@@ -17,7 +17,7 @@ namespace WebManagers
     ///WebRequest, Httpwebresponse
     public class WebManager : IWebManager
     {
-
+		NetworkCredential _credentials;
         public WebRequest _request;
         internal string OSESSIONID;
 
@@ -33,6 +33,7 @@ namespace WebManagers
                 _request = WebRequest.Create(url);
                 _request.Method = method;
                 _request.ContentLength = 0;
+				bindCredentials();
             }
             catch (Exception e)
             {
@@ -52,13 +53,24 @@ namespace WebManagers
         }
         internal void addCredentials(NetworkCredential credentials)
         {
-            this._request.Credentials = credentials;
+            _credentials = credentials;
+            bindCredentials();							  
+        }
+	    public void bindCredentials()
+        {
+            if (this._request != null)
+            {
+                if (this._credentials != null)
+                {
+                    this._request.Credentials = _credentials;
+                }
+            }
         }
         public virtual WebResponse GetResponse(string url, string method)
         {
 
             addRequest(url, method);
-
+			 bindCredentials();
             try
             {
                 return (HttpWebResponse)this._request.GetResponse();
@@ -68,6 +80,18 @@ namespace WebManagers
                 throw e;
             }
 
+        }
+		public virtual WebResponse GetResponse()
+        {
+            bindCredentials();
+            try
+            {
+                return (HttpWebResponse)this._request.GetResponse();
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
         public virtual async Task<HttpWebResponse> GetResponseAsync(string url, string method)
         {

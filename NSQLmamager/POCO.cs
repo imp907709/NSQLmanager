@@ -107,6 +107,10 @@ namespace POCO
         public string Name { get; set; }
 
     }
+	   public class UserSettings : OrientVertex
+    {
+        public bool showBirthday { get; set; }
+    }
 
     //Edges
     public class MainAssignment : OrientEdge
@@ -131,7 +135,38 @@ namespace POCO
     {
 
     }
-   
+    public class CommonSettings : OrientEdge
+    {
+
+    }
+
+    /*
+    CREATE class UserSettings extends V;
+    CREATE PROPERTY UserSettings.showBirthday BOOLEAN;
+    CREATE CLASS CommonSettings EXTENDS E;
+    */
+
+    //for spagetty check
+    public class MigrateCollection
+    {
+        public string @rid { get; set; }
+        public string @class { get; set; }
+        public string GUID { get; set; }
+    }
     #endregion
 
+    #region BreweryPOCOs
+    public class Brewery : OrientVertex
+    {
+        string Name { get; set; }
+        DateTime Created { get; set; }
+        string Changed { get; set; }
+    }
+    public class Beer : OrientVertex
+    {        
+        string Sort { get; set; }
+        DateTime Created { get; set; }
+        string Changed { get; set; }
+    }
+    #endregion
 }

@@ -6,3 +6,5 @@ G:\disk\Files\Progects\VS_Files\VS_solutions\Others\OrientDb\NSQLmamager\NSQLmam
 G:\disk\Files\Progects\VS_Files\VS_solutions\Others\OrientDb\NSQLmamager\NSQLmamager\obj\Debug\NSQLmamager.csprojResolveAssemblyReference.cache
 G:\disk\Files\Progects\VS_Files\VS_solutions\Others\OrientDb\NSQLmamager\NSQLmamager\obj\Debug\NSQLmamager.exe
 G:\disk\Files\Progects\VS_Files\VS_solutions\Others\OrientDb\NSQLmamager\NSQLmamager\obj\Debug\NSQLmamager.pdb
+G:\disk\Files\git\nsql\NSQLmamager\obj\Debug\NSQLmamager.csprojResolveAssemblyReference.cache
+G:\disk\Files\git\nsql\NSQLmamager\bin\Debug\NSQLmamager.exe.config
