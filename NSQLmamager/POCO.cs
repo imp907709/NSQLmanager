@@ -31,7 +31,7 @@ namespace POCO
         public string name { get; set; }
 
     }
-    public class OrientVertex : IOrientObject
+    public class OrientVertex : IOrientVertex
     {
         public string type { get; set; }
 
@@ -41,7 +41,7 @@ namespace POCO
 
         public string class_ { get; set; }
     }
-    public class OrientEdge : IOrientObject, IEdge
+    public class OrientEdge :  IOrientEdge
     {
         public string type { get; set; }
 
@@ -107,7 +107,7 @@ namespace POCO
         public string Name { get; set; }
 
     }
-	   public class UserSettings : OrientVertex
+	public class UserSettings : OrientVertex
     {
         public bool showBirthday { get; set; }
     }

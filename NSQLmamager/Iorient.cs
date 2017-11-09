@@ -11,7 +11,7 @@ namespace IOrientObjects
     {
 
     }
-    public interface IOrientObject
+    public interface IOrientVertex
     {
         [JsonProperty("@type")]
         string type { get; set; }
@@ -23,7 +23,7 @@ namespace IOrientObjects
         string class_ { get; set; }
     }
     //Specific for OrientDb (additional for Edges)
-    public interface IEdge
+    public interface IOrientEdge : IOrientVertex
     {
         string Out { get; set; }
         string In { get; set; }
@@ -32,8 +32,8 @@ namespace IOrientObjects
     public interface ITypeConverter
     {
         void Add(Type type_, ITypeToken token_);
-        ITypeToken Get(IOrientObject object_);
-        ITypeToken GetBase(IOrientObject object_);
+        ITypeToken Get(IOrientVertex object_);
+        ITypeToken GetBase(IOrientVertex object_);
         ITypeToken Get(Type type_);
         ITypeToken GetBase(Type type_);
     }

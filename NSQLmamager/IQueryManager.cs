@@ -19,22 +19,23 @@ namespace IQueryManagers
     {
         string Text { get; set; }
     }
-    public interface ITokenBuilder
+    public interface ITokenBuilderNoGen
     {
-        List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientContext = null);
-        List<ITypeToken> Command(ITypeToken command_, IOrientObject orientObject, ITypeToken from, ITypeToken to, ITypeToken orientContext = null);
-        List<ITypeToken> Command(ITypeToken command_, IOrientObject orientObject, IOrientObject orientClass_, ITypeToken orientTypeClass_, bool mandatory = false, bool notNull = false);
+        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_, ITypeToken orientObjectToken_, ITypeToken content = null);
+        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_, ITypeToken orientObject, ITypeToken from, ITypeToken to, ITypeToken content = null);
+        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_, ITypeToken orientObject);
 
     }
-    public interface ITokenBuilderImplicit
-    {
+    public interface ITokenBuilderTypeGen
+    {   
 
-        List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject);
-        List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType);
-        List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType, ITypeToken context_);
-        List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType, ITypeToken tokenA, ITypeToken tokenB, ITypeToken content);
+        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_, ITypeToken content = null);
+        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_,  ITypeToken from, ITypeToken to, ITypeToken content = null);
+        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_);
 
     }
+
+
     //Building Item from Token types
     public interface ITextBuilder
     {
