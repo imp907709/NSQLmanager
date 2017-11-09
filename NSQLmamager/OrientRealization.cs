@@ -409,11 +409,11 @@ namespace OrientRealization
                 result.Add(_typeConverter.Get(orientClass_.GetType()));
                 if(content !=null)
                 {
-                    if(orientClass_ is OrientClass)
+                    if(orientClass_ is IOrientClass)
                     {
                         result.Add(new OrientExtendsToken());
                     }
-                    if (orientClass_ is OrientVertex)
+                    if (orientClass_ is IOrientVertex)
                     {
                         result.Add(new OrientContentToken());
                     }
@@ -421,7 +421,26 @@ namespace OrientRealization
                 }
             return result;
         }
-
+        public List<ITypeToken> Command(ITypeToken command_, Type orientClass_, ITypeToken content = null)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            result.Add(command_);
+            result.Add(_typeConverter.GetBase(orientClass_.GetType()));
+            result.Add(_typeConverter.Get(orientClass_.GetType()));
+            if (content != null)
+            {
+                if (_typeConverter.GetBase(orientClass_.GetType()) is IOrientClass)
+                {
+                    result.Add(new OrientExtendsToken());
+                }
+                if (_typeConverter.GetBase(orientClass_.GetType()) is IOrientVertex)
+                {
+                    result.Add(new OrientContentToken());
+                }
+                result.Add(content);
+            }
+            return result;
+        }
         public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, IOrientObject orientProperty_, ITypeToken orientType_, bool mandatory = false, bool notnull = false)
         {
             List<ITypeToken> result = new List<ITypeToken>();
@@ -853,12 +872,12 @@ namespace OrientRealization
             return resp;
 
         }
-        public string Delete(IOrientObject type_ ,ITypeToken condition_)
+        public string Delete(Type type_ ,ITypeToken condition_)
         {
             string deleteClause;
                        
-            List<ITypeToken> commandTk = tb.Command(new OrientDeleteToken(), type_);
-            List<ITypeToken> whereTk = new List<ITypeToken>() { new OrientWhereToken(), new TextToken() { Text = @"Name = 0" } };
+            List<ITypeToken> commandTk = tb.Command(new OrientDeleteToken(), type_, condition_);
+            List<ITypeToken> whereTk = new List<ITypeToken>() { new OrientWhereToken(), condition_ };
 
             deleteClause = txb.Build(commandTk, new OrientDeleteCluaseFormat());
             string whereClause = txb.Build(whereTk, new OrientWhereClauseFormat());
@@ -877,7 +896,7 @@ namespace OrientRealization
 
         }
 
-        public string Select(IOrientObject object_, ITypeToken condition_)
+        public string Select(Type object_, ITypeToken condition_)
         {
 
             string result = null;

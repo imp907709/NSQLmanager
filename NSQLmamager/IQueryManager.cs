@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-
+using System;
 using IOrientObjects;
 
 namespace IQueryManagers
@@ -21,18 +21,19 @@ namespace IQueryManagers
     }
     public interface ITokenBuilderNoGen
     {
-        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_, ITypeToken orientObjectToken_, ITypeToken content = null);
-        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_, ITypeToken orientObject, ITypeToken from, ITypeToken to, ITypeToken content = null);
-        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_, ITypeToken orientObject);
+        List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObjectToken_, ITypeToken content = null);
+        List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObject, ITypeToken from, ITypeToken to, ITypeToken content = null);
+        List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObject);
 
     }
     public interface ITokenBuilderTypeGen
-    {   
+    {
 
-        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_, ITypeToken content = null);
-        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_,  ITypeToken from, ITypeToken to, ITypeToken content = null);
-        List<ITypeToken> Command(ITypeToken command_, IOrientVertex orientClass_);
-
+        List<ITypeToken> Command(ITypeToken command_, Type orientClass_, ITypeToken content = null);
+        List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken content = null);
+        List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_,  ITypeToken from, ITypeToken to, ITypeToken content = null);
+        List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_);
+        List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_,IOrientObject orientProperty_, ITypeToken orientType_, bool mandatory =false, bool notnull=false);
     }
 
 

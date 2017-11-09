@@ -62,7 +62,6 @@
   <ItemGroup>
     <Compile Include="ApiTester.cs" />
     <Compile Include="IJsonManager.cs" />
-    <Compile Include="Iobjects.cs" />
     <Compile Include="Iorient.cs" />
     <Compile Include="IorientObjects.cs" />
     <Compile Include="IQueryManager.cs" />

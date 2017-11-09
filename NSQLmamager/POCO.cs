@@ -17,14 +17,14 @@ namespace POCO
 
 
     //Orient object
-    public class OrientClass : IOrientSystemObject
+    public class OrientClass : IOrientClass
     {
         public string type { get; set; }
 
         public string name { get; set; }
        
     }
-    public class OrientProperty : IOrientSystemObject
+    public class OrientProperty : IOrientProperty
     {
         public string type { get; set; }
 
@@ -145,14 +145,7 @@ namespace POCO
     CREATE PROPERTY UserSettings.showBirthday BOOLEAN;
     CREATE CLASS CommonSettings EXTENDS E;
     */
-
-    //for spagetty check
-    public class MigrateCollection
-    {
-        public string @rid { get; set; }
-        public string @class { get; set; }
-        public string GUID { get; set; }
-    }
+   
     #endregion
 
     #region BreweryPOCOs

@@ -37,7 +37,7 @@ namespace ConsoleApp1
     public class RepoCheck
     {
         JSONManager jm;
-        OrientTokenBuilder tb;
+        OrientTokenBuilderImplicit tb;
         TypeConverter tc;
         Textbuilder ocb;
         WebManager wm ;
@@ -48,19 +48,25 @@ namespace ConsoleApp1
         Unit u;
         SubUnit s;
 
+        UserSettings us;
+        CommonSettings cs;
+
         MainAssignment m;
         List<string> lp,lu;
 
         public RepoCheck()
         {
             jm = new JSONManager();
-            tb = new OrientTokenBuilder();
+            tb = new OrientTokenBuilderImplicit();
             tc = new TypeConverter();
             ocb = new OrientCommandBuilder();
             wm = new WebManager();
             wr = new WebResponseReader();          
 
             repo = new OrientRepo(jm, tb, tc, ocb, wm, wr);
+
+            us = new UserSettings() { showBirthday = true };
+            cs = new CommonSettings();
 
             s = new SubUnit();
 
@@ -109,10 +115,31 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
         public void DeleteCheck()
         {
             string str;
-            str = repo.Delete(Person);
-            str = repo.Delete(typeof(Unit));
-            str = repo.Delete(typeof(MainAssignment));
-            str = repo.Delete(typeof(SubUnit));
+            str = repo.Delete(typeof(Person), new TextToken() { Text="1=1"});
+            str = repo.Delete(typeof(Unit), new TextToken() { Text = "1=1" });
+            str = repo.Delete(typeof(MainAssignment), new TextToken() { Text = "1=1" });
+            str = repo.Delete(typeof(SubUnit), new TextToken() { Text = "1=1" });
+        }
+        public void BirthdayConditionAdd()
+        {
+
+            List<string> persIds = new List<string>();
+            List<string> edgeIds = new List<string>();
+
+            persIds.AddRange(
+                jm.DeserializeFromParentNode<Person>(repo.Select(typeof(Person), new TextToken() { Text = "1=1 and outE(\"CommonSettings\").inv(\"UserSettings\").showBirthday[0] is null" }), new RESULT().Text).Select(s => s.id.Replace(@"#", ""))
+            );
+
+            for (int i = 0; i < persIds.Count(); i++)
+            {
+                string id = jm.DeserializeFromParentNode<UserSettings>(repo.Add(us), new RESULT().Text).Select(s => s.id.Replace(@"#", "")).FirstOrDefault();
+
+                repo.Add(cs, new TextToken() { Text = persIds[i] }, new TextToken() { Text = id });
+            }
+
+            repo.Delete(typeof(UserSettings), new TextToken() { Text = @"1 =1" });
+            repo.Delete(typeof(CommonSettings), new TextToken() { Text = @"1 =1" });
+
         }
     }
     
