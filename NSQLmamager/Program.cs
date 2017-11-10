@@ -87,7 +87,7 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
 
         public void GO()
         {
-
+            BirthdayConditionAdd();
             AddCheck();
             DeleteCheck();
         }
@@ -99,7 +99,6 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
             {
                 lp.Add(jm.DeserializeFromParentNode<Person>(repo.Add(p), new RESULT().Text).Select(s => s.id.Replace(@"#","")).FirstOrDefault());
                 lu.Add(jm.DeserializeFromParentNode<Unit>(repo.Add(u), new RESULT().Text).Select(s=>s.id.Replace(@"#", "")).FirstOrDefault());
-              
             }
             for (int i = 0; i <= lim/2; i++)
             {              
@@ -119,6 +118,51 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
             str = repo.Delete(typeof(Unit), new TextToken() { Text = "1=1" });
             str = repo.Delete(typeof(MainAssignment), new TextToken() { Text = "1=1" });
             str = repo.Delete(typeof(SubUnit), new TextToken() { Text = "1=1" });
+		  }
+        public void ExplicitCommandsCheck()
+        {
+
+            OrientCommandBuilder cb = new OrientCommandBuilder();
+            OrientTokenBuilderExplicit eb = new OrientTokenBuilderExplicit();
+            TypeConverter tc = new TypeConverter();
+
+            List<IQueryManagers.ITypeToken> lt = new List<IQueryManagers.ITypeToken>();
+            List<string> ls = new List<string>();
+
+
+lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientClassToken() { Text = "V" });
+ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+
+lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientPropertyToken() { Text = "Name" }, new OrientSTRINGToken(), true,true);
+ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+
+lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientPropertyToken() { Text = "Created" }, new OrientDATEToken(), true, true);
+ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+
+
+
+lt = eb.Create(new OrientClassToken() { Text = "ESCN" }, new OrientClassToken() { Text = "E" });
+ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+
+lt = eb.Create(new OrientClassToken() { Text = "ESCN" }, new OrientPropertyToken() { Text = "Name" }, new OrientSTRINGToken(), true, true);
+ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+
+lt = eb.Create(new OrientClassToken() { Text = "ESCN" }, new OrientPropertyToken() { Text = "Created" }, new OrientDATEToken(), true, true);
+ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+
+
+
+lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientClassToken() { Text = "VSCN" });
+ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+
+lt = eb.Create(new OrientClassToken() { Text = "Beer" }, new OrientClassToken() { Text = "VSCN" });
+ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+
+lt = eb.Create(new OrientClassToken() { Text = "Produces" }, new OrientClassToken() { Text = "ESCN" });
+ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+
+
+
         }
         public void BirthdayConditionAdd()
         {

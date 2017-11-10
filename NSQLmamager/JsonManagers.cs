@@ -77,10 +77,29 @@ namespace JsonManagers
             return result;
         }
 
+		 public IEnumerable<T> DeserializeFromParentNode<T>(string input) where T : class
+        {
+            IEnumerable<T> result = null;
+            result = JTokensToCollection<T>(ExtractFromParentNode(input));
+            return result;
+        }
+        public IEnumerable<T> DeserializeFromParentNodeObjColl<T>(string input) where T : class
+        {
+            IEnumerable<T> result = null;
+            result = JTokensToCollectionObjColl<T>(ExtractFromParentNode(input));
+            return result;
+        } 
+		
         public string SerializeObject(object input_, JsonSerializerSettings settings_=null)
         {
             string result = string.Empty;          
             result = JsonConvert.SerializeObject(input_, settings_);
+            return result;
+        }
+		 public string SerializeObject(object input_, JsonConverter converter_ = null)
+        {
+            string result = string.Empty;
+            result = JsonConvert.SerializeObject(input_, converter_);
             return result;
         }
         public string SerializeObject(object input_)
@@ -105,6 +124,25 @@ namespace JsonManagers
             result = (from s in input select s.ToObject<T>()).ToList();
             return result;
         }
+		  public IEnumerable<T> JTokensToCollectionObjColl<T>(IEnumerable<JToken> input) where T : class
+        {
+            IEnumerable<T> result = null;
+            foreach (var a in input)
+            {
+                result = a.ToObject<List<T>>();
+            }
+            return result;
+        }
+        public T JTokensToCollectionObj<T>(IEnumerable<JToken> input) where T : class
+        {
+            T result = null;
+            foreach (var a in input)
+            {
+                result = a.ToObject<T>();
+            }
+            return result;
+        }
+
         public List<string> JTokenToCollection(IEnumerable<JToken> input)
         {
             List<string> result = new List<string>();
@@ -120,6 +158,24 @@ namespace JsonManagers
             result = JsonConvert.SerializeObject(list_, jss);
             return result;
         }
+	public class BracketsConverter : JsonConverter
+    {
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            writer.WriteValue(value.ToString().Replace("[", "").Replace("]",""));
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            if(objectType == typeof(string)) { return true; }
+            throw new NotImplementedException();
+        }
     }
+    
 
 }

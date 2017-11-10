@@ -8,6 +8,9 @@ using IWebManagers;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web.Http;
+using System.Threading;
+
 
 namespace WebManagers
 {
@@ -17,7 +20,7 @@ namespace WebManagers
     ///WebRequest, Httpwebresponse
     public class WebManager : IWebManager
     {
-		NetworkCredential _credentials;
+        NetworkCredential _credentials;
         public WebRequest _request;
         internal string OSESSIONID;
 
@@ -33,7 +36,9 @@ namespace WebManagers
                 _request = WebRequest.Create(url);
                 _request.Method = method;
                 _request.ContentLength = 0;
-				bindCredentials();
+              
+                bindCredentials();
+                
             }
             catch (Exception e)
             {
@@ -51,12 +56,12 @@ namespace WebManagers
             result = this._request.GetResponse().Headers.Get(header);
             return result;
         }
-        internal void addCredentials(NetworkCredential credentials)
+        public void addCredentials(NetworkCredential credentials)
         {
             _credentials = credentials;
-            bindCredentials();							  
+            bindCredentials();
         }
-	    public void bindCredentials()
+        public void bindCredentials()
         {
             if (this._request != null)
             {
@@ -70,7 +75,7 @@ namespace WebManagers
         {
 
             addRequest(url, method);
-			 bindCredentials();
+            bindCredentials();
             try
             {
                 return (HttpWebResponse)this._request.GetResponse();
@@ -81,7 +86,7 @@ namespace WebManagers
             }
 
         }
-		public virtual WebResponse GetResponse()
+        public virtual WebResponse GetResponse()
         {
             bindCredentials();
             try
@@ -97,6 +102,7 @@ namespace WebManagers
         {
             HttpWebResponse resp;
             addRequest(url, method);
+            bindCredentials();
             try
             {
                 resp = (HttpWebResponse)this._request.GetResponse();
@@ -154,6 +160,39 @@ namespace WebManagers
             catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
 
             return result;
+        }
+        public string ReadResponse(IHttpActionResult response)
+        {
+            string result=null;
+            Task<HttpResponseMessage> mes = response.ExecuteAsync(new System.Threading.CancellationToken());
+            try
+            {
+                result = mes.Result.Content.ReadAsStringAsync().Result;
+            }
+            catch (Exception e) { }
+            return result;
+        }
+
+
+    }
+
+    public class ReturnEntities : IHttpActionResult
+    {
+        HttpRequestMessage _returnedTask;
+        public string _result;
+
+        public ReturnEntities(string result_, HttpRequestMessage ar_)
+        {
+            this._returnedTask = ar_;
+            this._result = result_;
+        }
+
+        async Task<HttpResponseMessage> IHttpActionResult.ExecuteAsync(CancellationToken cancellationToken)
+        {
+            HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+            response.Content = new StringContent(_result, Encoding.UTF8, "text/plain");
+
+            return await Task.FromResult(response);
         }
     }
 

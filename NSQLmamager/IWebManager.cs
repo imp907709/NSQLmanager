@@ -1,15 +1,18 @@
 ﻿using System.Net;
 using System.Net.Http;
+using System.Web.Http;
 
 namespace IWebManagers
 {
 
-    /// <summary>
+      /// <summary>
     /// Gets response from URL with method
     /// </summary>
     public interface IWebManager
     {
+        void addCredentials(NetworkCredential credentials);
         WebResponse GetResponse(string url, string method);
+        WebRequest addRequest(string url, string method);
     }
     /// <summary>
     /// Reads response and converts it to string
@@ -19,6 +22,7 @@ namespace IWebManagers
         string ReadResponse(HttpWebResponse response);
         string ReadResponse(WebResponse response);
         string ReadResponse(HttpResponseMessage response);
+        string ReadResponse(IHttpActionResult response);
     }
 
 }
