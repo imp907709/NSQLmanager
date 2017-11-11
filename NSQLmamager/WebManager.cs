@@ -169,7 +169,7 @@ namespace WebManagers
             {
                 result = mes.Result.Content.ReadAsStringAsync().Result;
             }
-            catch (Exception e) { }
+            catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
             return result;
         }
 

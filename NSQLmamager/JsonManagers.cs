@@ -1,16 +1,13 @@
 ﻿using Newtonsoft.Json;
-
 using Newtonsoft.Json.Linq;
-
 using System.Collections.Generic;
-
 using System.Linq;
-
 using IJsonManagers;
+using System;
 
 namespace JsonManagers
 {
-  
+
     /// <summary>
     /// JSON manager revised 
     /// Newtonsoft JSON wrapper
@@ -27,12 +24,12 @@ namespace JsonManagers
             result = JToken.Parse(input)[parentNodeName];
             return result;
         }
-		 public IJEnumerable<JToken> ExtractFromParentChildred(string input,  string childNodeName)
+        public IJEnumerable<JToken> ExtractFromParentChildren(string input, string childNodeName)
         {
             IJEnumerable<JToken> result = null;
             result = JToken.Parse(input).Children()[childNodeName];
             return result;
-        }
+        }       
         public IJEnumerable<JToken> ExtractFromParentChildNode(string input, string parentNodeName, string childNodeName)
         {
             IJEnumerable<JToken> result = null;
@@ -45,7 +42,7 @@ namespace JsonManagers
             result = JToken.Parse(input).Children()[childNodeName];
             return result;
         }
-	    
+
         public IJEnumerable<JToken> ExtractFromParentNode(string input)
         {
             IJEnumerable<JToken> result = null;
@@ -58,10 +55,10 @@ namespace JsonManagers
             result = JTokensToCollection<T>(ExtractFromParentNode(input, parentNodeName));
             return result;
         }
-		public IEnumerable<T> DeserializeFromParentChildren<T>(string input, string childNodeName) where T : class
+        public IEnumerable<T> DeserializeFromParentChildren<T>(string input, string childNodeName) where T : class
         {
             IEnumerable<T> result = null;
-            result = JTokensToCollection<T>(ExtractFromParentChildred(input, childNodeName));
+            result = JTokensToCollection<T>(ExtractFromParentChildren(input, childNodeName));
             return result;
         }
         public IEnumerable<T> DeserializeFromParentChildNode<T>(string input, string parentNodeName, string childNodeName) where T : class
@@ -77,7 +74,7 @@ namespace JsonManagers
             return result;
         }
 
-		 public IEnumerable<T> DeserializeFromParentNode<T>(string input) where T : class
+        public IEnumerable<T> DeserializeFromParentNode<T>(string input) where T : class
         {
             IEnumerable<T> result = null;
             result = JTokensToCollection<T>(ExtractFromParentNode(input));
@@ -88,15 +85,15 @@ namespace JsonManagers
             IEnumerable<T> result = null;
             result = JTokensToCollectionObjColl<T>(ExtractFromParentNode(input));
             return result;
-        } 
-		
-        public string SerializeObject(object input_, JsonSerializerSettings settings_=null)
+        }
+
+        public string SerializeObject(object input_, JsonSerializerSettings settings_ = null)
         {
-            string result = string.Empty;          
+            string result = string.Empty;
             result = JsonConvert.SerializeObject(input_, settings_);
             return result;
         }
-		 public string SerializeObject(object input_, JsonConverter converter_ = null)
+        public string SerializeObject(object input_, JsonConverter converter_ = null)
         {
             string result = string.Empty;
             result = JsonConvert.SerializeObject(input_, converter_);
@@ -124,7 +121,7 @@ namespace JsonManagers
             result = (from s in input select s.ToObject<T>()).ToList();
             return result;
         }
-		  public IEnumerable<T> JTokensToCollectionObjColl<T>(IEnumerable<JToken> input) where T : class
+        public IEnumerable<T> JTokensToCollectionObjColl<T>(IEnumerable<JToken> input) where T : class
         {
             IEnumerable<T> result = null;
             foreach (var a in input)
@@ -158,24 +155,24 @@ namespace JsonManagers
             result = JsonConvert.SerializeObject(list_, jss);
             return result;
         }
-	public class BracketsConverter : JsonConverter
-    {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public class BracketsConverter : JsonConverter
         {
-            writer.WriteValue(value.ToString().Replace("[", "").Replace("]",""));
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                writer.WriteValue(value.ToString().Replace("[", "").Replace("]", ""));
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override bool CanConvert(Type objectType)
+            {
+                if (objectType == typeof(string)) { return true; }
+                throw new NotImplementedException();
+            }
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool CanConvert(Type objectType)
-        {
-            if(objectType == typeof(string)) { return true; }
-            throw new NotImplementedException();
-        }
     }
-    
-
 }

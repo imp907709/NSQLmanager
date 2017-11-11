@@ -25,7 +25,7 @@ using APItesting;
 /// Deprecated, unused and refactored code mooved here
 /// can be deleted without any consequences
 /// </summary>
-namespace Trash
+namespace Deprecated
 {
 
     public class Check
@@ -527,7 +527,7 @@ namespace Trash
             };
             //Aggregate all query TokenManagers to one Select URL command with where
             OrientCommandURIBuilder commandSample = new OrientCommandURIBuilder(
-                CommandTokens, new TextToken() { Text = @"{0}/{1} {2}" }, Textbuilder.BuildTypeFormates.NESTED
+                CommandTokens, new TextToken() { Text = @"{0}/{1} {2}" }, TextBuilder.BuildTypeFormates.NESTED
                 );
             //full select query command
             string selectcommandURL = commandSample.Text.Text;
@@ -677,18 +677,18 @@ namespace Trash
             //EXAMPLE for token formats
             //Token1 -> "{0}\{1}" ; Token2 -> "{0} {1} {2}"; UrlToken -> "{0}:{1}"; Result => UrlToken "{0}\{1}:{2} {3} {4}"
             OrientCommandURIBuilder cpU =
-    new OrientCommandURIBuilder(createPersonTk, new TextToken() { Text = @"{0}/{1}" }, Textbuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(createPersonTk, new TextToken() { Text = @"{0}/{1}" }, TextBuilder.BuildTypeFormates.NESTED);
             OrientCommandURIBuilder spU =
-    new OrientCommandURIBuilder(selectTk, new TextToken() { Text = @"{0}/{1} {2}" }, Textbuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(selectTk, new TextToken() { Text = @"{0}/{1} {2}" }, TextBuilder.BuildTypeFormates.NESTED);
             OrientCommandURIBuilder dpU =
-    new OrientCommandURIBuilder(deleteTk, new TextToken() { Text = @"{0}/{1} {2}" }, Textbuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(deleteTk, new TextToken() { Text = @"{0}/{1} {2}" }, TextBuilder.BuildTypeFormates.NESTED);
 
             OrientCommandURIBuilder cuU =
-    new OrientCommandURIBuilder(createUnitTk, new TextToken() { Text = @"{0}/{1}" }, Textbuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(createUnitTk, new TextToken() { Text = @"{0}/{1}" }, TextBuilder.BuildTypeFormates.NESTED);
             OrientCommandURIBuilder suU =
-    new OrientCommandURIBuilder(selectUnitTk, new TextToken() { Text = @"{0}/{1} {2}" }, Textbuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(selectUnitTk, new TextToken() { Text = @"{0}/{1} {2}" }, TextBuilder.BuildTypeFormates.NESTED);
             OrientCommandURIBuilder duU =
-    new OrientCommandURIBuilder(deleteUnitTk, new TextToken() { Text = @"{0}/{1} {2}" }, Textbuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(deleteUnitTk, new TextToken() { Text = @"{0}/{1} {2}" }, TextBuilder.BuildTypeFormates.NESTED);
 
 
             //check
@@ -796,9 +796,9 @@ namespace Trash
 
 
             OrientCommandURIBuilder SuUB =
-                new OrientCommandURIBuilder(SuTb, new TextToken() { Text = @"{0}/{1}" }, Textbuilder.BuildTypeFormates.NESTED);
+                new OrientCommandURIBuilder(SuTb, new TextToken() { Text = @"{0}/{1}" }, TextBuilder.BuildTypeFormates.NESTED);
             OrientCommandURIBuilder MaUB =
-                new OrientCommandURIBuilder(MaTb, new TextToken() { Text = @"{0}/{1}" }, Textbuilder.BuildTypeFormates.NESTED);
+                new OrientCommandURIBuilder(MaTb, new TextToken() { Text = @"{0}/{1}" }, TextBuilder.BuildTypeFormates.NESTED);
 
 
             SubUnitsIDs.Add(
@@ -971,7 +971,6 @@ namespace Trash
 
 
     }
-
 
     //DRIVER scope
     public static class OrientNumToCLRType

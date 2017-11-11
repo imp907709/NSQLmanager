@@ -39,7 +39,7 @@ namespace ConsoleApp1
         JSONManager jm;
         OrientTokenBuilderImplicit tb;
         TypeConverter tc;
-        Textbuilder ocb;
+        TextBuilder ocb;
         WebManager wm ;
         WebResponseReader wr;
 
@@ -160,8 +160,6 @@ ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
 
 lt = eb.Create(new OrientClassToken() { Text = "Produces" }, new OrientClassToken() { Text = "ESCN" });
 ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
-
-
 
         }
         public void BirthdayConditionAdd()

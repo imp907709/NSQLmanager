@@ -84,35 +84,35 @@ namespace OrientRealization
     //Tokens for Orient Comamnd and Authenticate URLs
     public class OrientHost : ITypeToken
     {
-        public string Text { get { return "http://msk1-vm-ovisp02"; } set { Text = value; } }
+        public string Text { get; set; } = ConfigurationManager.AppSettings["ParentHost"];
     }
     public class OrientDb : ITypeToken
     {
-        public string Text { get; set; } = "Orgchart_prod";
+        public string Text { get; set; } = ConfigurationManager.AppSettings["ParentDBname"];
     }
     public class OrientPort : ITypeToken
     {
-        public string Text { get { return "2480"; } set { Text = value; } }
+        public string Text { get; set; } = "2480";
     }
     public class OrientAuthenticateToken : ITypeToken
     {
-        public string Text { get { return "connect"; } set { Text = value; } }
+        public string Text { get; set; } = "Connect";
     }
     public class OrientCommandToken : ITypeToken
     {
-        public string Text { get { return "command"; } set { Text = value; } }
+        public string Text { get; set; } = "command";
     }
     public class OrientCommandSQLTypeToken : ITypeToken
     {
-        public string Text { get { return "sql"; } set { Text = value; } }
+        public string Text { get; set; } = "sql";
     }
     public class OrientFuncionToken : ITypeToken
     {
-        public string Text { get { return "Function"; } set { Text = value; } }
+        public string Text { get; set; } = "function";
     }
     public class OrientBatchToken : ITypeToken
     {
-        public string Text { get { return "Batch"; } set { Text = value; } }
+        public string Text { get; set; } = "Batch";
     }
 
 
@@ -120,7 +120,16 @@ namespace OrientRealization
     /// Orient query tokens
     /// </summary>  
 
-    //Orient SQL syntax tokens    
+    //Orient SQL syntax tokens
+    public class OrientDatabaseToken : ITypeToken
+    {
+        public string Text { get; set; } = "database";
+    }
+    public class OrientPlocalToken : ITypeToken
+    {
+        public string Text { get; set; } = "Plocal";
+    }
+
     public class OrientSelectToken : ITypeToken
     {
         public string Text { get; set; } = "Select";
@@ -344,294 +353,11 @@ namespace OrientRealization
     {
         public string Text { get { return @"{0} {1} {2}"; } set { Text = value; } }
     }
-
-
-    /// <summary>
-    /// Builders.
-    /// Build command acording to type of passed object (class,vertes, or edge with objects referenced or ids)
-    /// Not use predefined formatters 
-    /// for special commands like create class/edge/vertex
-    /// which not requer special format like {0}:{1}\{2} but samle , generated fro mtoken list like {0} {1} {2}
-    /// but generated in lagre ammounts with differen types.
-    /// </summary>
-
-    //implicit token builder
-    public class OrientTokenBuilder : ITokenBuilderNoGen
-    {
-        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObject)
-        {
-            List<ITypeToken> result = new List<ITypeToken>();
-         
-            return result;
-        }
-
-        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObjectToken_, ITypeToken content)
-        {
-            List<ITypeToken> result = new List<ITypeToken>();
-
-            return result;
-        }
-
-        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObject, ITypeToken from, ITypeToken to, ITypeToken content)
-        {
-            List<ITypeToken> result = new List<ITypeToken>();
-
-            return result;
-        }
-    }
-
-    /// <summary>creates collection of tokens
-    //builds add,delete,create commands from token amount
-    /// </summary>
-    public class OrientTokenBuilderImplicit : ITokenBuilderTypeGen
-    {
-        ITypeConverter _typeConverter;
-
-        public void BindConverter(ITypeConverter typecOnverter_)
-        {
-            this._typeConverter = typecOnverter_;
-        }
-
-        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_)
-        {
-            List<ITypeToken> result = new List<ITypeToken>();
-                result.Add(command_);
-                result.Add(_typeConverter.GetBase(orientClass_.GetType()));
-                result.Add(_typeConverter.Get(orientClass_.GetType()));
-            return result;
-        }
-
-        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken content = null)
-        {
-            List<ITypeToken> result = new List<ITypeToken>();
-                result.Add(command_);
-                result.Add(_typeConverter.GetBase(orientClass_.GetType()));
-                result.Add(_typeConverter.Get(orientClass_.GetType()));
-                if(content !=null)
-                {
-                    if(orientClass_ is IOrientClass)
-                    {
-                        result.Add(new OrientExtendsToken());
-                    }
-                    if (orientClass_ is IOrientVertex)
-                    {
-                        result.Add(new OrientContentToken());
-                    }
-                    result.Add(content);
-                }
-            return result;
-        }
-        public List<ITypeToken> Command(ITypeToken command_, Type orientClass_, ITypeToken content = null)
-        {
-            List<ITypeToken> result = new List<ITypeToken>();
-            result.Add(command_);
-            result.Add(_typeConverter.GetBase(orientClass_.GetType()));
-            result.Add(_typeConverter.Get(orientClass_.GetType()));
-            if (content != null)
-            {
-                if (_typeConverter.GetBase(orientClass_.GetType()) is IOrientClass)
-                {
-                    result.Add(new OrientExtendsToken());
-                }
-                if (_typeConverter.GetBase(orientClass_.GetType()) is IOrientVertex)
-                {
-                    result.Add(new OrientContentToken());
-                }
-                result.Add(content);
-            }
-            return result;
-        }
-        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, IOrientObject orientProperty_, ITypeToken orientType_, bool mandatory = false, bool notnull = false)
-        {
-            List<ITypeToken> result = new List<ITypeToken>();
-                result.Add(command_);
-                result.Add(_typeConverter.GetBase(orientProperty_.GetType()));
-                result.Add(_typeConverter.Get(orientClass_.GetType()));
-                result.Add(new OrientDotToken());
-                result.Add(_typeConverter.Get(orientProperty_.GetType()));
-                result.Add(orientType_);
-                result.Add(new OrientLtRoundSquareToken());
-                result.Add(new OrientMandatoryToken());
-            if (mandatory)
-            {
-                result.Add(new OrientTRUEToken());
-            } else { result.Add(new OrientFLASEToken()); }
-                result.Add(new OrientNotNULLToken());
-
-            result.Add(new OrientComaToken());
-
-            if (notnull)
-            {
-                result.Add(new OrientTRUEToken());
-            }
-            else { result.Add(new OrientFLASEToken()); }
-            result.Add(new OrientRtRoundSquareToken());
-
-            return result;
-        }
-
-        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken from, ITypeToken to, ITypeToken content = null)
-        {
-            List<ITypeToken> result = new List<ITypeToken>();
-            result.Add(command_);
-            result.Add(_typeConverter.GetBase(orientClass_.GetType()));
-            result.Add(_typeConverter.Get(orientClass_.GetType()));
-            result.Add(new OrientFromToken());
-            result.Add(from);
-            result.Add(new OrientToToken());
-            result.Add(to);
-            if (content != null)
-            {
-                result.Add(new OrientContentToken());
-                result.Add(content);
-            }
-                return result;
-        }
-
-    }
-
-
-    /// <summary>
-    /// Builder with explicitly named commands
-    /// </summary>
-    public class OrientTokenBuilderExplicit
-    {      
-
-        //Create class cluase (type check) with extends class option
-        public List<ITypeToken> Create(OrientClassToken classType_, ITypeToken extendsClassType_=null)
-        {
-
-            List<ITypeToken> result = new List<ITypeToken>() {
-                new OrientCreateToken()
-            };
-
-            if (classType_ is OrientClassToken)
-            {
-                result.Add(new OrientClassToken());
-											   									  
-                result.Add(classType_);
-													
-                if (extendsClassType_ != null)
-                {
-                    result.Add(new OrientExtendsToken());
-                    result.Add(extendsClassType_);
-                }
-            }           
-            return result;
-        }
-        //Create  vertex cluase (type check) with content optiona
-        public List<ITypeToken> Create(OrientVertexToken classType_, ITypeToken extendsClassType_=null)
-        {
-            List<ITypeToken> result = new List<ITypeToken>() {
-                new OrientCreateToken()
-            };
-            if (classType_ is OrientVertexToken)
-            {
-                result.Add(new OrientVertexToken());
-											   
-								  
-                result.Add(classType_);
-
-                if (extendsClassType_ != null)
-                {
-                    result.Add(new OrientContentToken());
-                    result.Add(extendsClassType_);
-                }
-            }
-            return result;
-        }
-        //Create property cluase
-        public List<ITypeToken> Create(ITypeToken className_, ITypeToken propertyName_, ITypeToken propertyType_,
-        bool mandatory_ = false, bool notnull=false)
-        {
-            List<ITypeToken> result = new List<ITypeToken>() {
-                new OrientCreateToken(), new OrientPropertyToken(),className_, new OrientDotToken(),propertyName_,propertyType_
-            };
-
-            result.Add(new OrientLtRoundSquareToken());
-            result.Add(new OrientMandatoryToken());
-
-            if (mandatory_){
-                result.Add(new OrientTRUEToken());
-            }else { result.Add(new OrientFLASEToken()); }
-
-            result.Add(new OrientComaToken());
-            result.Add(new OrientNotNULLToken());
-
-            if (notnull){
-                result.Add(new OrientTRUEToken());
-            }else { result.Add(new OrientFLASEToken()); }
-
-            result.Add(new OrientRtRoundSquareToken());
-
-            return result;
-        }
-        //Create edge clause
-        public List<ITypeToken> Create (ITypeToken className_, ITypeToken from_,ITypeToken to_)
-        {
-
-            List<ITypeToken> result = new List<ITypeToken>(){
-                new OrientCreateToken(), new OrientEdgeToken(), className_, new OrientFromToken(),
-                from_,
-                new OrientToToken(),
-                to_
-            };
-
-            return result;
-        }
-        //For select from cluases (Vertex,edge)
-        public List<ITypeToken> Select(ITypeToken orientType_, ITypeToken class_)
-        {
-            List<ITypeToken> result = new List<ITypeToken>() {
-                new OrientSelectToken(),orientType_, new OrientFromToken(), class_
-            };
-
-            return result;
-        }
-        //Where clauses receiveing content< which must be strictly parametrized in UOW
-        public List<ITypeToken> Where(ITypeToken orientType_, ITypeToken content_)
-        {
-            List<ITypeToken> result = new List<ITypeToken>() {
-                new OrientWhereToken(),content_
-            };
-
-            return result;
-        }
-        //delete vertex,edge,or class
-        public List<ITypeToken> Delete(ITypeToken classType_,ITypeToken classname_)
-        {
-            List<ITypeToken> result = new List<ITypeToken>();
-            if (classType_ is OrientVertexToken)
-            {
-                result.Add(new OrientDeleteToken());
-													  
-                result.Add(classType_);
-												 
-															
-            }
-            if (classType_ is OrientEdgeToken)
-            {
-                result.Add(new OrientDeleteToken());
-                result.Add(classType_);
-            }
-            if (classType_ is OrientClassToken)
-            {
-                result.Add(new OrientDropToken());
-                result.Add(classType_);
-            }
-            if(result.Count()!=0)
-            {
-                result.Add(classname_);
-            }
-            return result;
-        }		
-
-    }
-    
+   
 	
     //buider for commands with format
     //mostly used for URLS (auth,
-    public class OrientCommandBuilder : Textbuilder
+    public class OrientCommandBuilder : TextBuilder
     {
         public OrientCommandBuilder() : base()
         {
@@ -643,11 +369,14 @@ namespace OrientRealization
 
         }
     }
-	
-	
+
+
+    //<<--deprecation possible, replaced with type convertible commandbuilder
+    //Query builders
+    //class segregation for different cluse builders
 
     //Authentication URL build
-    public class OrientAuthenticationURIBuilder : Textbuilder
+    public class OrientAuthenticationURIBuilder : TextBuilder
     {
         public OrientAuthenticationURIBuilder(List<ITypeToken> tokens_, OrientAuthenticationURLFormat FormatPattern_)
              : base(tokens_, FormatPattern_)
@@ -656,24 +385,22 @@ namespace OrientRealization
         }
     }
     //Command URL build
-    public class OrientCommandURIBuilder : Textbuilder
+    public class OrientCommandURIBuilder : TextBuilder
     {
         public OrientCommandURIBuilder(List<ITypeToken> tokens_, OrientCommandURLFormat FormatPattern_)
             : base(tokens_, FormatPattern_)
         {
 
         }
-        public OrientCommandURIBuilder(List<ITextBuilder> texts_, ITypeToken FormatPattern_, Textbuilder.BuildTypeFormates type_)
+        public OrientCommandURIBuilder(List<ITextBuilder> texts_, ITypeToken FormatPattern_, TextBuilder.BuildTypeFormates type_)
           : base(texts_, FormatPattern_, type_)
         {
 
         }
     }
 
-    //<<--deprecatoin possible, replaced with type convertible commandbuilder
-    //Query builders
-    //class segregation for different cluse builders
-    public class OrientSelectClauseBuilder : Textbuilder
+   
+    public class OrientSelectClauseBuilder : TextBuilder
     {
         public OrientSelectClauseBuilder(List<ITypeToken> tokens_, OrientSelectClauseFormat FormatPattern_ = null)
             : base(tokens_, FormatPattern_ = new OrientSelectClauseFormat())
@@ -681,7 +408,7 @@ namespace OrientRealization
 
         }
     }
-    public class OrientWhereClauseBuilder : Textbuilder
+    public class OrientWhereClauseBuilder : TextBuilder
     {
         public OrientWhereClauseBuilder(List<ITypeToken> tokens_, OrientWhereClauseFormat FormatPattern_)
             : base(tokens_, FormatPattern_)
@@ -690,7 +417,7 @@ namespace OrientRealization
         }
     }
 
-    public class OrientCreateClauseBuilder : Textbuilder
+    public class OrientCreateClauseBuilder : TextBuilder
     {
         public OrientCreateClauseBuilder(List<ITypeToken> tokens_, ITypeToken format_)
             : base(tokens_, format_)
@@ -698,7 +425,7 @@ namespace OrientRealization
 
         }
     }
-    public class OrientDeleteClauseBuilder : Textbuilder
+    public class OrientDeleteClauseBuilder : TextBuilder
     {
         public OrientDeleteClauseBuilder(List<ITypeToken> tokens_, ITypeToken format_)
             : base(tokens_, format_)
@@ -777,8 +504,298 @@ namespace OrientRealization
         }
 
     }
-		
-	
+
+    /// <summary>
+    /// Builders.
+    /// Build command acording to type of passed object (class,vertes, or edge with objects referenced or ids)
+    /// Not use predefined formatters 
+    /// for special commands like create class/edge/vertex
+    /// which not requer special format like {0}:{1}\{2} but samle , generated fro mtoken list like {0} {1} {2}
+    /// but generated in lagre ammounts with differen types.
+    /// </summary>
+
+    //implicit token builder
+    public class OrientTokenBuilder : ITokenBuilderNoGen
+    {
+
+        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObject)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+
+            return result;
+        }
+        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObjectToken_, ITypeToken content)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+
+            return result;
+        }    
+        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObject, ITypeToken from, ITypeToken to, ITypeToken content)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+
+            return result;
+        }
+
+    }
+
+    /// <summary>creates collection of tokens
+    //builds add,delete,create commands from token amount
+    /// </summary>
+    public class OrientTokenBuilderImplicit : ITokenBuilderTypeGen
+    {
+
+        ITypeConverter _typeConverter;
+
+        public void BindConverter(ITypeConverter typecOnverter_)
+        {
+            this._typeConverter = typecOnverter_;
+        }
+
+        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            result.Add(command_);
+            result.Add(_typeConverter.GetBase(orientClass_.GetType()));
+            result.Add(_typeConverter.Get(orientClass_.GetType()));
+            return result;
+        }
+
+        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken content = null)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            result.Add(command_);
+            result.Add(_typeConverter.GetBase(orientClass_.GetType()));
+            result.Add(_typeConverter.Get(orientClass_.GetType()));
+            if (content != null)
+            {
+                if (orientClass_ is IOrientClass)
+                {
+                    result.Add(new OrientExtendsToken());
+                }
+                if (orientClass_ is IOrientVertex)
+                {
+                    result.Add(new OrientContentToken());
+                }
+                result.Add(content);
+            }
+            return result;
+        }
+        public List<ITypeToken> Command(ITypeToken command_, Type orientClass_, ITypeToken content = null)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            result.Add(command_);
+            result.Add(_typeConverter.GetBase(orientClass_.GetType()));
+            result.Add(_typeConverter.Get(orientClass_.GetType()));
+            if (content != null)
+            {
+                if (_typeConverter.GetBase(orientClass_.GetType()) is IOrientClass)
+                {
+                    result.Add(new OrientExtendsToken());
+                }
+                if (_typeConverter.GetBase(orientClass_.GetType()) is IOrientVertex)
+                {
+                    result.Add(new OrientContentToken());
+                }
+                result.Add(content);
+            }
+            return result;
+        }
+        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, IOrientObject orientProperty_, ITypeToken orientType_, bool mandatory = false, bool notnull = false)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            result.Add(command_);
+            result.Add(_typeConverter.GetBase(orientProperty_.GetType()));
+            result.Add(_typeConverter.Get(orientClass_.GetType()));
+            result.Add(new OrientDotToken());
+            result.Add(_typeConverter.Get(orientProperty_.GetType()));
+            result.Add(orientType_);
+            result.Add(new OrientLtRoundSquareToken());
+            result.Add(new OrientMandatoryToken());
+            if (mandatory)
+            {
+                result.Add(new OrientTRUEToken());
+            }
+            else { result.Add(new OrientFLASEToken()); }
+            result.Add(new OrientNotNULLToken());
+
+            result.Add(new OrientComaToken());
+
+            if (notnull)
+            {
+                result.Add(new OrientTRUEToken());
+            }
+            else { result.Add(new OrientFLASEToken()); }
+            result.Add(new OrientRtRoundSquareToken());
+
+            return result;
+        }
+
+        public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken from, ITypeToken to, ITypeToken content = null)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            result.Add(command_);
+            result.Add(_typeConverter.GetBase(orientClass_.GetType()));
+            result.Add(_typeConverter.Get(orientClass_.GetType()));
+            result.Add(new OrientFromToken());
+            result.Add(from);
+            result.Add(new OrientToToken());
+            result.Add(to);
+            if (content != null)
+            {
+                result.Add(new OrientContentToken());
+                result.Add(content);
+            }
+            return result;
+        }
+
+    }
+
+
+    /// <summary>
+    /// Builder with explicitly named commands
+    /// </summary>
+    public class OrientTokenBuilderExplicit
+    {
+
+        //Create class cluase (type check) with extends class option
+        public List<ITypeToken> Create(OrientClassToken classType_, ITypeToken extendsClassType_ = null)
+        {
+
+            List<ITypeToken> result = new List<ITypeToken>() {
+                new OrientCreateToken()
+            };
+
+            if (classType_ is OrientClassToken)
+            {
+                result.Add(new OrientClassToken());
+
+                result.Add(classType_);
+
+                if (extendsClassType_ != null)
+                {
+                    result.Add(new OrientExtendsToken());
+                    result.Add(extendsClassType_);
+                }
+            }
+            return result;
+        }
+        //Create  vertex cluase (type check) with content optiona
+        public List<ITypeToken> Create(OrientVertexToken classType_, ITypeToken extendsClassType_ = null)
+        {
+            List<ITypeToken> result = new List<ITypeToken>() {
+                new OrientCreateToken()
+            };
+            if (classType_ is OrientVertexToken)
+            {
+                result.Add(new OrientVertexToken());
+
+
+                result.Add(classType_);
+
+                if (extendsClassType_ != null)
+                {
+                    result.Add(new OrientContentToken());
+                    result.Add(extendsClassType_);
+                }
+            }
+            return result;
+        }
+        //Create property cluase
+        public List<ITypeToken> Create(ITypeToken className_, ITypeToken propertyName_, ITypeToken propertyType_,
+        bool mandatory_ = false, bool notnull = false)
+        {
+            List<ITypeToken> result = new List<ITypeToken>() {
+                new OrientCreateToken(), new OrientPropertyToken(),className_, new OrientDotToken(),propertyName_,propertyType_
+            };
+
+            result.Add(new OrientLtRoundSquareToken());
+            result.Add(new OrientMandatoryToken());
+
+            if (mandatory_)
+            {
+                result.Add(new OrientTRUEToken());
+            }
+            else { result.Add(new OrientFLASEToken()); }
+
+            result.Add(new OrientComaToken());
+            result.Add(new OrientNotNULLToken());
+
+            if (notnull)
+            {
+                result.Add(new OrientTRUEToken());
+            }
+            else { result.Add(new OrientFLASEToken()); }
+
+            result.Add(new OrientRtRoundSquareToken());
+
+            return result;
+        }
+        //Create edge clause
+        public List<ITypeToken> Create(ITypeToken className_, ITypeToken from_, ITypeToken to_)
+        {
+
+            List<ITypeToken> result = new List<ITypeToken>(){
+                new OrientCreateToken(), new OrientEdgeToken(), className_, new OrientFromToken(),
+                from_,
+                new OrientToToken(),
+                to_
+            };
+
+            return result;
+        }
+        //For select from cluases (Vertex,edge)
+        public List<ITypeToken> Select(ITypeToken orientType_, ITypeToken class_)
+        {
+            List<ITypeToken> result = new List<ITypeToken>() {
+                new OrientSelectToken(),orientType_, new OrientFromToken(), class_
+            };
+
+            return result;
+        }
+        //Where clauses receiveing content< which must be strictly parametrized in UOW
+        public List<ITypeToken> Where(ITypeToken orientType_, ITypeToken content_)
+        {
+            List<ITypeToken> result = new List<ITypeToken>() {
+                new OrientWhereToken(),content_
+            };
+
+            return result;
+        }
+        //delete vertex,edge,or class
+        public List<ITypeToken> Delete(ITypeToken classType_, ITypeToken classname_)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            if (classType_ is OrientVertexToken)
+            {
+                result.Add(new OrientDeleteToken());
+
+                result.Add(classType_);
+
+
+            }
+            if (classType_ is OrientEdgeToken)
+            {
+                result.Add(new OrientDeleteToken());
+                result.Add(classType_);
+            }
+            if (classType_ is OrientClassToken)
+            {
+                result.Add(new OrientDropToken());
+                result.Add(classType_);
+            }
+            if (result.Count() != 0)
+            {
+                result.Add(classname_);
+            }
+            return result;
+        }
+
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
     //boilderplate usage
     //rewrite to command builder use
     public class OrientRepo
@@ -832,7 +849,7 @@ namespace OrientRealization
             return resp;
 
         }
-        public string Add(IOrientVertex obj_, IOrientVertex from, IOrientVertex to)
+        public string Add(IOrientEdge obj_, IOrientVertex from, IOrientVertex to)
         {
             
             string content = jm.SerializeObject(obj_);
@@ -852,7 +869,7 @@ namespace OrientRealization
             return resp;
 
         }
-        public string Add(IOrientVertex obj_, ITypeToken from, ITypeToken to)
+        public string Add(IOrientEdge obj_, ITypeToken from, ITypeToken to)
         {
 
             string content = jm.SerializeObject(obj_);
