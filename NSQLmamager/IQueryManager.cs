@@ -28,7 +28,7 @@ namespace IQueryManagers
     }
     public interface ITokenBuilderTypeGen
     {
-
+        List<ITypeToken> Command(ITypeToken name_, ITypeToken type_);
         List<ITypeToken> Command(ITypeToken command_, Type orientClass_, ITypeToken content = null);
         List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken content = null);
         List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_,  ITypeToken from, ITypeToken to, ITypeToken content = null);

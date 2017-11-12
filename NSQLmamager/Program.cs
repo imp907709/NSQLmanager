@@ -37,8 +37,8 @@ namespace ConsoleApp1
     public class RepoCheck
     {
         JSONManager jm;
-        OrientTokenBuilderImplicit tb;
-        TypeConverter tc;
+        OrientCommandBuilderImplicit tb;
+        OrientTypeConverter tc;
         TextBuilder ocb;
         WebManager wm ;
         WebResponseReader wr;
@@ -57,8 +57,8 @@ namespace ConsoleApp1
         public RepoCheck()
         {
             jm = new JSONManager();
-            tb = new OrientTokenBuilderImplicit();
-            tc = new TypeConverter();
+            tb = new OrientCommandBuilderImplicit();
+            tc = new OrientTypeConverter();
             ocb = new OrientCommandBuilder();
             wm = new WebManager();
             wr = new WebResponseReader();          
@@ -87,9 +87,12 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
 
         public void GO()
         {
-            BirthdayConditionAdd();
+            dbCreateCheck();
+            ExplicitCommandsCheck();
             AddCheck();
             DeleteCheck();
+            BirthdayConditionAdd();
+
         }
         public void AddCheck()
         {
@@ -124,7 +127,7 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
 
             OrientCommandBuilder cb = new OrientCommandBuilder();
             OrientTokenBuilderExplicit eb = new OrientTokenBuilderExplicit();
-            TypeConverter tc = new TypeConverter();
+            OrientTypeConverter tc = new OrientTypeConverter();
 
             List<IQueryManagers.ITypeToken> lt = new List<IQueryManagers.ITypeToken>();
             List<string> ls = new List<string>();
@@ -183,6 +186,11 @@ ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
             repo.Delete(typeof(CommonSettings), new TextToken() { Text = @"1 =1" });
 
         }
+        public void dbCreateCheck()
+        {
+            repo.Add(new POST(), new OrientTestDbToken(), new OrientPlocalToken());
+        }
+
     }
     
 

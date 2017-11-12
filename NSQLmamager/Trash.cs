@@ -469,7 +469,7 @@ namespace Deprecated
 
             //Get collection of tokens used for concatenating authentication URL part
             List<ITypeToken> urlTokens = new List<ITypeToken>()
-            { new OrientHost(), new OrientPort(), new OrientAuthenticateToken(), new OrientDb() };
+            { new OrientHost(), new OrientPort(), new OrientAuthenticateToken(), new OrientDbToken() };
             //Initialize Format for auth URL string concat 
             //- > {0}:{1}/{2}/{3}
             // <host>:<port>/connect/<dbname>
@@ -486,7 +486,7 @@ namespace Deprecated
             OrientCommandURLFormat cf = new OrientCommandURLFormat();
             //tokens for command url part
             List<ITypeToken> urlCommandTokens = new List<ITypeToken>()
-            { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDb(), new OrientCommandSQLTypeToken() };
+            { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDbToken(), new OrientCommandSQLTypeToken() };
             //Command URL text
             OrientCommandURIBuilder commandUrlPart = new OrientCommandURIBuilder(urlCommandTokens, cf);
             //command url
@@ -581,7 +581,7 @@ namespace Deprecated
 
             //Initialize tokens for sql command clause
             List<ITypeToken> urlTokents =
-    new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDb(), new OrientCommandSQLTypeToken() };
+    new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDbToken(), new OrientCommandSQLTypeToken() };
 
             //create model class for person
             //manual init for testng , furhter will be loaded from elsewhere
@@ -702,7 +702,7 @@ namespace Deprecated
 
             //create authentication tokens and build auth url
             List<ITypeToken> authtokens = new List<ITypeToken>()
-            { new OrientHost(),new OrientPort(),new OrientAuthenticateToken(),new OrientDb() };
+            { new OrientHost(),new OrientPort(),new OrientAuthenticateToken(),new OrientDbToken() };
             OrientAuthenticationURLFormat auf = new OrientAuthenticationURLFormat();
             OrientAuthenticationURIBuilder authBld = new OrientAuthenticationURIBuilder(authtokens, auf);
 

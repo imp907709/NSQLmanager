@@ -134,9 +134,14 @@ namespace WebManagers
         public string ReadResponse(HttpWebResponse response)
         {
             string result = string.Empty;
-            Stream sm = response.GetResponseStream();
-            StreamReader sr = new StreamReader(sm);
-            result = sr.ReadToEnd();
+            try
+            {
+                Stream sm = response.GetResponseStream();
+                StreamReader sr = new StreamReader(sm);
+                result = sr.ReadToEnd();
+            }
+            catch(Exception e){ System.Diagnostics.Trace.WriteLine(e.Message); }
+
             return result;
         }
         public string ReadResponse(HttpResponseMessage response)

@@ -76,17 +76,19 @@ namespace OrientRealization
 
     }
 
-   
+
+    #region Tokens
+
     /// <summary>
     ///  Tokens realization for different string concatenations
     /// </summary>
-    
+
     //Tokens for Orient Comamnd and Authenticate URLs
     public class OrientHost : ITypeToken
     {
         public string Text { get; set; } = ConfigurationManager.AppSettings["ParentHost"];
     }
-    public class OrientDb : ITypeToken
+    public class OrientDbToken : ITypeToken
     {
         public string Text { get; set; } = ConfigurationManager.AppSettings["ParentDBname"];
     }
@@ -254,6 +256,10 @@ namespace OrientRealization
         public string Text { get; set; } = "DATETIME";
     }
 
+    public class OrientTestDbToken : ITypeToken
+    {
+        public string Text { get; set; } = "TestDB";
+    }
 
     public class OrientUserSettingsToken : ITypeToken
     {
@@ -293,6 +299,9 @@ namespace OrientRealization
         public string Text { get; set; } = "result";
     }
 
+    #endregion
+
+    #region TokenFormats
 
     /// <summary>
     /// Builder formats
@@ -322,6 +331,10 @@ namespace OrientRealization
     public class OrientCommandURLFormat : ITypeToken
     {
         public string Text { get { return @"{0}:{1}/{2}/{3}/{4}"; } set { Text = value; } }
+    }
+    public class OrientDatabaseUrlFormat : ITypeToken
+    {
+        public string Text { get; set; } = "{0}:{1}/{2}";
     }
 
     /// </summary>
@@ -353,8 +366,11 @@ namespace OrientRealization
     {
         public string Text { get { return @"{0} {1} {2}"; } set { Text = value; } }
     }
-   
-	
+
+    #endregion
+
+    #region TokenListsBuilders
+
     //buider for commands with format
     //mostly used for URLS (auth,
     public class OrientCommandBuilder : TextBuilder
@@ -369,7 +385,6 @@ namespace OrientRealization
 
         }
     }
-
 
     //<<--deprecation possible, replaced with type convertible commandbuilder
     //Query builders
@@ -398,7 +413,6 @@ namespace OrientRealization
 
         }
     }
-
    
     public class OrientSelectClauseBuilder : TextBuilder
     {
@@ -433,24 +447,27 @@ namespace OrientRealization
 
         }
     }
+    
+    #endregion
 
 
-     
+
     //predefined url token collections
     //prefered change to predefined url and command builds
     public static class TokenRepo
     {
-        public static List<ITypeToken> authUrl = new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientAuthenticateToken(), new OrientDb() };
-        public static List<ITypeToken> commandUrl = new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDb(), new OrientCommandSQLTypeToken() };
+        public static List<ITypeToken> authUrl = new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientAuthenticateToken(), new OrientDbToken() };
+        public static List<ITypeToken> commandUrl = new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDbToken(), new OrientCommandSQLTypeToken() };
+        public static List<ITypeToken> addDbURL = new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientDatabaseToken()};
     }
 
     //converts from token tyoes for orient Db objects like (vertex,edge) to according model POCO class
     //Vertex (Person) to class (Person)    
-    public class TypeConverter : ITypeConverter
+    public class OrientTypeConverter : ITypeConverter
     {
         Dictionary<Type, ITypeToken> types;
 
-        public TypeConverter()
+        public OrientTypeConverter()
         {
             types = new Dictionary<Type, ITypeToken>();
 
@@ -462,6 +479,7 @@ namespace OrientRealization
 
             types.Add(typeof(MainAssignment), new OrientMainAssignmentToken());
             types.Add(typeof(SubUnit), new OrientSubUnitToken());
+            types.Add(typeof(OrientDb), new OrientTestDbToken());
         }
         public void Add(Type type_, ITypeToken token_)
         {
@@ -491,6 +509,14 @@ namespace OrientRealization
                          
             return token_;
         }
+        public ITypeToken Get(IOrientDatabase object_)
+        {
+            ITypeToken token_ = null;
+
+            types.TryGetValue(object_.GetType(), out token_);
+
+            return token_;
+        }
         public ITypeToken GetBase(IOrientVertex object_)
         {
             ITypeToken token_ = null;
@@ -504,6 +530,8 @@ namespace OrientRealization
         }
 
     }
+
+    #region CommandBuilders
 
     /// <summary>
     /// Builders.
@@ -542,7 +570,7 @@ namespace OrientRealization
     /// <summary>creates collection of tokens
     //builds add,delete,create commands from token amount
     /// </summary>
-    public class OrientTokenBuilderImplicit : ITokenBuilderTypeGen
+    public class OrientCommandBuilderImplicit : ITokenBuilderTypeGen
     {
 
         ITypeConverter _typeConverter;
@@ -550,6 +578,14 @@ namespace OrientRealization
         public void BindConverter(ITypeConverter typecOnverter_)
         {
             this._typeConverter = typecOnverter_;
+        }
+
+        public List<ITypeToken> Command(ITypeToken name_, ITypeToken type_)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();                           
+                result.Add(name_);
+                result.Add(type_);
+            return result;
         }
 
         public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_)
@@ -792,6 +828,10 @@ namespace OrientRealization
         }
 
     }
+    
+    #endregion
+
+    #region Repos
 
     /// <summary>
     /// 
@@ -810,9 +850,7 @@ namespace OrientRealization
 
         OrientWebManager owm = new OrientWebManager();
 
-        string AuthUrl;
-        string CommandUrl;
-        string queryUrl;
+        string AuthUrl, CommandUrl, queryUrl,DatabaseUrl;   
 
         public OrientRepo(
             IJsonManger jsonManager_, ITokenBuilderTypeGen tokenBuilder_,ITypeConverter typeConverter_,ITextBuilder textBuilder_, 
@@ -827,9 +865,25 @@ namespace OrientRealization
 
             AuthUrl =txb.Build(TokenRepo.authUrl, new OrientAuthenticationURLFormat());
             CommandUrl= txb.Build(TokenRepo.commandUrl, new OrientCommandURLFormat());
-            
+            DatabaseUrl = txb.Build(TokenRepo.addDbURL, new OrientDatabaseUrlFormat());
         }
 
+        public string Add ( ITypeToken rest_command_, ITypeToken dbName_, ITypeToken type_)
+        {
+            List<ITypeToken> commandTk = tb.Command(dbName_, type_);
+            string command = txb.Build(commandTk, new TextToken() { Text=@"{0}/{1}"});
+            queryUrl = DatabaseUrl + "/" + command;
+
+            wm.addCredentials( 
+                new NetworkCredential(ConfigurationManager.AppSettings["ParentLogin"], ConfigurationManager.AppSettings["ParentPassword"]));
+
+            string resp =
+            ir.ReadResponse(
+                wm.GetResponse(queryUrl, rest_command_.Text)
+            );
+
+            return resp;
+        }
         public string Add(IOrientVertex obj_)
         {
 
@@ -936,5 +990,7 @@ namespace OrientRealization
         }
 
     }
+    
+    #endregion
 
 }

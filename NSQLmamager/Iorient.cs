@@ -11,6 +11,10 @@ namespace IOrientObjects
     {
 
     }
+    public interface IOrientDatabase : IOrientObject
+    {
+
+    }
     public interface IOrientClass : IOrientObject
     {
 
@@ -41,6 +45,7 @@ namespace IOrientObjects
     {
         void Add(Type type_, ITypeToken token_);
         ITypeToken Get(IOrientVertex object_);
+        ITypeToken Get(IOrientDatabase object_);
         ITypeToken GetBase(IOrientVertex object_);
         ITypeToken Get(Type type_);
         ITypeToken GetBase(Type type_);

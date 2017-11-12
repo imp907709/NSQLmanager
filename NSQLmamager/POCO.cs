@@ -17,6 +17,10 @@ namespace POCO
 
 
     //Orient object
+    public class OrientDb : IOrientDatabase
+    {
+
+    }
     public class OrientClass : IOrientClass
     {
         public string type { get; set; }
