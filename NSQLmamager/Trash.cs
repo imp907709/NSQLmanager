@@ -15,17 +15,17 @@ using System.Threading.Tasks;
 using JsonManagers;
 using POCO;
 using WebManagers;
-using OrientRealization;
-using IOrientObjects;
+
 using IQueryManagers;
 using QueryManagers;
 using APItesting;
+using OrientRealization;
 
 /// <summary>
 /// Deprecated, unused and refactored code mooved here
 /// can be deleted without any consequences
 /// </summary>
-namespace Deprecated
+namespace Trash
 {
 
     public class Check
@@ -97,12 +97,11 @@ namespace Deprecated
             //Back to object 
             IEnumerable<Person> persons = JsonConvert.DeserializeObject<IEnumerable<Person>>(resp0);
         }
-      
-
+       
         public static void PersonApiCheck()
         {
 
-            WebManager wm = new WebManager();
+            OrientWebManager wm = new OrientWebManager();
 
             APItester_sngltn ut = new APItester_sngltn();
             WebResponseReader wr = new WebResponseReader();
@@ -173,7 +172,7 @@ namespace Deprecated
         public static void PersonApiCheckAsync()
         {
 
-            WebManager wm = new WebManager();
+            OrientWebManager wm = new OrientWebManager();
 
             APItester_sngltn ut = new APItester_sngltn();
             WebResponseReader wr = new WebResponseReader();
@@ -469,7 +468,7 @@ namespace Deprecated
 
             //Get collection of tokens used for concatenating authentication URL part
             List<ITypeToken> urlTokens = new List<ITypeToken>()
-            { new OrientHost(), new OrientPort(), new OrientAuthenticateToken(), new OrientDbToken() };
+            { new OrientHost(), new OrientPort(), new OrientAuthenticateToken(), new OrientDatabaseToken() };
             //Initialize Format for auth URL string concat 
             //- > {0}:{1}/{2}/{3}
             // <host>:<port>/connect/<dbname>
@@ -486,7 +485,7 @@ namespace Deprecated
             OrientCommandURLFormat cf = new OrientCommandURLFormat();
             //tokens for command url part
             List<ITypeToken> urlCommandTokens = new List<ITypeToken>()
-            { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDbToken(), new OrientCommandSQLTypeToken() };
+            { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDatabaseToken(), new OrientCommandSQLTypeToken() };
             //Command URL text
             OrientCommandURIBuilder commandUrlPart = new OrientCommandURIBuilder(urlCommandTokens, cf);
             //command url
@@ -522,7 +521,7 @@ namespace Deprecated
 
             //collection of FULL tokens 
             //@"{0}:{1}/{2}/{3}/{4}/{5} {6} {7} {8} {9}"
-            List<ITextBuilder> CommandTokens = new List<ITextBuilder>(){
+            List<ITokenAggreagtor> CommandTokens = new List<ITokenAggreagtor>(){
                 commandUrlPart,selectUrlPart,whereUrlPart
             };
             //Aggregate all query TokenManagers to one Select URL command with where
@@ -581,7 +580,7 @@ namespace Deprecated
 
             //Initialize tokens for sql command clause
             List<ITypeToken> urlTokents =
-    new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDbToken(), new OrientCommandSQLTypeToken() };
+    new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDatabaseToken(), new OrientCommandSQLTypeToken() };
 
             //create model class for person
             //manual init for testng , furhter will be loaded from elsewhere
@@ -663,13 +662,13 @@ namespace Deprecated
 
 
             //build commands strings according to string format
-            List<ITextBuilder> createPersonTk = new List<ITextBuilder>() { ub, cpb };
-            List<ITextBuilder> selectTk = new List<ITextBuilder>() { ub, spb, wb };
-            List<ITextBuilder> deleteTk = new List<ITextBuilder>() { ub, dpb, wb };
+            List<ITokenAggreagtor> createPersonTk = new List<ITokenAggreagtor>() { ub, cpb };
+            List<ITokenAggreagtor> selectTk = new List<ITokenAggreagtor>() { ub, spb, wb };
+            List<ITokenAggreagtor> deleteTk = new List<ITokenAggreagtor>() { ub, dpb, wb };
 
-            List<ITextBuilder> createUnitTk = new List<ITextBuilder>() { ub, cub };
-            List<ITextBuilder> selectUnitTk = new List<ITextBuilder>() { ub, sub, wb };
-            List<ITextBuilder> deleteUnitTk = new List<ITextBuilder>() { ub, dub, wb };
+            List<ITokenAggreagtor> createUnitTk = new List<ITokenAggreagtor>() { ub, cub };
+            List<ITokenAggreagtor> selectUnitTk = new List<ITokenAggreagtor>() { ub, sub, wb };
+            List<ITokenAggreagtor> deleteUnitTk = new List<ITokenAggreagtor>() { ub, dub, wb };
 
 
             //building command urls according to string format
@@ -702,7 +701,7 @@ namespace Deprecated
 
             //create authentication tokens and build auth url
             List<ITypeToken> authtokens = new List<ITypeToken>()
-            { new OrientHost(),new OrientPort(),new OrientAuthenticateToken(),new OrientDbToken() };
+            { new OrientHost(),new OrientPort(),new OrientAuthenticateToken(),new OrientDatabaseToken() };
             OrientAuthenticationURLFormat auf = new OrientAuthenticationURLFormat();
             OrientAuthenticationURIBuilder authBld = new OrientAuthenticationURIBuilder(authtokens, auf);
 
@@ -791,8 +790,8 @@ namespace Deprecated
             OrientCommandBuilder SuB = new OrientCommandBuilder(SubUnitTk, SbUtf);
             OrientCommandBuilder MaB = new OrientCommandBuilder(MainAssignmentTk, MnAsf);
 
-            List<ITextBuilder> SuTb = new List<ITextBuilder>() { ub, SuB };
-            List<ITextBuilder> MaTb = new List<ITextBuilder>() { ub, MaB };
+            List<ITokenAggreagtor> SuTb = new List<ITokenAggreagtor>() { ub, SuB };
+            List<ITokenAggreagtor> MaTb = new List<ITokenAggreagtor>() { ub, MaB };
 
 
             OrientCommandURIBuilder SuUB =
@@ -940,7 +939,7 @@ namespace Deprecated
 
             //read basic GET response
             string url = @"http://msk1-vm-ovisp01:8083/api/Person/GetCollegesLower/bs";
-            WebManager hm = new WebManager();
+            OrientWebManager hm = new OrientWebManager();
             WebResponse response = hm.GetResponse(url, "GET");
             string sampleResult = reader.ReadResponse(response);
 
@@ -971,7 +970,7 @@ namespace Deprecated
 
 
     }
-
+  
     //DRIVER scope
     public static class OrientNumToCLRType
     {

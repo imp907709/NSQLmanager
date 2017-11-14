@@ -83,9 +83,10 @@
     <Compile Include="AdinTce.cs" />
     <Compile Include="ApiTester.cs" />
     <Compile Include="IJsonManager.cs" />
-    <Compile Include="Iorient.cs" />
     <Compile Include="IorientObjects.cs" />
+    <Compile Include="IPersonUOW.cs" />
     <Compile Include="IQueryManager.cs" />
+    <Compile Include="IRepo.cs" />
     <Compile Include="IWebManager.cs" />
     <Compile Include="JsonManagers.cs" />
     <Compile Include="OrientRealization.cs" />
@@ -93,7 +94,9 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryManager.cs" />
+    <Compile Include="Repo.cs" />
     <Compile Include="Trash.cs" />
+    <Compile Include="UOWs.cs" />
     <Compile Include="WebManager.cs" />
   </ItemGroup>
   <ItemGroup>

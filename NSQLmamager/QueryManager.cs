@@ -9,9 +9,6 @@ using IQueryManagers;
 namespace QueryManagers
 {
 
-    //Generates sample token format from list of tokens
-    //helps avoid explicit tokenformats overcreating
-    // {0} .. {.} .. {n}
     public class TextFormatGenerate : ITypeToken
     {
         public string Text { get; set; } = string.Empty;
@@ -35,7 +32,6 @@ namespace QueryManagers
     }
 
     //Tokens for storing Resulted build strings (URLs, commands e.t.c)
-    //used for implementing new tokens
     public class TextToken : ITypeToken
     {
         public string Text { get; set; }
@@ -43,7 +39,7 @@ namespace QueryManagers
 
     // Base class for url tokens concatenation
     //TextBuilder realization for Format placeholders for URL concatenation
-    public class TextBuilder : ITextBuilder
+    public class TextBuilder : ITokenAggreagtor
     {
 
         public ITypeToken Text { get; set; }
@@ -62,7 +58,7 @@ namespace QueryManagers
             SetText(this.Tokens, this.FormatPattern);
         }
         //cocatenates URLbuilders Token collections from URLbuilders with format pattern
-        public TextBuilder(List<ITextBuilder> texts_, ITypeToken FormatPattern_, BuildTypeFormates type_)
+        public TextBuilder(List<ITokenAggreagtor> texts_, ITypeToken FormatPattern_, BuildTypeFormates type_)
         {
       
             this.FormatPattern = FormatPattern_;
@@ -77,7 +73,7 @@ namespace QueryManagers
             if (type_ == BuildTypeFormates.NESTED)
             {
                 List<ITypeToken> str = new List<ITypeToken>();
-                foreach (ITextBuilder tb in texts_)
+                foreach (ITokenAggreagtor tb in texts_)
                 {
                     //build string
                     tb.SetText(tb.Tokens, tb.FormatPattern);
@@ -119,7 +115,7 @@ namespace QueryManagers
             SetText(tokens_, FormatPattern_);
             return GetText();
         }
-        public string Build(List<ITextBuilder> texts_, ITypeToken FormatPattern_, BuildTypeFormates type_)
+        public string Build(List<ITokenAggreagtor> texts_, ITypeToken FormatPattern_, BuildTypeFormates type_)
         {
 
             this.FormatPattern = FormatPattern_;
@@ -134,7 +130,7 @@ namespace QueryManagers
             if (type_ == BuildTypeFormates.NESTED)
             {
                 List<ITypeToken> str = new List<ITypeToken>();
-                foreach (ITextBuilder tb in texts_)
+                foreach (ITokenAggreagtor tb in texts_)
                 {
                     //build string
                     tb.SetText(tb.Tokens, tb.FormatPattern);

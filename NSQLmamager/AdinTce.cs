@@ -9,7 +9,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json;
 using System.Configuration;
 
-namespace NSQLManager
+namespace AdinTce
 {
 
     #region AdinTce
@@ -18,7 +18,7 @@ namespace NSQLManager
     public class AdinTceRepo
     {
 
-        IQueryManagers.ITextBuilder _textBuilder;
+        IQueryManagers.ITokenAggreagtor _textBuilder;
         IWebManagers.IWebManager _webManager;
         IWebManagers.IResponseReader _responseReader;
         IJsonManagers.IJsonManger _jsonManager;
@@ -28,7 +28,7 @@ namespace NSQLManager
         AdinTceExplicitTokenBuilder tokenBuilder;
 
         public AdinTceRepo(
-            IQueryManagers.ITextBuilder textBuilder_,
+            IQueryManagers.ITokenAggreagtor textBuilder_,
             IWebManagers.IWebManager webManager_,
             IWebManagers.IResponseReader responseReader_,
             IJsonManagers.IJsonManger jsonManager_)
@@ -57,8 +57,9 @@ namespace NSQLManager
         }
         public string HoliVation(string GUID)
         {
-            AdinTcePOCO2 adp = new AdinTcePOCO2();
-          IEnumerable<Holiday> dhl=null;
+            
+            AdinTcePOCO adp = new AdinTcePOCO();
+            IEnumerable<Holiday> dhl=null;
             IEnumerable<Vacation> vhl = null;
             IEnumerable<GUIDPOCO> gpl = null;
 
@@ -73,7 +74,7 @@ namespace NSQLManager
 
             //Task.Run(() => {
             holidaysResp = _responseReader.ReadResponse(_webManager.addRequest(holidayCommand, "GET").GetResponse());
-			 if (holidaysResp != null && holidaysResp != string.Empty)
+            if (holidaysResp != null && holidaysResp != string.Empty)
             {
                 gpl = _jsonManager.DeserializeFromParentNode<GUIDPOCO>(holidaysResp);
                 dhl = _jsonManager.DeserializeFromParentChildren<Holiday>(holidaysResp, "Holidays");
@@ -81,16 +82,14 @@ namespace NSQLManager
                 adp.Position = gpl.Select(s => s).FirstOrDefault().Position;
                 adp.holidays = dhl.ToList();
             }
-			
+
             vacationsResp = _responseReader.ReadResponse(_webManager.addRequest(vacationCommand, "GET").GetResponse());
-			if (vacationsResp!=null && vacationsResp != string.Empty)
+            if (vacationsResp!=null && vacationsResp != string.Empty)
             {
                 vhl = _jsonManager.DeserializeFromParentChildren<Vacation>(vacationsResp, "Holidays");
-
-										
                 adp.vacations = vhl.ToList();
             }
-				
+
             //});
 
             result = _jsonManager.SerializeObject(adp);
@@ -224,7 +223,7 @@ namespace NSQLManager
         public string Position { get; set; }
     }
   
-    public class AdinTcePOCO2
+    public class AdinTcePOCO
     {
         [JsonProperty("GUID")]
         public string GUID_ { get; set; }

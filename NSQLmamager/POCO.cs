@@ -13,11 +13,12 @@ namespace POCO
 
     //MODEL scope
     #region POCOs
+
     //@JsonInclude(Include.NON_NULL)
 
 
     //Orient object
-    public class OrientDb : IOrientDatabase
+   public class OrientDatabase : IOrientDatabase
     {
 
     }
@@ -45,7 +46,7 @@ namespace POCO
 
         public string class_ { get; set; }
     }
-    public class OrientEdge :  IOrientEdge
+    public class OrientEdge : IOrientEdge
     {
         public string type { get; set; }
 
@@ -88,6 +89,9 @@ namespace POCO
         public string OneSHash { get; set; }
         public string Hash { get; set; }
 
+        [JsonProperty("id")]
+        public new string id { get; set; }
+
         /*
         public List<string> in_MainAssignment { get; set; }
         public List<string> out_MainAssignment { get; set; }
@@ -111,7 +115,7 @@ namespace POCO
         public string Name { get; set; }
 
     }
-	public class UserSettings : OrientVertex
+    public class UserSettings : OrientVertex
     {
         public bool showBirthday { get; set; }
     }
@@ -144,12 +148,26 @@ namespace POCO
 
     }
 
+
+    public class TrackBirthdays : OrientEdge
+    {
+
+    }
+
     /*
     CREATE class UserSettings extends V;
     CREATE PROPERTY UserSettings.showBirthday BOOLEAN;
     CREATE CLASS CommonSettings EXTENDS E;
     */
-   
+
+    //for spagetty check
+    public class MigrateCollection
+    {
+        public string @rid { get; set; }
+        public string @class { get; set; }
+        public string GUID { get; set; }
+    }
+
     #endregion
 
     #region BreweryPOCOs
@@ -166,4 +184,5 @@ namespace POCO
         string Changed { get; set; }
     }
     #endregion
+
 }

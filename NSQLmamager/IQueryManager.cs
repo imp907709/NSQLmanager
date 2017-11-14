@@ -1,5 +1,10 @@
-﻿using System.Collections.Generic;
+﻿
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+
 using IOrientObjects;
 
 namespace IQueryManagers
@@ -19,7 +24,34 @@ namespace IQueryManagers
     {
         string Text { get; set; }
     }
-	 public interface ITokenBuilder
+
+    //Building Item from Token types
+    public interface ITokenAggreagtor
+    {
+        ITypeToken Text { get; }
+        ITypeToken FormatPattern { get; }
+        List<ITypeToken> Tokens { get; }
+
+        string Build(List<ITypeToken> tokens_, ITypeToken FormatPattern_);
+        string GetText();
+        void SetText(List<ITypeToken> tokens_, ITypeToken FormatPattern_);
+
+    }
+
+    /// <summary>
+    /// Converts from Database and POCO classes to Tokens
+    /// </summary>
+    public interface ITypeConverter
+    {
+        void Add(Type type_, ITypeToken token_);
+        ITypeToken Get(IOrientObject object_);
+        ITypeToken GetBase(IOrientObject object_);
+        ITypeToken Get(Type type_);
+        ITypeToken GetBase(Type type_);
+    }
+
+    
+    public interface ITokenCompilator
     {
 
         List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject);
@@ -27,16 +59,18 @@ namespace IQueryManagers
         List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType, ITypeToken context_);
         List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType, ITypeToken tokenA, ITypeToken tokenB, ITypeToken content );
 
+        List<ITypeToken> outEinVExp(ITypeToken command_, ITypeToken vertex_, ITypeToken edge_, ITypeToken condition_);
+
     }
-	
-    public interface ITokenBuilderNoGen
+    public interface ITokenAggreagtorNoGen
     {
+
         List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObjectToken_, ITypeToken content = null);
         List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObject, ITypeToken from, ITypeToken to, ITypeToken content = null);
         List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObject);
 
     }
-    public interface ITokenBuilderTypeGen
+    public interface ITokenAggreagtorTypeGen
     {
         List<ITypeToken> Command(ITypeToken name_, ITypeToken type_);
         List<ITypeToken> Command(ITypeToken command_, Type orientClass_, ITypeToken content = null);
@@ -45,19 +79,5 @@ namespace IQueryManagers
         List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_);
         List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_,IOrientObject orientProperty_, ITypeToken orientType_, bool mandatory =false, bool notnull=false);
     }
-
-
-    //Building Item from Token types
-    public interface ITextBuilder
-    {
-        ITypeToken Text { get; }
-        ITypeToken FormatPattern { get; }
-        List<ITypeToken> Tokens { get; }
-
-        string Build(List<ITypeToken> tokens_, ITypeToken FormatPattern_);
-        string GetText();
-        void SetText(List<ITypeToken> tokens_, ITypeToken FormatPattern_);      
-        
-    }
-    
+   
 }
