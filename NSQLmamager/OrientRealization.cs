@@ -541,10 +541,74 @@ namespace OrientRealization
     /// which not requer special format like {0}:{1}\{2} but samle , generated fro mtoken list like {0} {1} {2}
     /// but generated in lagre ammounts with differen types.
     /// </summary>
+    public class OrientTokenBuilder : ITokenBuilder
+    {
+        //for select command
+        public List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            result.Add(command_);
+            result.Add(new OrientFromToken());
+            result.Add(orientObject);
+            return result;
+        }
+
+        //for delete, select conditional command
+        public List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            if (command_ is OrientDeleteToken)
+            {
+                result.Add(command_);
+                result.Add(orientType);
+                //result.Add(new OrientFromToken());
+                result.Add(orientObject);
+            }
+            if (command_ is OrientSelectToken)
+            {
+                result.Add(command_);
+                result.Add(new OrientFromToken());
+                result.Add(orientObject);
+                result.Add(new OrientWhereToken());
+                result.Add(orientType);
+            }
+            return result;
+        }
+
+        //for create command, authenticate, command
+        public List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType, ITypeToken context_)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            result.Add(command_);
+            result.Add(orientType);
+            result.Add(orientObject);
+            result.Add(new OrientContentToken());
+            result.Add(context_);
+            return result;
+        }
+
+        //for create Edge from to 
+        public List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType, ITypeToken tokenA, ITypeToken tokenB, ITypeToken context_)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+            result.Add(command_);
+            result.Add(orientType);
+            result.Add(orientObject);
+            result.Add(new OrientFromToken());
+            result.Add(tokenA);
+            result.Add(new OrientToToken());
+            result.Add(tokenB);
+            result.Add(new OrientContentToken());
+            result.Add(context_);
+            return result;
+        }
+
+    }
 
     //implicit token builder
-    public class OrientTokenBuilder : ITokenBuilderNoGen
+    public class OrientTokenBuilderNoGen : ITokenBuilderNoGen
     {
+
 
         public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObject)
         {
@@ -557,14 +621,13 @@ namespace OrientRealization
             List<ITypeToken> result = new List<ITypeToken>();
 
             return result;
-        }    
+        }
         public List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObject, ITypeToken from, ITypeToken to, ITypeToken content)
         {
             List<ITypeToken> result = new List<ITypeToken>();
 
             return result;
         }
-
     }
 
     /// <summary>creates collection of tokens
@@ -827,6 +890,13 @@ namespace OrientRealization
             return result;
         }
 
+		public List<ITypeToken> Function(ITypeToken function_,ITextBuilder params_)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();
+                result.Add(function_);
+                result.AddRange(params_.Tokens);
+            return result;
+        }
     }
     
     #endregion

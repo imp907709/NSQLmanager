@@ -19,6 +19,16 @@ namespace IQueryManagers
     {
         string Text { get; set; }
     }
+	 public interface ITokenBuilder
+    {
+
+        List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject);
+        List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType);
+        List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType, ITypeToken context_);
+        List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject, ITypeToken orientType, ITypeToken tokenA, ITypeToken tokenB, ITypeToken content );
+
+    }
+	
     public interface ITokenBuilderNoGen
     {
         List<ITypeToken> Command(ITypeToken command_, IOrientObject orientClass_, ITypeToken orientObjectToken_, ITypeToken content = null);
