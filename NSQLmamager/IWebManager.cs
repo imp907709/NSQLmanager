@@ -13,7 +13,7 @@ namespace IWebManagers
         void addCredentials(NetworkCredential credentials);
         WebResponse GetResponse(string url, string method);
         WebRequest addRequest(string url, string method);
-    }
+    }    
     /// <summary>
     /// Reads response and converts it to string
     /// </summary>

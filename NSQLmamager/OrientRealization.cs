@@ -11,15 +11,9 @@ using System.Configuration;
 using WebManagers;
 using IQueryManagers;
 using QueryManagers;
-
 using IOrientObjects;
-
-using JsonManagers;
-using IWebManagers;
-
-using IUOW;
 using POCO;
-using IRepos;
+
 
 /// <summary>
 /// Realization of IJsonMangers, IWebManagers, and IOrient specifically for orient db
