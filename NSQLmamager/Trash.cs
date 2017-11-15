@@ -22,6 +22,7 @@ using APItesting;
 using OrientRealization;
 using UOWs;
 using Repos;
+using IUOWs;
 
 /// <summary>
 /// Deprecated, unused and refactored code mooved here
@@ -523,12 +524,12 @@ namespace Trash
 
             //collection of FULL tokens 
             //@"{0}:{1}/{2}/{3}/{4}/{5} {6} {7} {8} {9}"
-            List<ITokenAggreagtor> CommandTokens = new List<ITokenAggreagtor>(){
+            List<ICommandBuilder> CommandTokens = new List<ICommandBuilder>(){
                 commandUrlPart,selectUrlPart,whereUrlPart
             };
             //Aggregate all query TokenManagers to one Select URL command with where
             OrientCommandURIBuilder commandSample = new OrientCommandURIBuilder(
-                CommandTokens, new TextToken() { Text = @"{0}/{1} {2}" }, TextBuilder.BuildTypeFormates.NESTED
+                CommandTokens, new TextToken() { Text = @"{0}/{1} {2}" }, CommandBuilder.BuildTypeFormates.NESTED
                 );
             //full select query command
             string selectcommandURL = commandSample.Text.Text;
@@ -664,13 +665,13 @@ namespace Trash
 
 
             //build commands strings according to string format
-            List<ITokenAggreagtor> createPersonTk = new List<ITokenAggreagtor>() { ub, cpb };
-            List<ITokenAggreagtor> selectTk = new List<ITokenAggreagtor>() { ub, spb, wb };
-            List<ITokenAggreagtor> deleteTk = new List<ITokenAggreagtor>() { ub, dpb, wb };
+            List<ICommandBuilder> createPersonTk = new List<ICommandBuilder>() { ub, cpb };
+            List<ICommandBuilder> selectTk = new List<ICommandBuilder>() { ub, spb, wb };
+            List<ICommandBuilder> deleteTk = new List<ICommandBuilder>() { ub, dpb, wb };
 
-            List<ITokenAggreagtor> createUnitTk = new List<ITokenAggreagtor>() { ub, cub };
-            List<ITokenAggreagtor> selectUnitTk = new List<ITokenAggreagtor>() { ub, sub, wb };
-            List<ITokenAggreagtor> deleteUnitTk = new List<ITokenAggreagtor>() { ub, dub, wb };
+            List<ICommandBuilder> createUnitTk = new List<ICommandBuilder>() { ub, cub };
+            List<ICommandBuilder> selectUnitTk = new List<ICommandBuilder>() { ub, sub, wb };
+            List<ICommandBuilder> deleteUnitTk = new List<ICommandBuilder>() { ub, dub, wb };
 
 
             //building command urls according to string format
@@ -678,18 +679,18 @@ namespace Trash
             //EXAMPLE for token formats
             //Token1 -> "{0}\{1}" ; Token2 -> "{0} {1} {2}"; UrlToken -> "{0}:{1}"; Result => UrlToken "{0}\{1}:{2} {3} {4}"
             OrientCommandURIBuilder cpU =
-    new OrientCommandURIBuilder(createPersonTk, new TextToken() { Text = @"{0}/{1}" }, TextBuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(createPersonTk, new TextToken() { Text = @"{0}/{1}" }, CommandBuilder.BuildTypeFormates.NESTED);
             OrientCommandURIBuilder spU =
-    new OrientCommandURIBuilder(selectTk, new TextToken() { Text = @"{0}/{1} {2}" }, TextBuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(selectTk, new TextToken() { Text = @"{0}/{1} {2}" }, CommandBuilder.BuildTypeFormates.NESTED);
             OrientCommandURIBuilder dpU =
-    new OrientCommandURIBuilder(deleteTk, new TextToken() { Text = @"{0}/{1} {2}" }, TextBuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(deleteTk, new TextToken() { Text = @"{0}/{1} {2}" }, CommandBuilder.BuildTypeFormates.NESTED);
 
             OrientCommandURIBuilder cuU =
-    new OrientCommandURIBuilder(createUnitTk, new TextToken() { Text = @"{0}/{1}" }, TextBuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(createUnitTk, new TextToken() { Text = @"{0}/{1}" }, CommandBuilder.BuildTypeFormates.NESTED);
             OrientCommandURIBuilder suU =
-    new OrientCommandURIBuilder(selectUnitTk, new TextToken() { Text = @"{0}/{1} {2}" }, TextBuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(selectUnitTk, new TextToken() { Text = @"{0}/{1} {2}" }, CommandBuilder.BuildTypeFormates.NESTED);
             OrientCommandURIBuilder duU =
-    new OrientCommandURIBuilder(deleteUnitTk, new TextToken() { Text = @"{0}/{1} {2}" }, TextBuilder.BuildTypeFormates.NESTED);
+    new OrientCommandURIBuilder(deleteUnitTk, new TextToken() { Text = @"{0}/{1} {2}" }, CommandBuilder.BuildTypeFormates.NESTED);
 
 
             //check
@@ -792,14 +793,14 @@ namespace Trash
             OrientCommandBuilder SuB = new OrientCommandBuilder(SubUnitTk, SbUtf);
             OrientCommandBuilder MaB = new OrientCommandBuilder(MainAssignmentTk, MnAsf);
 
-            List<ITokenAggreagtor> SuTb = new List<ITokenAggreagtor>() { ub, SuB };
-            List<ITokenAggreagtor> MaTb = new List<ITokenAggreagtor>() { ub, MaB };
+            List<ICommandBuilder> SuTb = new List<ICommandBuilder>() { ub, SuB };
+            List<ICommandBuilder> MaTb = new List<ICommandBuilder>() { ub, MaB };
 
 
             OrientCommandURIBuilder SuUB =
-                new OrientCommandURIBuilder(SuTb, new TextToken() { Text = @"{0}/{1}" }, TextBuilder.BuildTypeFormates.NESTED);
+                new OrientCommandURIBuilder(SuTb, new TextToken() { Text = @"{0}/{1}" }, CommandBuilder.BuildTypeFormates.NESTED);
             OrientCommandURIBuilder MaUB =
-                new OrientCommandURIBuilder(MaTb, new TextToken() { Text = @"{0}/{1}" }, TextBuilder.BuildTypeFormates.NESTED);
+                new OrientCommandURIBuilder(MaTb, new TextToken() { Text = @"{0}/{1}" }, CommandBuilder.BuildTypeFormates.NESTED);
 
 
             SubUnitsIDs.Add(
@@ -978,9 +979,9 @@ namespace Trash
     {
 
         JSONManager jm;
-        OrientTokenAggregator ta;
-        OrientTypeConverter tc;
-        TextBuilder ocb;
+        OrientTokenBuilder ta;
+        TypeConverter tc;
+        CommandBuilder ocb;
         OrientWebManager wm;
         WebResponseReader wr;
 
@@ -995,14 +996,14 @@ namespace Trash
         UserSettings us;
         CommonSettings cs;
         string guid_;
-        PersonUOW pUOW;
+        IPersonUOW pUOW;
 
         public RepoCheck()
         {
-            pUOW = new PersonUOW(repo, tc, ocb, jm, ta, wm, wr);
+            pUOW = new PersonUOW();
             jm = new JSONManager();
-            ta = new OrientTokenAggregator();
-            tc = new OrientTypeConverter();
+            ta = new OrientTokenBuilder();
+            tc = new TypeConverter();
             ocb = new OrientCommandBuilder();
             wm = new OrientWebManager();
             wr = new WebResponseReader();

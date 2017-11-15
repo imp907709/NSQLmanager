@@ -18,7 +18,7 @@ namespace AdinTce
     public class AdinTceRepo
     {
 
-        IQueryManagers.ITokenAggreagtor _textBuilder;
+        IQueryManagers.ICommandBuilder _textBuilder;
         IWebManagers.IWebManager _webManager;
         IWebManagers.IResponseReader _responseReader;
         IJsonManagers.IJsonManger _jsonManager;
@@ -28,7 +28,7 @@ namespace AdinTce
         AdinTceExplicitTokenBuilder tokenBuilder;
 
         public AdinTceRepo(
-            IQueryManagers.ITokenAggreagtor textBuilder_,
+            IQueryManagers.ICommandBuilder textBuilder_,
             IWebManagers.IWebManager webManager_,
             IWebManagers.IResponseReader responseReader_,
             IJsonManagers.IJsonManger jsonManager_)
@@ -159,7 +159,7 @@ namespace AdinTce
 
     ///<summary>AdinTce realization of Base builder,web,reader,json
     ///</summary>
-    public class AdinTceTextBuilder : QueryManagers.TextBuilder
+    public class AdinTceTextBuilder : QueryManagers.CommandBuilder
     {
 
     }

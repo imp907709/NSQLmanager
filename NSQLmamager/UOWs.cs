@@ -2,39 +2,42 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using IUOW;
-using IOrientObjects;
+using IUOWs;
 using IQueryManagers;
-using IJsonManagers;
 using IWebManagers;
 using POCO;
 using OrientRealization;
 using QueryManagers;
+using IRepos;
+using JsonManagers;
+using IJsonManagers;
+using WebManagers;
+using Repos;
 
 namespace UOWs
 {
     
     public class PersonUOW : IPersonUOW
     {
-        IRepos.IRepo _repo;      
+        IRepo _repo;
+        OreintNewsTokenBuilder ob = new OreintNewsTokenBuilder();
         ITypeConverter _typeConverter;
-        ITokenAggreagtor _textBuilder;
+        ICommandBuilder _textBuilder;
         IJsonManger _jsonManager;
-        ITokenCompilator _tokenAggregator;
-        IWebManager _webManager;
-        IResponseReader _responseReader;
+        ITokenBuilder _tokenAggregator;
+        IWebManager wm;
+        IResponseReader wr;
 
-        public PersonUOW(IRepos.IRepo repo_,ITypeConverter typeConverter_,ITokenAggreagtor textBuilder_,IJsonManger jsonManager_,ITokenCompilator tokenAggregator_,
-        IWebManager webManager_, IResponseReader responseReader_)
+        public PersonUOW()
         {
-            _jsonManager = jsonManager_;
-            _tokenAggregator = tokenAggregator_;
-            _typeConverter = typeConverter_;
-            _textBuilder = textBuilder_;
-            _webManager = webManager_;
-            _responseReader = responseReader_;
+            _jsonManager = new JSONManager();
+            _tokenAggregator = new OrientTokenBuilder();
+            _typeConverter = new TypeConverter();
+            _textBuilder = new OrientCommandBuilder();
+            wm = new OrientWebManager();
+            wr = new WebResponseReader();
 
-            _repo = repo_;
+            _repo = new Repo(_jsonManager, _tokenAggregator, _typeConverter, _textBuilder, wm, wr);
         }
 
 
@@ -84,7 +87,7 @@ namespace UOWs
             string result = string.Empty;
             IEnumerable<Person> persons = null;
             TextToken condition_ = new TextToken() { Text = "1=1 and GUID ='" + GUID + "'" };
-            List<ITypeToken> tokens = _tokenAggregator.outEinVExp(new OrientSelectToken(),
+            List<ITypeToken> tokens = ob.outEinVExp(new OrientSelectToken(),
                 _typeConverter.Get(typeof(Person)), _typeConverter.Get(typeof(TrackBirthdays)), condition_);
             string command = _textBuilder.Build(tokens, new OrientOutEinVFormat() { });
             persons = _repo.Select<Person>(command);
@@ -92,15 +95,31 @@ namespace UOWs
             return result;
         }
 
-        public string AddTrackBirthday(IOrientEdge edge, string guidFrom, string guidTo)
+        public string AddTrackBirthday(OrientEdge edge_, string guidFrom, string guidTo)
         {
+            string result = null;
             Person from = GetObjByGUID(guidFrom).FirstOrDefault();
             Person to = GetObjByGUID(guidTo).FirstOrDefault();
-            TrackBirthdays tb = new TrackBirthdays();
-            string result = null;
+
             if (from != null && to != null)
             {
-                result = _repo.Add(tb, from, to);
+                result = _repo.Add(edge_, from, to);
+            }
+            return result;
+        }
+        public string DeleteTrackedBirthday(OrientEdge edge_, string guidFrom, string guidTo)
+        {
+            string result = null;
+            Person from = GetObjByGUID(guidFrom).FirstOrDefault();
+            Person to = GetObjByGUID(guidTo).FirstOrDefault();
+
+            List<ITypeToken> condTokens_ = ob.outVinVcnd(typeof(Person), new TextToken() { Text = "GUID" },
+                new TextToken() { Text = from.GUID }, new TextToken() { Text = to.GUID });
+            string command_ = _textBuilder.Build(condTokens_, new OrientOutVinVFormat() { });
+
+            if (from != null && to != null)
+            {
+                result = _repo.Delete(edge_.GetType(), new TextToken() { Text = command_ });
             }
             return result;
         }

@@ -24,3 +24,4 @@ G:\disk\Files\git\nsql\NSQLmamager\bin\Debug\System.Net.Http.Formatting.xml
 G:\disk\Files\git\nsql\NSQLmamager\bin\Debug\System.Net.Http.Primitives.xml
 G:\disk\Files\git\nsql\NSQLmamager\bin\Debug\System.Web.Http.xml
 G:\disk\Files\git\nsql\NSQLmamager\bin\Debug\System.Web.Http.WebHost.xml
+G:\disk\Files\git\nsql\NSQLmamager\obj\Debug\NSQLmamager.csprojResolveAssemblyReference.cache

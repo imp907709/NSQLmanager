@@ -84,7 +84,7 @@
     <Compile Include="ApiTester.cs" />
     <Compile Include="IJsonManager.cs" />
     <Compile Include="IorientObjects.cs" />
-    <Compile Include="IPersonUOW.cs" />
+    <Compile Include="IUOWS.cs" />
     <Compile Include="IQueryManager.cs" />
     <Compile Include="IRepo.cs" />
     <Compile Include="IWebManager.cs" />

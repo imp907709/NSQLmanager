@@ -11,9 +11,14 @@ using System.Configuration;
 using WebManagers;
 using IQueryManagers;
 using QueryManagers;
-using IOrientObjects;
-using POCO;
 
+using IOrientObjects;
+
+using JsonManagers;
+using IWebManagers;
+using IRepos;
+using IUOWs;
+using POCO;
 
 /// <summary>
 /// Realization of IJsonMangers, IWebManagers, and IOrient specifically for orient db
@@ -180,6 +185,11 @@ namespace OrientRealization
         public string Text { get; set; } = "Drop";
     }
 
+    public class OrientAndToken : ITypeToken
+    {
+        public string Text { get; set; } = @"and";
+    }
+
     public class OrientClassToken : ITypeToken
     {
         public string Text { get; set; } = "Class";
@@ -230,6 +240,10 @@ namespace OrientRealization
         public string Text { get; set; } = "notnull";
     }
 
+    public class OrientEqualsToken : ITypeToken
+    {
+        public string Text { get; set; } = @"=";
+    }
     public class OrientApostropheToken : ITypeToken
     {
         public string Text { get; set; } = @"'";
@@ -429,14 +443,17 @@ namespace OrientRealization
     {
         public string Text { get { return @"{0} {1}{2} {3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18} {19} {20} {21} {22}"; } set { Text = value; } }
     }
-
+    public class OrientOutVinVFormat : ITypeToken
+    {
+        public string Text { get { return @"{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12} {13} {14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}"; } set { Text = value; } }
+    }
     #endregion
 
     #region TokenListsBuilders
 
     //buider for commands with format
     //mostly used for URLS (auth,
-    public class OrientCommandBuilder : TextBuilder
+    public class OrientCommandBuilder : CommandBuilder
     {
         public OrientCommandBuilder() : base()
         {
@@ -454,7 +471,7 @@ namespace OrientRealization
     //class segregation for different cluse builders
 
     //Authentication URL build
-    public class OrientAuthenticationURIBuilder : TextBuilder
+    public class OrientAuthenticationURIBuilder : CommandBuilder
     {
         public OrientAuthenticationURIBuilder(List<ITypeToken> tokens_, OrientAuthenticationURLFormat FormatPattern_)
              : base(tokens_, FormatPattern_)
@@ -463,21 +480,21 @@ namespace OrientRealization
         }
     }
     //Command URL build
-    public class OrientCommandURIBuilder : TextBuilder
+    public class OrientCommandURIBuilder : CommandBuilder
     {
         public OrientCommandURIBuilder(List<ITypeToken> tokens_, OrientCommandURLFormat FormatPattern_)
             : base(tokens_, FormatPattern_)
         {
 
         }
-        public OrientCommandURIBuilder(List<ITokenAggreagtor> texts_, ITypeToken FormatPattern_, TextBuilder.BuildTypeFormates type_)
+        public OrientCommandURIBuilder(List<ICommandBuilder> texts_, ITypeToken FormatPattern_, CommandBuilder.BuildTypeFormates type_)
           : base(texts_, FormatPattern_, type_)
         {
 
         }
     }
 
-    public class OrientSelectClauseBuilder : TextBuilder
+    public class OrientSelectClauseBuilder : CommandBuilder
     {
         public OrientSelectClauseBuilder(List<ITypeToken> tokens_, OrientSelectClauseFormat FormatPattern_ = null)
             : base(tokens_, FormatPattern_ = new OrientSelectClauseFormat())
@@ -485,7 +502,7 @@ namespace OrientRealization
 
         }
     }
-    public class OrientWhereClauseBuilder : TextBuilder
+    public class OrientWhereClauseBuilder : CommandBuilder
     {
         public OrientWhereClauseBuilder(List<ITypeToken> tokens_, OrientWhereClauseFormat FormatPattern_)
             : base(tokens_, FormatPattern_)
@@ -494,7 +511,7 @@ namespace OrientRealization
         }
     }
 
-    public class OrientCreateClauseBuilder : TextBuilder
+    public class OrientCreateClauseBuilder : CommandBuilder
     {
         public OrientCreateClauseBuilder(List<ITypeToken> tokens_, ITypeToken format_)
             : base(tokens_, format_)
@@ -502,7 +519,7 @@ namespace OrientRealization
 
         }
     }
-    public class OrientDeleteClauseBuilder : TextBuilder
+    public class OrientDeleteClauseBuilder : CommandBuilder
     {
         public OrientDeleteClauseBuilder(List<ITypeToken> tokens_, ITypeToken format_)
             : base(tokens_, format_)
@@ -511,7 +528,7 @@ namespace OrientRealization
         }
     }
 
-    public class OrientNestedSelectClauseBuilder : TextBuilder
+    public class OrientNestedSelectClauseBuilder : CommandBuilder
     {
         public OrientNestedSelectClauseBuilder(List<ITypeToken> tokens_, ITypeToken format_)
             : base(tokens_, format_)
@@ -528,70 +545,7 @@ namespace OrientRealization
         public static List<ITypeToken> authUrl = new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientAuthenticateToken(), new OrientDatabaseNameToken() };
         public static List<ITypeToken> commandUrl = new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientCommandToken(), new OrientDatabaseNameToken(), new OrientCommandSQLTypeToken() };
         public static List<ITypeToken> addDbURL = new List<ITypeToken>() { new OrientHost(), new OrientPort(), new OrientDatabaseToken()};
-    }
-
-    //converts from token tyoes for orient Db objects like (vertex,edge) to according model POCO class
-    //Vertex (Person) to class (Person)    
-    public class OrientTypeConverter : ITypeConverter
-    {
-        Dictionary<Type, ITypeToken> types;
-
-        public OrientTypeConverter()
-        {
-            types = new Dictionary<Type, ITypeToken>();
-
-            types.Add(typeof(OrientVertex), new OrientVertexToken());
-            types.Add(typeof(OrientEdge), new OrientEdgeToken());
-
-            types.Add(typeof(Person), new OrientPersonToken());
-            types.Add(typeof(Unit), new OrientUnitToken());
-
-            types.Add(typeof(MainAssignment), new OrientMainAssignmentToken());
-            types.Add(typeof(SubUnit), new OrientSubUnitToken());
-            types.Add(typeof(OrientDatabaseToken), new OrientTestDbToken());
-        }
-        public void Add(Type type_, ITypeToken token_)
-        {
-            this.types.Add(type_, token_);
-        }
-        public ITypeToken Get(Type type_)
-        {
-            ITypeToken token_ = null;
-
-            types.TryGetValue(type_, out token_);
-
-            return token_;
-        }
-        public ITypeToken GetBase(Type type_)
-        {
-            ITypeToken token_ = null;
-            Type tp = type_.BaseType;
-            types.TryGetValue(tp, out token_);
-
-            return token_;
-        }
-        public ITypeToken Get(IOrientObject object_)
-        {
-            ITypeToken token_ =null;
-            
-                types.TryGetValue(object_.GetType(), out token_);
-                         
-            return token_;
-        }
-      
-        public ITypeToken GetBase(IOrientObject object_)
-        {
-            ITypeToken token_ = null;
-            Type tp = object_.GetType().BaseType;
-            IOrientVertex t2 = (IOrientVertex)object_;
-
-                types.TryGetValue(object_.GetType().BaseType, out token_);
-            
-
-            return token_;
-        }
-
-    }
+    }   
 	
     #region CommandBuilders
 	
@@ -603,7 +557,7 @@ namespace OrientRealization
     /// which not requer special format like {0}:{1}\{2} but samle , generated fro mtoken list like {0} {1} {2}
     /// but generated in lagre ammounts with differen types.
     /// </summary>
-    public class OrientTokenAggregator : ITokenCompilator
+    public class OrientTokenBuilder : ITokenBuilder
     {
         //for select command
         public List<ITypeToken> Command(ITypeToken command_, ITypeToken orientObject)
@@ -663,22 +617,38 @@ namespace OrientRealization
             result.Add(tokenA);
             result.Add(new OrientToToken());
             result.Add(tokenB);
-            if (context_ != null && context_.Text != null && context_.Text!=string.Empty)
+
+            if(command_ is OrientCreateToken){
+                if (context_ != null && context_.Text != null && context_.Text != string.Empty)
+                {
+                    result.Add(new OrientContentToken());
+                    result.Add(context_);
+                }
+            }
+            if (command_ is OrientDeleteToken)
             {
-                result.Add(new OrientContentToken());
-                result.Add(context_);
+                if (context_ != null && context_.Text != null && context_.Text != string.Empty)
+                {                    
+                    result.Add(context_);
+                }
             }
             return result;
-        }
+        }        
 
-        public List<ITypeToken> outEinVExp(ITypeToken command_, ITypeToken vertex_, ITypeToken edge_, ITypeToken condition_)
+    }
+
+    public class OreintNewsTokenBuilder
+    {
+        TypeConverter typeConverter_ = new TypeConverter();
+
+        public List<ITypeToken> outEinVExp(ITypeToken command_,ITypeToken vertex_,ITypeToken edge_, ITypeToken condition_)
         {
             List<ITypeToken> result = new List<ITypeToken>();
             result.Add(command_);
             //expand
             result.Add(new OrientExpandToken());
             result.Add(new OrientLtRoundSquareToken());
-
+            
             //outE
             result.Add(new OrientOutToken());
             result.Add(new OrientEToken());
@@ -702,7 +672,7 @@ namespace OrientRealization
             result.Add(new OrientFromToken());
             result.Add(vertex_);
 
-            if (condition_ != null && condition_.Text != null && condition_.Text != string.Empty)
+            if(condition_!= null && condition_.Text != null && condition_.Text!=string.Empty)
             {
                 result.Add(new OrientWhereToken());
                 result.Add(condition_);
@@ -714,13 +684,58 @@ namespace OrientRealization
             return result;
         }
 
-    }
+        public List<ITypeToken> outVinVcnd(Type object_, ITypeToken property_, ITypeToken conda_, ITypeToken condb_)
+        {
+            List<ITypeToken> result = new List<ITypeToken>();         
+            
+            if (object_.BaseType == typeof(OrientVertex) || object_.BaseType == typeof(OrientEdge))
+            {
+                       
+                //outV
+                result.Add(new OrientOutToken());
+                result.Add(new OrientVToken());
+                result.Add(new OrientLtRoundSquareToken());
+                result.Add(new OrientApostropheToken());
+                result.Add(typeConverter_.Get(object_));
+                result.Add(new OrientApostropheToken());
+                result.Add(new OrientRtRoundSquareToken());
+                result.Add(new OrientDotToken());
+                result.Add(property_);
 
- 
+                result.Add(new OrientEqualsToken());
+
+                result.Add(new OrientApostropheToken());
+                result.Add(conda_);
+                result.Add(new OrientApostropheToken());
+
+                result.Add(new OrientAndToken());
+
+                //inv
+                result.Add(new OrientInToken());
+                result.Add(new OrientVToken());
+                result.Add(new OrientLtRoundSquareToken());
+                result.Add(new OrientApostropheToken());
+                result.Add(typeConverter_.Get(object_));
+                result.Add(new OrientApostropheToken());
+                result.Add(new OrientRtRoundSquareToken());
+                result.Add(new OrientDotToken());
+                result.Add(property_);
+
+                result.Add(new OrientEqualsToken());
+
+                result.Add(new OrientApostropheToken());
+                result.Add(condb_);
+                result.Add(new OrientApostropheToken());
+
+            }
+            return result;
+        }
+
+    }
 	/// <summary>creates collection of tokens
     /// builds add,delete,create commands from token amount
     /// </summary>
-    public class OrientCommandBuilderImplicit : ITokenAggreagtorTypeGen
+    public class OrientCommandBuilderImplicit : ITokenBuilderTypeGen
     {
 
         ITypeConverter _typeConverter;
@@ -989,7 +1004,7 @@ namespace OrientRealization
             return result;
         }
 
-        public List<ITypeToken> Function(ITypeToken function_,ITokenAggreagtor params_)
+        public List<ITypeToken> Function(ITypeToken function_,ICommandBuilder params_)
         {
             List<ITypeToken> result = new List<ITypeToken>();
                 result.Add(function_);
@@ -999,5 +1014,73 @@ namespace OrientRealization
     }
 	
 	#endregion	
-      
+
+    ///<summary>Converts from model poco classes types to ItypeToken types
+    ///</summary>
+    public class TypeConverter : ITypeConverter
+    {
+
+        Dictionary<Type, ITypeToken> types;
+
+        public TypeConverter()
+        {
+
+            types = new Dictionary<Type, ITypeToken>();
+
+            types.Add(typeof(OrientVertex), new OrientVertexToken());
+            types.Add(typeof(OrientEdge), new OrientEdgeToken());
+
+            types.Add(typeof(Person), new OrientPersonToken());
+            types.Add(typeof(Unit), new OrientUnitToken());
+
+            types.Add(typeof(MainAssignment), new OrientMainAssignmentToken());
+            types.Add(typeof(SubUnit), new OrientSubUnitToken());
+
+            types.Add(typeof(UserSettings), new OrientUserSettingsToken());
+            types.Add(typeof(CommonSettings), new OrientCommonSettingsToken());
+            
+            types.Add(typeof(TrackBirthdays), new OrientTrackBirthdaysToken());
+        }
+        public void Add(Type type_, ITypeToken token_)
+        {
+            this.types.Add(type_, token_);
+        }
+        public ITypeToken Get(Type type_)
+        {
+            ITypeToken token_ = null;
+
+            types.TryGetValue(type_, out token_);
+
+            return token_;
+        }
+        public ITypeToken GetBase(Type type_)
+        {
+            ITypeToken token_ = null;
+            Type tp = type_.BaseType;
+            types.TryGetValue(tp, out token_);
+
+            return token_;
+        }
+        public ITypeToken Get(IOrientObject object_)
+        {
+            ITypeToken token_ = null;
+
+            types.TryGetValue(object_.GetType(), out token_);
+
+            return token_;
+        }
+        public ITypeToken GetBase(IOrientObject object_)
+        {
+            ITypeToken token_ = null;
+            Type tp = object_.GetType().BaseType;
+            IOrientVertex t2 = (IOrientVertex)object_;
+
+            types.TryGetValue(object_.GetType().BaseType, out token_);
+
+            return token_;
+        }
+
+    }
+
+
 }

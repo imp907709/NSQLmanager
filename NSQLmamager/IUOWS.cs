@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using POCO;
 
-using IOrientObjects;
 
-namespace IUOW
+namespace IUOWs
 {
     public interface IPersonUOW
     {
@@ -11,6 +10,7 @@ namespace IUOW
         string GetByGUID(string GUID);
         IEnumerable<Person> GetObjByGUID(string GUID);
         string GetTrackedBirthday(string GUID);
-        string AddTrackBirthday(IOrientEdge edge, string guidFrom, string guidTo);
+        string AddTrackBirthday(OrientEdge edge_, string guidFrom, string guidTo);
+        string DeleteTrackedBirthday(OrientEdge edge_, string guidFrom, string guidTo);
     }
 }
