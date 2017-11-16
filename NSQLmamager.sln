@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NSQLmamager", "NSQLmamager\NSQLmamager.csproj", "{DD5F4185-010F-45C8-A0C5-3B9B07BD387B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NSQLManager", "NSQLManager\NSQLManager.csproj", "{DD5F4185-010F-45C8-A0C5-3B9B07BD387B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NSQLManagerTests", "NSQLManagerTests\NSQLManagerTests.csproj", "{3EC7FC6C-E84E-4FEC-85A9-698DC010076E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{DD5F4185-010F-45C8-A0C5-3B9B07BD387B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD5F4185-010F-45C8-A0C5-3B9B07BD387B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD5F4185-010F-45C8-A0C5-3B9B07BD387B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3EC7FC6C-E84E-4FEC-85A9-698DC010076E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3EC7FC6C-E84E-4FEC-85A9-698DC010076E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3EC7FC6C-E84E-4FEC-85A9-698DC010076E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3EC7FC6C-E84E-4FEC-85A9-698DC010076E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
