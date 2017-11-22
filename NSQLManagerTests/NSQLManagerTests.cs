@@ -125,7 +125,7 @@ namespace NSQLManagerTests.Tests
 
 
             wm = new WebManager2();
-            wm.AddRequest(@"http://localhost:80");
+            wm.AddRequest(@"http://webdbg.com/sandbox");
             using (HttpWebResponse wr = wm.GetHttpResponse(methodBefore))
             {
                 codeBefore = wr.StatusCode;
@@ -222,7 +222,7 @@ namespace NSQLManagerTests.Tests
         public WebResponseReaderIntegrationTest()
         {
             webResponseReader = new WebResponseReader();
-            webRequestsCheckURL = @"https://www.google.ru";
+            webRequestsCheckURL = @"http://duckduckgo.com";
 
             webRequest = WebRequest.Create(webRequestsCheckURL);
             httpWebRequest = HttpWebRequest.CreateHttp(webRequestsCheckURL);
@@ -371,12 +371,12 @@ namespace NSQLManagerTests.Tests
             commandURLExpected = string.Format(@"{0}:2480/command/{1}/sql", hostExpected, dbExpected);
 
             createPersonURLExpected = string.Format(
-                "http://msk1-vm-ovisp02:2480/command/{0}/sql/Create Vertex Person content {1}"
-                , dbExpected, "{\"Name\":\"0\",\"GUID\":\"0\",\"Created\":\"2017-01-01 00:00:00\",\"Changed\":\"2017-01-01 00:00:00\"}");
-            selectPersonURLExpected = string.Format(@"http://msk1-vm-ovisp02:2480/command/{0}/sql/{1}"
-                , dbExpected, "Select from Person where Name = 0");
-            deletePersonURLExpected = string.Format(@"http://msk1-vm-ovisp02:2480/command/{0}/sql/{1}"
-                , dbExpected, "Delete Vertex from Person where Name = 0");
+                "{0}:2480/command/{1}/sql/Create Vertex Person content {2}"
+               , ConfigurationManager.AppSettings["ParentHost"], dbExpected, "{\"Name\":\"0\",\"GUID\":\"0\",\"Created\":\"2017-01-01 00:00:00\",\"Changed\":\"2017-01-01 00:00:00\"}");
+            selectPersonURLExpected = string.Format(@"{0}:2480/command/{1}/sql/{2}"
+                 ,ConfigurationManager.AppSettings["ParentHost"], dbExpected, "Select from Person where Name = 0");
+            deletePersonURLExpected = string.Format(@"{0}:2480/command/{1}/sql/{2}"
+                , ConfigurationManager.AppSettings["ParentHost"], dbExpected, "Delete Vertex from Person where Name = 0");
 
         }
 
@@ -515,9 +515,10 @@ namespace NSQLManagerTests.Tests
                 commandUrlPart,selectUrlPart,whereUrlPart
             };
             //Aggregate all query TokenManagers to one Select URL command with where
-            OrientCommandURIBuilder commandSample = new OrientCommandURIBuilder(
-                CommandTokens, new TextToken() { Text = @"{0}/{1} {2}" }, CommandBuilder.BuildTypeFormates.NESTED
-                );
+            CommandBuilder commandSample = new CommandBuilder();
+            commandSample.AddBuilders(CommandTokens);
+            commandSample.AddFormat(new TextToken() { Text = @"{0}/{1} {2}" });
+
             //full select query command
             string selectcommandURL = commandSample.Text.Text;
 
@@ -597,12 +598,22 @@ namespace NSQLManagerTests.Tests
             List<ICommandBuilder> selectTk = new List<ICommandBuilder>() { ub, sb, wb };
             List<ICommandBuilder> deleteTk = new List<ICommandBuilder>() { ub, db, wb };
 
-            OrientCommandURIBuilder cU =
-    new OrientCommandURIBuilder(createTk, new TextToken() { Text = @"{0}/{1}" }, CommandBuilder.BuildTypeFormates.NESTED);
-            OrientCommandURIBuilder sU =
-    new OrientCommandURIBuilder(selectTk, new TextToken() { Text = @"{0}/{1} {2}" }, CommandBuilder.BuildTypeFormates.NESTED);
-            OrientCommandURIBuilder dU =
-    new OrientCommandURIBuilder(deleteTk, new TextToken() { Text = @"{0}/{1} {2}" }, CommandBuilder.BuildTypeFormates.NESTED);
+            CommandBuilder cU =
+    new CommandBuilder();
+            CommandBuilder sU =
+    new CommandBuilder();
+            CommandBuilder dU =
+    new CommandBuilder();
+
+        
+            cU.AddBuilders(createTk);
+            cU.AddFormat(new TextToken() { Text = @"{0}/{1}" });
+
+            sU.AddBuilders(selectTk);
+            sU.AddFormat(new TextToken() { Text = @"{0}/{1} {2}" });
+
+            dU.AddBuilders(deleteTk);
+            dU.AddFormat(new TextToken() { Text = @"{0}/{1} {2}" });
 
             string cUt = cU.Text.Text;
             string sUt = sU.Text.Text;

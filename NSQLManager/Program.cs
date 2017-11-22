@@ -54,9 +54,10 @@ namespace NSQLManager
         UserSettings us;
         CommonSettings cs;
         string guid_;
-
+        
         public RepoCheck()
-        {
+        {            
+            
             jm = new JSONManager();
             tb = new OrientTokenBuilder();
             tc = new TypeConverter();
@@ -66,9 +67,9 @@ namespace NSQLManager
 
             us = new UserSettings() { showBirthday = true };
             cs = new CommonSettings();
-
+            
             repo = new Repo(jm, tb, tc, ocb, wm, wr);
-
+         
             s = new SubUnit();
 
             p =
@@ -149,37 +150,37 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
             List<IQueryManagers.ITypeToken> lt = new List<IQueryManagers.ITypeToken>();
             List<string> ls = new List<string>();
 
-
-lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientClassToken() { Text = "V" });
-ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+      
+lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientClassToken() { Text = "V" });           
+ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientPropertyToken() { Text = "Name" }, new OrientSTRINGToken(), true,true);
-ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientPropertyToken() { Text = "Created" }, new OrientDATEToken(), true, true);
-ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
 
 
 
 lt = eb.Create(new OrientClassToken() { Text = "ESCN" }, new OrientClassToken() { Text = "E" });
-ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "ESCN" }, new OrientPropertyToken() { Text = "Name" }, new OrientSTRINGToken(), true, true);
-ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "ESCN" }, new OrientPropertyToken() { Text = "Created" }, new OrientDATEToken(), true, true);
-ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
 
 
 
 lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientClassToken() { Text = "VSCN" });
-ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "Beer" }, new OrientClassToken() { Text = "VSCN" });
-ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "Produces" }, new OrientClassToken() { Text = "ESCN" });
-ls.Add(cb.Build(lt, new TextFormatGenerate(lt)));
+ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
 
 
 

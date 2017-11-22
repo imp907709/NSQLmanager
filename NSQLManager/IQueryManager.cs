@@ -3,20 +3,20 @@ using System;
 using System.Collections.Generic;
 
 using IOrientObjects;
-
+using IFormats;
 namespace IQueryManagers
 {
-   
+
     /// <summary>
     /// Main manager interfaces
     /// </summary>
 
+    //For token items
     /// <summary>
     /// Tokens for Orient API URIs 
     /// Different API types tend to different Http req strategies example: Fucntion/param or: Batch/ + JSON-body
     /// (add types to ItypeToken for plugging-in)
-    /// </summary>
-    //For token items
+    /// </summary>  
     public interface ITypeToken
     {
         string Text { get; set; }
@@ -25,11 +25,19 @@ namespace IQueryManagers
     //Building Item from Token types
     public interface ICommandBuilder
     {
+        IFormatFromListGenerator formatGenerator { get; }
+        ITypeToken typeToken { get; }
         ITypeToken Text { get; }
         ITypeToken FormatPattern { get; }
         List<ITypeToken> Tokens { get; }
 
-        string Build(List<ITypeToken> tokens_, ITypeToken FormatPattern_);
+        void AddTokens(List<ITypeToken> tokens_);
+        void AddFormat(ITypeToken formatPatern_);
+        void AddFormatGenerator(IFormatFromListGenerator formatGenerator_);
+        void AddBuilders(List<ICommandBuilder> texts_, ITypeToken FormatPattern_ = null);
+
+        string Build();
+        string Build(List<ICommandBuilder> tokens_, ITypeToken FormatPattern_);
         string GetText();
         void SetText(List<ITypeToken> tokens_, ITypeToken FormatPattern_);
 
