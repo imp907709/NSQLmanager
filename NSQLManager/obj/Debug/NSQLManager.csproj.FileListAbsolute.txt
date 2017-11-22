@@ -1,8 +1,3 @@
-G:\disk\Files\git\nsql\NSQLManager\bin\Debug\NSQLmamager.exe.config
-G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLmamager.exe
-G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLmamager.pdb
-G:\disk\Files\git\nsql\NSQLManager\bin\Debug\NSQLmamager.exe
-G:\disk\Files\git\nsql\NSQLManager\bin\Debug\NSQLmamager.pdb
 G:\disk\Files\git\nsql\NSQLManager\bin\Debug\Newtonsoft.Json.dll
 G:\disk\Files\git\nsql\NSQLManager\bin\Debug\System.Net.Http.Extensions.dll
 G:\disk\Files\git\nsql\NSQLManager\bin\Debug\System.Net.Http.Formatting.dll
@@ -16,3 +11,18 @@ G:\disk\Files\git\nsql\NSQLManager\bin\Debug\System.Net.Http.Primitives.xml
 G:\disk\Files\git\nsql\NSQLManager\bin\Debug\System.Web.Http.xml
 G:\disk\Files\git\nsql\NSQLManager\bin\Debug\System.Web.Http.WebHost.xml
 G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLManager.csproj.App.config
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\NSQLmanager.exe.config
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.abstractions.dll
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.runner.visualstudio.testadapter.dll
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.runner.reporters.net452.dll
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.runner.utility.net452.dll
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\NSQLmanager.exe
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\NSQLmanager.pdb
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.assert.dll
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.core.dll
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.execution.desktop.dll
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.assert.xml
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.core.xml
+G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.execution.desktop.xml
+G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLmanager.exe
+G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLmanager.pdb

@@ -1,7 +1,6 @@
 ﻿//using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Xunit;
 
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +22,8 @@ using POCO;
 using AdinTce;
 using OrientRealization;
 using System.Configuration;
+
+
 
 namespace NSQLManagerTests.Tests
 {
@@ -100,8 +101,9 @@ namespace NSQLManagerTests.Tests
         public void AddRequestGETCheck()
         {
             HttpStatusCode code = HttpStatusCode.NotImplemented;
-            wm = new WebManager2();
-            wm.AddRequest(@"http://localhost:80");
+            wm = new WebManager2();            
+            wm.AddRequest(ConfigurationManager.AppSettings["TestHost"]);
+            wm.SetTimeout(5000);
             code = ((HttpWebResponse)wm.GetHttpResponse()).StatusCode;
             Assert.Equal(HttpStatusCode.OK, code);
         }
@@ -110,7 +112,7 @@ namespace NSQLManagerTests.Tests
         {
             HttpStatusCode code = HttpStatusCode.NotImplemented;
             wm = new WebManager2();
-            wm.AddRequest(@"http://localhost:80");
+            wm.AddRequest(ConfigurationManager.AppSettings["POSTHost"]);
             code = ((HttpWebResponse)wm.GetHttpResponse("POST")).StatusCode;
             Assert.Equal(HttpStatusCode.OK, code);
         }
@@ -123,9 +125,10 @@ namespace NSQLManagerTests.Tests
             string methodAfter = "POST";
             string aMb = null, aMa = null;
 
-
+            string testHost = "http://localhost:8000";
             wm = new WebManager2();
-            wm.AddRequest(@"http://webdbg.com/sandbox");
+            wm.AddRequest(testHost);
+            
             using (HttpWebResponse wr = wm.GetHttpResponse(methodBefore))
             {
                 codeBefore = wr.StatusCode;
@@ -148,9 +151,9 @@ namespace NSQLManagerTests.Tests
             HttpStatusCode codeBefore = HttpStatusCode.NotImplemented;
 
             wm = new WebManager2();
-            wm.AddRequest(@"http://localhost:80");
+            wm.AddRequest("http://localhost:8000");
             wm.AddContent(contentSet);
-
+            wm.SetTimeout(5000);
             using (HttpWebResponse wr = wm.GetHttpResponse("POST"))
             {
                 codeBefore = wr.StatusCode;
@@ -173,13 +176,32 @@ namespace NSQLManagerTests.Tests
         {
             orietWebManager = new OrientWebManager();
 
-            authUrl = ConfigurationManager.AppSettings["orient_auth_host"];
-            funcUrl = ConfigurationManager.AppSettings["orient_func_host"];
-            batchUrl = ConfigurationManager.AppSettings["orient_batch_host"];
-            commandUrl = ConfigurationManager.AppSettings["orient_command_host"];
+            authUrl = string.Format(@"{0}:{1}/{2}/{3}"
+                ,ConfigurationManager.AppSettings["ParentHost"]
+                ,ConfigurationManager.AppSettings["ParentPort"]
+                , ConfigurationManager.AppSettings["AuthURL"]
+                , ConfigurationManager.AppSettings["ParentDB"]);
 
-            root = ConfigurationManager.AppSettings["ChildLogin"];
-            password = ConfigurationManager.AppSettings["ChildPassword"];
+            funcUrl = string.Format(@"{0}:{1}/{2}/{3}"
+                , ConfigurationManager.AppSettings["ParentHost"]
+                , ConfigurationManager.AppSettings["ParentPort"]
+                , ConfigurationManager.AppSettings["FunctionURL"]
+                , ConfigurationManager.AppSettings["ParentDB"]);
+
+            batchUrl = string.Format(@"{0}:{1}/{2}/{3}"
+                , ConfigurationManager.AppSettings["ParentHost"]
+                , ConfigurationManager.AppSettings["ParentPort"]
+                , ConfigurationManager.AppSettings["BatchURL"]
+                , ConfigurationManager.AppSettings["ParentDB"]);
+
+            commandUrl = string.Format(@"{0}:{1}/{2}/{3}"
+                , ConfigurationManager.AppSettings["ParentHost"]
+                , ConfigurationManager.AppSettings["ParentPort"]
+                , ConfigurationManager.AppSettings["CommandURL"]
+                , ConfigurationManager.AppSettings["ParentDB"]);
+
+            root = ConfigurationManager.AppSettings["orient_login"];
+            password = ConfigurationManager.AppSettings["orient_pswd"];
 
             nc = new NetworkCredential(root, password);
 
@@ -208,6 +230,255 @@ namespace NSQLManagerTests.Tests
             orietWebManager.Authenticate(authUrl, nc).Headers.Get("Set-Cookie");
             orietWebManager.GetResponseCred("GET");
         }
+    }
+ public class CommandTest
+    {
+
+        Commands commandOne;
+        CommandShemasExplicit commandShemas;
+        CommandBuilder commandBuilder, commandBuilder_SelectFrom;
+        ITypeToken V, VSC;
+
+        public CommandTest()
+        {
+            commandBuilder = new CommandBuilder();
+
+            commandBuilder_SelectFrom = new CommandBuilder(new List<ITypeToken> { new TextToken() { Text = "Name,GUID" } }, new TextToken() { Text = "{0}" });
+            V = new TextToken() { Text = "V" };
+            VSC = new TextToken() { Text = "VSC" };
+            //initialize command interfaces
+            this.commandShemas = new CommandShemasExplicit(new CommandBuilder(), new FormatFromListGenerator(new TokenMiniFactory()), new TextToken());
+
+            this.commandOne = CommandInit();
+        }
+
+        public Commands CommandInit()
+        {
+            return new Commands(new CommandBuilder(), new FormatFromListGenerator(new TokenMiniFactory()), new TextToken()
+                , new OrientRoundBraketLeftToken(), new OrientRoundBraketRightToken()
+                , new OrientSquareBraketLeftToken(), new OrientSquareBraketRightToken());
+        }
+
+        [Fact]
+        public void UniversalCommandCheck()
+        {
+            string select =
+                this.commandShemas.Command(new List<ITypeToken> {
+                    new TextToken() { Text = "Select" }
+                    ,new TextToken() { Text = "Name" }
+                    ,new TextToken() { Text = "," }
+                    ,new TextToken() { Text = "GUID" }
+                    ,new TextToken() { Text = "from" }
+                    ,new TextToken() { Text = "where" }
+                }).GetText();
+            Assert.Equal("Select Name , GUID from where", select);
+        }
+
+        [Fact]
+        public void SelectFromNestWithWehereCheck()
+        {
+            List<ICommandBuilder> cb1 =new  List<ICommandBuilder>();
+            cb1.Add(CommandInit().Select().GetBuilder());
+            cb1.Add(CommandInit().Where().GetBuilder());
+
+            Assert.NotNull(null);
+        }
+        [Fact]
+        public void SquareCheck()
+        {
+            this.commandOne.NestSq();
+            string result = this.commandOne.GetCommand();
+            Assert.Equal("[ ]", result);
+        }
+        [Fact]
+        public void NestSelectNestSquareCheck()
+        {
+            this.commandOne.Select(commandBuilder_SelectFrom).From()
+                .NestSq().Select();
+            string result = this.commandOne.GetCommand();
+            Assert.Equal("Select [Select Name,GUID  from ]", result);
+        }
+        [Fact]
+        public void NestSelectNestRoundCheck()
+        {
+            this.commandOne.Select(commandBuilder_SelectFrom).From()
+                .NestRnd().Select().From();
+            string result = this.commandOne.GetCommand();
+            Assert.Equal("Select (Select Name,GUID  from ) from ", result);
+        }
+        [Fact]
+        public void NestSelectNestCheck()
+        {
+            this.commandOne.Select(commandBuilder_SelectFrom).From()
+                .Nest(new OrientRoundBraketLeftToken(), new OrientRoundBraketRightToken(),
+                new TextToken() {Text=@" {0} {1} {2} " }).Select().From();
+            string result = this.commandOne.GetCommand();
+            Assert.Equal("Select  ( Select Name,GUID  from  )  from ", result);
+        }
+        [Fact]
+        public void NestSelectCheck()
+        {
+            this.commandOne.Select(commandBuilder_SelectFrom).Select();
+            string result = this.commandOne.GetCommand();
+            Assert.Equal("Select Select Name,GUID ", result);
+        }
+
+        [Fact]
+        public void NestChainExtendedCheck()
+        {
+
+            this.commandOne.Select(commandBuilder_SelectFrom).From().Create().Class(V).Extends(VSC).Nest(new OrientRoundBraketLeftToken(), new OrientRoundBraketRightToken(), new TextToken() { Text = string.Empty });
+
+            string result = this.commandOne.GetCommand();
+            Assert.Equal("(Select Name,GUID   from  Create Class V Extends VSC)", result);
+        }
+        [Fact]
+        public void NestChainCheck()
+        {
+            this.commandOne.Select().From().Nest(new OrientRoundBraketLeftToken(), new OrientRoundBraketRightToken(), new TextToken() { Text = string.Empty });
+
+            string result = this.commandOne.GetCommand();
+            Assert.Equal("(Select  from )", result);
+        }
+
+        [Fact]
+        public void CreateChainCheck()
+        {
+
+            this.commandOne.Create().Class(V).Extends(VSC);
+
+            string result = this.commandOne.GetCommand();
+            Assert.Equal("Create Class V Extends VSC", result);
+        }
+
+        [Fact]
+        public void NestCheck()
+        {
+            CommandBuilder commandBuilder =
+                new CommandBuilder(
+                    new List<ITypeToken>() { new TextToken() { Text = "Select from" } }
+                    , new TextToken() { Text = "{0}" });
+
+            string result =
+            this.commandShemas.Nest(commandBuilder, new OrientRoundBraketLeftToken(), new OrientRoundBraketRightToken(), new TextToken() { Text = string.Empty }).Text.Text;
+
+            Assert.Equal("(Select from)", result);
+        }
+        [Fact]
+        public void ExtendesCheck()
+        {
+            ITypeToken param = new TextToken() { Text = "Person" };
+            string result = this.commandShemas.Extends(param).GetText();
+            Assert.Equal(" Extends Person", result);
+        }
+        [Fact]
+        public void CreateClassCheck()
+        {
+            commandBuilder = new CommandBuilder(new List<ITypeToken> { new TextToken() { Text = "class" } }, new TextToken() { Text = "{0}" });
+            string result = this.commandShemas.Create(commandBuilder).GetText();
+            Assert.Equal("Create class", result);
+        }
+
+        [Fact]
+        public void WhereParamCheck()
+        {
+            ICommandBuilder cb =
+                new CommandBuilder(new List<ITypeToken>() { new TextToken() { Text = "1=1" } }, new TextToken() { Text = "{0}" });
+
+            this.commandOne.Where(cb);
+            string result = this.commandOne.GetCommand();
+            Assert.Equal("where 1=1", result);
+        }
+        [Fact]
+        public void WhereCheck()
+        {
+            this.commandOne.Where();
+            string result = this.commandOne.GetCommand();
+            Assert.Equal("where", result);
+        }
+
+        [Fact]
+        public void shemaSelectCheck()
+        {
+            string result = this.commandShemas.Select().GetText();
+            Assert.Equal("Select ", result);
+        }
+        [Fact]
+        public void shemaSelectParametersCheck()
+        {
+
+            string result = this.commandShemas.Select(commandBuilder_SelectFrom).GetText();
+            Assert.Equal("Select Name,GUID ", result);
+        }
+
+        [Fact]
+        public void CommandFromParamCheck()
+        {
+            string result = CommandInit().From(new TextToken() { Text = "Person"}).GetBuilder().GetText();
+            Assert.Equal(" from Person ", result);
+        }
+        [Fact]
+        public void CommandFromCheck()
+        {            
+            string result = CommandInit().From().GetBuilder().GetText();
+            Assert.Equal(" from ", result);
+        }
+
+        [Fact]
+        public void CommandSelectFromCheck()
+        {
+            string result = CommandInit().Select().From().GetBuilder().GetText();
+            Assert.Equal("Select  from ", result);
+        }
+        [Fact]
+        public void CommandSelectFromParamCheck()
+        {
+            string result = CommandInit().Select().From(new TextToken() { Text = "Person" }).GetBuilder().GetText();
+            Assert.Equal("Select  from Person ", result);
+        }
+
+        [Fact]
+        public void FormatBuilderConcatenatesArraysOfBuildersWithFormatStoreCheck()
+        {
+            List<ICommandBuilder> bds = new List<ICommandBuilder>();
+
+            bds.Add(
+                new CommandBuilder(new List<ITypeToken> {
+                    new TextToken() { Text = "token 1" }
+                    , new TextToken() { Text = "token 2" }
+                }, new TextToken() { Text = "{0}.{1}" }));
+
+            bds.Add(
+                          new CommandBuilder(new List<ITypeToken> {
+                    new TextToken() { Text = "token 3" }
+                    , new TextToken() { Text = "token 4" }
+                    , new TextToken() { Text = "token 5" }
+               }, new TextToken() { Text = "{0}:{1}/{3}" }));
+
+
+            CommandBuilder cb3 = new CommandBuilder(bds, new TextToken() { Text = "{0}_|_{1}" });
+            string result = cb3.GetText();
+            Assert.Equal("token 1.token 2_|_token 3:token 4/token 5", result);
+        }
+
+        [Fact]
+        public void StringRearrangeDoubledOneCheck()
+        {
+            string str = @"{0}{1}{1}{0}{0}{1}{1}{0}{9}{10}";
+            string resAct= commandBuilder.FormatStringReArrange(str);
+            string resExp = @"{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}";
+            Assert.Equal(resExp, resAct);
+        }
+
+        [Fact]
+        public void StringRearrangeDoubledTwoCheck()
+        {
+            string str = @"{0}{1}{1}{0}{0}{1}{1}{0}{9}{10}{12}";
+            string resAct = commandBuilder.FormatStringReArrange(str);
+            string resExp = @"{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}";
+            Assert.Equal(resExp, resAct);
+        }
+
     }
     public class WebResponseReaderIntegrationTest
     {
@@ -516,9 +787,8 @@ namespace NSQLManagerTests.Tests
             };
             //Aggregate all query TokenManagers to one Select URL command with where
             CommandBuilder commandSample = new CommandBuilder();
-            commandSample.AddBuilders(CommandTokens);
-            commandSample.AddFormat(new TextToken() { Text = @"{0}/{1} {2}" });
-
+            commandSample.AddBuilders(CommandTokens, new TextToken() { Text = @"{0}/{1} {2}" });
+            commandSample.Build();
             //full select query command
             string selectcommandURL = commandSample.Text.Text;
 
@@ -605,15 +875,15 @@ namespace NSQLManagerTests.Tests
             CommandBuilder dU =
     new CommandBuilder();
 
-        
-            cU.AddBuilders(createTk);
-            cU.AddFormat(new TextToken() { Text = @"{0}/{1}" });
+            //cU.AddFormat(new TextToken() { Text = @"{0}/{1}" });
+            cU.AddBuilders(createTk, new TextToken() { Text = @"{0}/{1}" });
+            cU.Build();
 
-            sU.AddBuilders(selectTk);
-            sU.AddFormat(new TextToken() { Text = @"{0}/{1} {2}" });
+            sU.AddBuilders(selectTk, (new TextToken() { Text = @"{0}/{1} {2}" }));                       
+            sU.Build();
 
-            dU.AddBuilders(deleteTk);
-            dU.AddFormat(new TextToken() { Text = @"{0}/{1} {2}" });
+            dU.AddBuilders(deleteTk, (new TextToken() { Text = @"{0}/{1} {2}" }));                   
+            dU.Build();
 
             string cUt = cU.Text.Text;
             string sUt = sU.Text.Text;
@@ -681,7 +951,7 @@ namespace NSQLManagerTests.Tests
 
             AddActualUrls();
 
-            _webManager = new AdinTceWebManager();
+            _webManager = new AdinTceWebManager();            
             _webManager.AddCredentials(new System.Net.NetworkCredential(
               ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
 
