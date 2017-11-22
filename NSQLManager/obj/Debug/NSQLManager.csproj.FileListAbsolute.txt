@@ -16,3 +16,4 @@ G:\disk\Files\git\nsql\NSQLManager\bin\Debug\System.Net.Http.Primitives.xml
 G:\disk\Files\git\nsql\NSQLManager\bin\Debug\System.Web.Http.xml
 G:\disk\Files\git\nsql\NSQLManager\bin\Debug\System.Web.Http.WebHost.xml
 G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLManager.csproj.App.config
+G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLManager.csprojResolveAssemblyReference.cache
