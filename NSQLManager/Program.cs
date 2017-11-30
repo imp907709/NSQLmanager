@@ -27,6 +27,8 @@ namespace NSQLManager
 
         static void Main(string[] args)
         {
+            Trash.FormatRearrange.StringsCheck();
+
             RepoCheck rc = new RepoCheck();
             rc.GO();
         }
@@ -61,7 +63,7 @@ namespace NSQLManager
             jm = new JSONManager();
             tb = new OrientTokenBuilder();
             tc = new TypeConverter();
-            ocb = new OrientCommandBuilder();
+            ocb = new OrientCommandBuilder(new TokenMiniFactory(), new FormatFactory());
             wm = new OrientWebManager();
             wr = new WebResponseReader();
 
@@ -90,8 +92,8 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
 
 
         public void GO()
-        {
-           
+        {            
+
             TrackBirthdaysPtP();
             DeleteBirthdays();
             DbCreateDeleteCheck();
@@ -143,7 +145,7 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
         public void ExplicitCommandsCheck()
         {
 
-            OrientCommandBuilder cb = new OrientCommandBuilder();
+            OrientCommandBuilder cb = new OrientCommandBuilder(new TokenMiniFactory(), new FormatFactory());
             OrientTokenBuilderExplicit eb = new OrientTokenBuilderExplicit();
             ITypeConverter tc = new TypeConverter();
 
@@ -152,35 +154,35 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
 
       
 lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientClassToken() { Text = "V" });           
-ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
+ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientPropertyToken() { Text = "Name" }, new OrientSTRINGToken(), true,true);
-ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
+ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientPropertyToken() { Text = "Created" }, new OrientDATEToken(), true, true);
-ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
+ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new TextFormatGenerate(lt)).Text.Text);
 
 
 
 lt = eb.Create(new OrientClassToken() { Text = "ESCN" }, new OrientClassToken() { Text = "E" });
-ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
+ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "ESCN" }, new OrientPropertyToken() { Text = "Name" }, new OrientSTRINGToken(), true, true);
-ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
+ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "ESCN" }, new OrientPropertyToken() { Text = "Created" }, new OrientDATEToken(), true, true);
-ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
+ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new TextFormatGenerate(lt)).Text.Text);
 
 
 
 lt = eb.Create(new OrientClassToken() { Text = "VSCN" }, new OrientClassToken() { Text = "VSCN" });
-ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
+ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "Beer" }, new OrientClassToken() { Text = "VSCN" });
-ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
+ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new TextFormatGenerate(lt)).Text.Text);
 
 lt = eb.Create(new OrientClassToken() { Text = "Produces" }, new OrientClassToken() { Text = "ESCN" });
-ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
+ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new TextFormatGenerate(lt)).Text.Text);
 
 
 
@@ -191,9 +193,16 @@ ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
             List<string> persIds = new List<string>();
             List<string> edgeIds = new List<string>();
 
-            persIds.AddRange(
-                jm.DeserializeFromParentNode<Person>(repo.Select(typeof(Person), new TextToken() { Text = "1=1 and outE(\"CommonSettings\").inv(\"UserSettings\").showBirthday[0] is null" }), new RESULT().Text).Select(s => s.id.Replace(@"#", ""))
-            );
+            var PersList = jm.DeserializeFromParentNode<Person>(
+        repo.Select(
+            typeof(Person),
+        new TextToken() { Text = "1=1 and outE(\"CommonSettings\").inv(\"UserSettings\").showBirthday[0] is null" })
+        , new RESULT().Text);
+
+            foreach(Person pers in PersList)
+            {
+                persIds.Add(pers.id.Replace(@"#", ""));
+            }          
 
             for (int i = 0; i < persIds.Count(); i++)
             {
@@ -201,6 +210,7 @@ ls.Add(new OrientCommandBuilder(lt, new TextFormatGenerate(lt)).Text.Text);
 
                 repo.Add(cs, new TextToken() { Text = persIds[i] }, new TextToken() { Text = id });
             }
+
 
             repo.Delete(typeof(UserSettings), new TextToken() { Text = @"1 =1" });
             repo.Delete(typeof(CommonSettings), new TextToken() { Text = @"1 =1" });
