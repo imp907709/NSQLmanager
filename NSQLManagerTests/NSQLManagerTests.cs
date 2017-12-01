@@ -38,8 +38,7 @@ namespace NSQLManagerTests.Tests
 
         [Fact]
         public void GetResponseReturnsNullTest()
-        {
-            webManager.Object.AddRequest(@"http://localhost");
+        {          
             webManager.Object.GetResponse("GET");
             WebResponse res = webManager.Object.GetResponse("GET");
             Assert.Null(res);
@@ -89,33 +88,34 @@ namespace NSQLManagerTests.Tests
     public class WebManager2IntegrationTests
     {
 
-        WebManager2 wm;
+        WebRequestManager wm;
+
         public WebManager2IntegrationTests()
         {
 
         }
 
         [Fact]
-        public void AddRequestGETCheck()
+        public void WebManager2AddRequestGETCheck()
         {
             HttpStatusCode code = HttpStatusCode.NotImplemented;
-            wm = new WebManager2();
+            wm = new WebRequestManager();
             wm.AddRequest(ConfigurationManager.AppSettings["TestHost"]);
             wm.SetTimeout(5000);
-            code = ((HttpWebResponse)wm.GetHttpResponse()).StatusCode;
+            code = ((HttpWebResponse)wm.GetHttpResponse("GET")).StatusCode;
             Assert.Equal(HttpStatusCode.OK, code);
         }
         [Fact]
-        public void AddRequestPOSTCheck()
+        public void WebManager2AddRequestPOSTCheck()
         {
             HttpStatusCode code = HttpStatusCode.NotImplemented;
-            wm = new WebManager2();
-            wm.AddRequest(ConfigurationManager.AppSettings["POSTHost"]);
+            wm = new WebRequestManager();
+            wm.AddRequest(ConfigurationManager.AppSettings["orient_command_host"]);
             code = ((HttpWebResponse)wm.GetHttpResponse("POST")).StatusCode;
             Assert.Equal(HttpStatusCode.OK, code);
         }
         [Fact]
-        public void AddRequestSwapGetPostCheckSameMethodsAndURL()
+        public void WebManager2AddRequestSwapGetPostCheckSameMethodsAndURL()
         {
             HttpStatusCode codeBefore = HttpStatusCode.NotImplemented;
             HttpStatusCode codeAfter = HttpStatusCode.NotImplemented;
@@ -124,7 +124,7 @@ namespace NSQLManagerTests.Tests
             string aMb = null, aMa = null;
 
             string testHost = "http://localhost:8000";
-            wm = new WebManager2();
+            wm = new WebRequestManager();
             wm.AddRequest(testHost);
 
             using (HttpWebResponse wr = wm.GetHttpResponse(methodBefore))
@@ -141,6 +141,85 @@ namespace NSQLManagerTests.Tests
             Assert.Equal(HttpStatusCode.OK, codeAfter);
             Assert.Equal(methodBefore, aMb);
             Assert.Equal(methodAfter, aMa);
+        }
+       
+    }
+
+    public class IntegrationCombatTest
+    {
+        WebRequestManager wm;
+        WebResponseReader wr;
+
+        internal ICommandFactory _commandFactory;
+        internal IFormatFactory _formatFactory;
+        internal ITokenMiniFactory _miniFactory;
+
+        internal ICommandBuilder _commandBuilder;
+        internal IFormatFromListGenerator _formatGenerator;
+
+        IOrientBodyFactory _orientBodyFactory;
+        IOrientQueryFactory _orientQueryFactory;
+
+        UrlShemasExplicit _urlShemas;
+        CommandShemasExplicit _commandSchema;
+        BodyShemas _bodyShema;
+
+        string orientAuth;
+
+        public IntegrationCombatTest()
+        {
+
+            wm = new WebRequestManager();
+            wr = new WebResponseReader();
+
+            _commandFactory = new CommandFactory();
+            _formatFactory = new FormatFactory();
+            _miniFactory = new TokenMiniFactory();
+
+            _orientBodyFactory = new OrientBodyFactory();
+            _orientQueryFactory = new OrientQueryFactory();
+
+            _commandBuilder = _commandFactory.CommandBuilder(_miniFactory, _formatFactory);
+            _formatGenerator = _formatFactory.FormatGenerator(_miniFactory);
+
+            _urlShemas = new UrlShemasExplicit(_commandFactory, _formatFactory, _miniFactory, _orientBodyFactory);
+            _commandSchema = new CommandShemasExplicit(_commandFactory, _formatFactory, _miniFactory, _orientQueryFactory);
+            _bodyShema = new BodyShemas(_commandFactory, _formatFactory, _miniFactory, _orientBodyFactory);
+
+            orientAuth = string.Format("{0}{1}{2}",
+                 ConfigurationManager.AppSettings["orient_login"] 
+                 ,":"
+                 , ConfigurationManager.AppSettings["orient_pswd"]
+                 );
+
+        }
+
+        [Fact]
+        public void IntegrationCreateDatabaseCombat()
+        {
+           
+            ITypeToken hostToken = new TextToken() { Text = 
+                string.Format("{0}:{1}"
+                , ConfigurationManager.AppSettings["ParentHost"]
+                , ConfigurationManager.AppSettings["ParentPort"])
+                };
+
+            ITypeToken dbName = new TextToken() { Text = ConfigurationManager.AppSettings["TestDBname"] };
+            
+            _urlShemas.AddHost(hostToken);
+            //buil command url
+            string urlCommand = _urlShemas.Database(dbName).GetText();
+
+            wm.AddRequest(_urlShemas.Database(dbName).GetText());            
+            wm.SetBase64AuthHeader(orientAuth);
+            
+            string createDb = wr.ReadResponse(wm.GetResponse64("POST"));
+
+            Assert.NotNull(createDb);
+
+            string dropDb = wr.ReadResponse(wm.GetResponse64("DELETE"));
+
+            Assert.Equal(string.Empty,dropDb);
         }
 
     }
@@ -203,13 +282,14 @@ namespace NSQLManagerTests.Tests
             Assert.True(check);
         }
 
+        [Fact]
         public void CommandExecuteCheck()
         {
-
             orietWebManager.GetResponse(authUrl, "GET");
             orietWebManager.Authenticate(authUrl, nc).Headers.Get("Set-Cookie");
             orietWebManager.GetResponseCred("GET");
         }
+
     }
     public class CommandTest
     {
@@ -234,7 +314,7 @@ namespace NSQLManagerTests.Tests
         public CommandsChain CommandInit()
         {
             TokenMiniFactory tokenMiniFactory = new TokenMiniFactory();
-            OrientTokenFactory tokenQueryFactory = new OrientTokenFactory();
+            OrientQueryFactory tokenQueryFactory = new OrientQueryFactory();
             FormatFactory formatFactoy = new FormatFactory();
             CommandFactory commandFactory = new CommandFactory();
 
@@ -249,15 +329,15 @@ namespace NSQLManagerTests.Tests
             CommandBuilder select = new CommandBuilder(new TokenMiniFactory(), new FormatFactory()
                 , new List<ITypeToken>() { new TextToken() { Text = @"GUID,Name,Unit" } }
                 , new TextToken() { Text = @"{0}" }
-                );            
+                );
 
             //from type token
             TextToken person = new TextToken() { Text = @"Person" };
 
             //where token
             CommandBuilder where = new CommandBuilder(new TokenMiniFactory(), new FormatFactory()
-            ,new List<ITypeToken>() { new TextToken() { Text = @"1=1" } }
-            ,new TextToken() { Text = @"{0}" });
+            , new List<ITypeToken>() { new TextToken() { Text = @"1=1" } }
+            , new TextToken() { Text = @"{0}" });
 
             List<ICommandBuilder> cb1 = new List<ICommandBuilder>();
 
@@ -598,6 +678,7 @@ namespace NSQLManagerTests.Tests
     {
         UrlShemasExplicit Urlshema;
         string testDBname;
+        string parentHost;
         public UrlShemasExplicitTest()
         {
             ITokenMiniFactory tf = new TokenMiniFactory();
@@ -607,11 +688,12 @@ namespace NSQLManagerTests.Tests
 
             IFormatFromListGenerator fg = new FormatFromListGenerator(tf);
 
-            IOrientQueryBodyFactory qbf = new OrientQueryBodyFactory();
+            IOrientBodyFactory qbf = new OrientBodyFactory();
 
             Urlshema = new UrlShemasExplicit(cb, fg, tf, qbf);
             Urlshema.AddHost( new TextToken() { Text = ConfigurationManager.AppSettings["ParentHost"] });
             testDBname = ConfigurationManager.AppSettings["testDbname"];
+            parentHost = ConfigurationManager.AppSettings["ParentHost"];
         }
 
         [Fact]
@@ -623,7 +705,7 @@ namespace NSQLManagerTests.Tests
         public void UrlShemasCreateCheck()
         {
             string result = string.Empty;
-            string expected = ConfigurationManager.AppSettings["ParentHost"]+"/database/test_db/plocal";
+            string expected = parentHost + "/database/test_db/plocal";
             result = Urlshema.Database(new TextToken() { Text = testDBname}).GetText();
             Assert.Equal(expected,result);
         }
@@ -631,7 +713,7 @@ namespace NSQLManagerTests.Tests
         public void UrlShemasConnectCheck()
         {
             string result = string.Empty;
-            string expected = ConfigurationManager.AppSettings["ParentHost"]+"/connect/test_db";
+            string expected = parentHost + "/connect/test_db";
             result = Urlshema.Connect(new TextToken() { Text = testDBname }).GetText();
             Assert.Equal(expected, result);
         }
@@ -639,7 +721,7 @@ namespace NSQLManagerTests.Tests
         public void UrlShemasCommandCheck()
         {
             string result = string.Empty;
-            string expected = ConfigurationManager.AppSettings["ParentHost"]+"/command/test_db/sql";
+            string expected = parentHost + "/command/test_db/sql";
             result = Urlshema.Command(new TextToken() { Text = testDBname }).GetText();
             Assert.Equal(expected, result);
         }
@@ -647,7 +729,7 @@ namespace NSQLManagerTests.Tests
         public void UrlShemasBatchCheck()
         {
             string result = string.Empty;
-            string expected = ConfigurationManager.AppSettings["ParentHost"] + "/batch/test_db/sql";
+            string expected = parentHost + "/batch/test_db/sql";
             result = Urlshema.Batch(new TextToken() { Text = testDBname }).GetText();
             Assert.Equal(expected, result);
         }
@@ -660,7 +742,7 @@ namespace NSQLManagerTests.Tests
         TokenMiniFactory tokenFactory;
         CommandFactory commandFactory;
         FormatFactory formatFactory;
-        OrientQueryBodyFactory queryFactory;
+        OrientBodyFactory queryFactory;
 
         BodyShemas Bodyshema;
         string testDBname;
@@ -670,7 +752,7 @@ namespace NSQLManagerTests.Tests
             tokenFactory = new TokenMiniFactory();
             commandFactory = new CommandFactory();
             formatFactory = new FormatFactory();
-            queryFactory = new OrientQueryBodyFactory();
+            queryFactory = new OrientBodyFactory();
 
             Bodyshema = new BodyShemas(commandFactory, formatFactory, tokenFactory, queryFactory);
 
@@ -681,7 +763,7 @@ namespace NSQLManagerTests.Tests
 
             IFormatFromListGenerator fg = new FormatFromListGenerator(tf);
 
-            IOrientQueryBodyFactory qbf = new OrientQueryBodyFactory();
+            IOrientBodyFactory qbf = new OrientBodyFactory();
       
             CommandBuilder cbd = new CommandBuilder(new TokenMiniFactory(), new FormatFactory());
             cbd.AddTokens(new List<ITypeToken>() {
@@ -726,18 +808,20 @@ namespace NSQLManagerTests.Tests
             commandBuilder_SelectFrom = 
     new CommandBuilder(new TokenMiniFactory(), new FormatFactory()) { Tokens = new List<ITypeToken>() { new TextToken(){ Text="Name,GUID"} } };
             commandBuilder = new CommandBuilder(new TokenMiniFactory(), new FormatFactory());
+
             //initialize command interfaces
             this.commandShemas = new CommandShemasExplicit(
-                new CommandBuilder(new TokenMiniFactory(), new FormatFactory())
-                , new FormatFromListGenerator(new TokenMiniFactory())
-                , new TokenMiniFactory()
-                , new OrientTokenFactory());
+                new CommandFactory()
+                ,new FormatFactory()
+                ,new TokenMiniFactory()
+                , new OrientQueryFactory()
+                );
+
         }
 
         [Fact]
         public void ShemaUniversalCommandCheck()
         {
-
             List < ITypeToken >  tokens = new List<ITypeToken> {
                 new TextToken() { Text = "Select" }
                 ,new TextToken() { Text = "Name" }
@@ -749,7 +833,7 @@ namespace NSQLManagerTests.Tests
 
             CommandBuilder cb = new CommandBuilder(new TokenMiniFactory(), new FormatFactory()) { Tokens = tokens };
             List<ICommandBuilder> cbl = new List<ICommandBuilder>(){ cb };
-            commandShemas.Command(cbl, null);
+            commandShemas.BuildNew(cbl, new TokenMiniFactory().Gap());
 
             string select = cb.GetText();
             Assert.Equal("Select Name , GUID from where", select);
@@ -767,7 +851,7 @@ namespace NSQLManagerTests.Tests
 
             string res = commandShemas.Property(class_, prop_, type_, mandatory_, notnull_).GetText();
 
-            Assert.Equal(@"Property Person.Name STRING  (MANDATORY TRUE,NOTNULL TRUE) ", res);
+            Assert.Equal("PropertyPerson.Name STRING  (MANDATORY TRUE,NOTNULL TRUE) ", res);
         }
         [Fact]
         public void ShemaPropertyItemCheck()
@@ -885,7 +969,7 @@ namespace NSQLManagerTests.Tests
             Assert.NotNull(result);
             Assert.NotEqual(string.Empty, result);
         }
-
+       
     }
     public class JSONmanagerIntegrationTests
     {
@@ -1088,7 +1172,7 @@ namespace NSQLManagerTests.Tests
             OrientSelectClauseFormat of = new OrientSelectClauseFormat();
             //build full command URL with URL and command Parts            
             CommandBuilder selectUrlPart = new CommandBuilder(
-                new TokenMiniFactory(),new FormatFactory()
+                new TokenMiniFactory(), new FormatFactory()
                 );
             selectUrlPart.AddTokens(selectCommandTokens);
             selectUrlPart.AddFormat(of);
@@ -1325,6 +1409,8 @@ namespace NSQLManagerTests.Tests
 
         List<string> expectedUrls, actualUrls;
 
+        string adinTceUrl = ConfigurationManager.AppSettings["AdinTceUrl"] + "/holiday/full";
+
         string testGUID = "c1a4c984-a00e-11e6-80db-005056813668";
         //"18222799-602e-11e4-ad69-00c2c66d13b0" //test_long
         //"18a14516-cbb4-11e4-b849-f80f41d3dd35" //test
@@ -1361,8 +1447,9 @@ namespace NSQLManagerTests.Tests
             AddActualUrls();
 
             _webManager = new AdinTceWebManager();            
-            _webManager.AddCredentials(new System.Net.NetworkCredential(
+            _webManager.SetCredentials(new System.Net.NetworkCredential(
               ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
+            _webManager.AddRequest(adinTceUrl);
 
             //_webManager.SetTimeout(11000);
             adinTceRepo = new AdinTceRepo(_CommandBuilder, _webManager, _responseReader, _jsonManager);
@@ -1409,11 +1496,10 @@ namespace NSQLManagerTests.Tests
         public void AdinTceWebManagerTest()
         {
             WebResponse wr = null;
+          
             try
-            {
-                _webManager.AddRequest("http://msk1-vm-onesweb01/nspk_zup/hs/Portal_Holiday/location/holiday/full");
-                _webManager.AddBase64AuthHeader();
-                wr = _webManager.GetResponse("GET");
+            {                
+                wr = _webManager.GetResponse64("GET");
             }
             catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
 
@@ -1426,7 +1512,7 @@ namespace NSQLManagerTests.Tests
             string result = null;
             try
             {
-                _webManager.AddRequest("http://msk1-vm-onesweb01/nspk_zup/hs/Portal_Holiday/location/holiday/full");                
+                _webManager.AddRequest(adinTceUrl);
                 result = _responseReader.ReadResponse(_webManager.GetResponse64("GET"));
             }
             catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
@@ -1443,11 +1529,7 @@ namespace NSQLManagerTests.Tests
             try
             {             
 
-                _webManager.AddRequest(
-                    string.Format("{0}/{1}"
-                        , ConfigurationManager.AppSettings["AdinTceUrl"]
-                        , "holiday/full")
-                    );   
+                _webManager.AddRequest(adinTceUrl);   
                 
                 temp = _responseReader.ReadResponse(_webManager.GetResponse64("GET"));
             }
