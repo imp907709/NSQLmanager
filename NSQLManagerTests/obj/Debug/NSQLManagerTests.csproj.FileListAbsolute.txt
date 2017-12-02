@@ -8,6 +8,7 @@ G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\NSQLManagerTests.pdb
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\Castle.Core.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\Moq.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\Newtonsoft.Json.dll
+G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\NSQLmanager.exe
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\nunit.framework.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\System.Net.Http.Extensions.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\System.Net.Http.Formatting.dll
@@ -17,6 +18,7 @@ G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\System.Web.Http.WebHost.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.assert.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.core.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.execution.desktop.dll
+G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\NSQLmanager.pdb
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\Castle.Core.xml
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\Moq.pdb
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\Moq.xml
@@ -34,5 +36,3 @@ G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.csproj.App.co
 G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.csprojResolveAssemblyReference.cache
 G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.pdb
-G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\NSQLmanager.exe
-G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\NSQLmanager.pdb

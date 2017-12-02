@@ -686,12 +686,17 @@ namespace OrientRealization
         }
         public string GetCommand()
         {
+            if(this._commandBuilder.Text==null)
+            {
+                this._commandBuilder.Build();
+            }
             return this._commandBuilder.Text.Text;
         }
         public ICommandBuilder GetBuilder()
         {
             return this._commandBuilder;
         }
+              
 
         public CommandsChain NestSq()
         {
@@ -709,65 +714,67 @@ namespace OrientRealization
             this._commandBuilder = _commandShemas.Nest(this._commandBuilder, leftToken, rightToken);
             return this;
         }
+        public CommandsChain Nest(ITypeToken leftToken_ = null, ITypeToken rightToken_ = null, ITypeToken format = null)
+        {
+            this._commands.Clear();
+            this._commands.Add(this._commandShemas.Nest(this._commandBuilder, leftToken_, rightToken_, format));
+            this._commandBuilder.BindBuilders(this._commands);
+            this._commandBuilder.Build();
+            return this;
+        }
 
         public CommandsChain Where(ICommandBuilder param = null)
         {
-            this._commandBuilder = _commandShemas.Where(param);
+            this._commands.Add(_commandShemas.Where(param));
+            this._commandBuilder.BindBuilders(this._commands);
             return this;
         }
 
         public CommandsChain Select(ICommandBuilder columns_ = null)
         {
             this._commands.Insert(0,this._commandShemas.Select(columns_));
+            this._commandBuilder.BindBuilders(this._commands);
+            this._commandBuilder.Build();
             return this;
         }
 
         public CommandsChain From(ITypeToken param = null)
         {
-            this._commands.Insert(0,_commandShemas.From(param));
+            this._commands.Add(_commandShemas.From(param));
+            this._commandBuilder.BindBuilders(this._commands);
+            this._commandBuilder.Build();
             return this;
         }
 
-        public CommandsChain Nest(ITypeToken leftToken_ = null, ITypeToken rightToken_ = null, ITypeToken format = null)
-        {
-            ITypeToken lt, rt;
-
-            lt = (leftToken_ == null) ? _tokenOrientFactory.LeftRoundBraket() : leftToken_;
-            rt = (rightToken_ == null) ? _tokenOrientFactory.RightRoundBraket() : rightToken_;
-
-            List<ITypeToken> ltL=new List<ITypeToken> { lt };
-            ITypeToken t1=_tokenMiniFactory.NewToken();
-            t1=_formatFactory.FormatGenerator(_tokenMiniFactory).FormatFromListGenerate(ltL);
-
-            _commandFactory.CommandBuilder(_tokenMiniFactory, _formatFactory);
-                //,ltL, t1);
-
-            this._commandBuilder = _commandShemas.Nest(this._commandBuilder, lt, rt, format);
-            return this;
-        }
+       
         public CommandsChain Create(ICommandBuilder param = null)
         {
-            this._commandBuilder = _commandShemas.Create(param);
+            this._commands.Add(_commandShemas.Create(param));
+            this._commandBuilder.BindBuilders(this._commands);
             return this;
         }
         public CommandsChain Class(ITypeToken param = null)
         {
-            this._commandBuilder = _commandShemas.Class(param);
+            this._commands.Add(_commandShemas.Class(param));
+            this._commandBuilder.BindBuilders(this._commands);
             return this;
         }
         public CommandsChain Vertex(ITypeToken param = null)
         {
-            this._commandBuilder = _commandShemas.Vertex(param);
+            this._commands.Add(_commandShemas.Vertex(param));
+            this._commandBuilder.BindBuilders(this._commands);
             return this;
         }
         public CommandsChain Extends(ITypeToken param = null)
         {
-            this._commandBuilder = _commandShemas.Extends(param);
+            this._commands.Add(_commandShemas.Extends(param));
+            this._commandBuilder.BindBuilders(this._commands);
             return this;
         }
         public CommandsChain Content(ICommandBuilder param = null)
         {
-            this._commandBuilder = _commandShemas.Content(param);
+            this._commands.Add(_commandShemas.Content(param));
+            this._commandBuilder.BindBuilders(this._commands);
             return this;
         }
         
@@ -980,21 +987,49 @@ namespace OrientRealization
         /// <param name="token_">Command token</param>
         /// <param name="param_">Command parameters</param>
         /// <returns></returns>
-        public ICommandBuilder ParametrizedCommand(ITypeToken token_, ITypeToken param_)
+        public void ParametrizedCommand(ITypeToken token_, ICommandBuilder param_)
         {
-            List<ITypeToken> tokenList = new List<ITypeToken>();
-            tokenList.Add(_miniFactory.Gap());
-            tokenList.Add(token_);
+            List<ICommandBuilder> buildersList = new List<ICommandBuilder>();
+            List<ITypeToken> tokens = new List<ITypeToken>();
 
+            tokens.Add(token_);
+            tokens.Add(_miniFactory.Gap());
+            buildersList.Add(BuildNew(tokens, this._miniFactory.EmptyString()));
             if (param_ != null)
             {
-                tokenList.Add(_miniFactory.Gap());
-                tokenList.Add(param_);
+                buildersList.Add(param_);
+                tokens.Add(_miniFactory.Gap());
             }
-
-            Build(tokenList, _formatGenerator.FormatFromListGenerate(tokenList, _miniFactory.EmptyString().Text));
-            return this._commandBuilder;
+          
+            this._commandBuilder = BuildNew(buildersList, this._miniFactory.EmptyString());          
         }
+        public void ParametrizedCommand(ITypeToken token_, ITypeToken param_)
+        {
+            List<ICommandBuilder> buildersList = new List<ICommandBuilder>();
+            List<ITypeToken> tokens = new List<ITypeToken>();
+
+            tokens.Add(token_);
+            tokens.Add(_miniFactory.Gap());
+            if (param_ != null)
+            {
+                tokens.Add(param_);
+                tokens.Add(_miniFactory.Gap());
+            }
+            buildersList.Add(BuildNew(tokens, this._miniFactory.EmptyString()));
+            this._commandBuilder = BuildNew(buildersList, this._miniFactory.Gap());
+        }
+        public void ParametrizedCommand(List<ITypeToken> tokens_, ITypeToken param_)
+        {
+            List<ICommandBuilder> buildersList = new List<ICommandBuilder>();
+            //tokens_.Add(_miniFactory.Gap());
+            if (param_ != null)
+            {
+                tokens_.Add(param_);
+            }
+            buildersList.Add(BuildNew(tokens_, this._miniFactory.EmptyString()));
+            this._commandBuilder = BuildNew(buildersList, this._miniFactory.Gap());
+        }
+
         /// <summary>
         /// For creating commans with nesting functionality and double indenting (Nest).
         /// Adds to the left from all previous commandbuilder
@@ -1151,41 +1186,56 @@ namespace OrientRealization
             return tokenList;
         }
 
-
-        public ICommandBuilder Nest(ICommandBuilder param, ITypeToken leftToken, ITypeToken rightToken
-            , ITypeToken format = null)
+        public ICommandBuilder Nest(ICommandBuilder param, ITypeToken leftToken_, ITypeToken rightToken_
+          , ITypeToken format = null)
         {
-            List<ITypeToken> tokenList = new List<ITypeToken>();
-            ITypeToken token = _miniFactory.NewToken();
+            List<ICommandBuilder> commands_ = new List<ICommandBuilder>();
+            ITypeToken lt, rt;
 
-            tokenList.Add(leftToken);
-            if (param != null)
-            {
-                if (param.Tokens != null)
-                {
-                    tokenList.AddRange(param.Tokens);
-                }
-            }
-            tokenList.Add(rightToken);
+            lt = (leftToken_ == null) ? _orientFactory.LeftRoundBraket() : leftToken_;
+            rt = (rightToken_ == null) ? _orientFactory.RightRoundBraket() : rightToken_;
 
-            if (format != null && format.Text != string.Empty)
-            {
-                token.Text = string.Format(format.Text, "{0}", param.FormatPattern.Text, "{0}");
-            }
-            else
-            {
-                if (param.FormatPattern != null)
-                {
-                    token.Text = string.Concat("{0}", param.FormatPattern.Text, "{0}");
-                }
-                else { token = _formatGenerator.FormatFromListGenerate(tokenList); }
+            List<ITypeToken> ltL = new List<ITypeToken> { lt };
+            ITypeToken t1 = _formatFactory.FormatGenerator(_miniFactory).FormatFromListGenerate(ltL);
+            commands_.Add(_commandFactory.CommandBuilder(_miniFactory, _formatFactory, ltL, t1));
 
+            if (param.Tokens != null || param.Text!=null)
+            {
+                commands_.Add(param);
             }
 
-            return CommandFormattedRebuild(tokenList, token);
+            List<ITypeToken> ltR = new List<ITypeToken> { rt };
+            ITypeToken t2 = _formatFactory.FormatGenerator(_miniFactory).FormatFromListGenerate(ltL);
+            commands_.Add(_commandFactory.CommandBuilder(_miniFactory, _formatFactory, ltR, t2));
+
+            this._commandBuilder.BindBuilders(
+                commands_, _formatFactory.FormatGenerator(_miniFactory).FormatFromListGenerate(commands_,_miniFactory.EmptyString().Text)
+                );
+
+            return GetBuilder();
+            
         }
+
+     
+
+        public ICommandBuilder Content(ICommandBuilder param)
+        {
+            ParametrizedCommand(_orientFactory.ContentToken(), param);
+            return GetBuilder();
+        }
+        public ICommandBuilder Extends(ITypeToken param)
+        {
+            ParametrizedCommand(_orientFactory.ExtendsToken(), param);
+            return GetBuilder();
+        }
+        public ICommandBuilder Class(ITypeToken param = null)
+        {
+            ParametrizedCommand(_orientFactory.ClassToken(), param);
+            return GetBuilder();
+        }
+
         public ICommandBuilder Property(ITypeToken class_, ITypeToken prop_, ITypeToken type_
-           , ITypeToken mandatory_, ITypeToken notnull_)
+        , ITypeToken mandatory_, ITypeToken notnull_)
         {
             List<ICommandBuilder> builders = new List<ICommandBuilder>();
 
@@ -1196,30 +1246,17 @@ namespace OrientRealization
             return BuildNew(builders, _miniFactory.EmptyString());
         }
 
-        public ICommandBuilder Content(ICommandBuilder param)
-        {
-            return ParametrizedCommand(_orientFactory.ContentToken(), param, false);
-        }
-        public ICommandBuilder Extends(ITypeToken param)
-        {
-            return ParametrizedCommand(_orientFactory.ExtendsToken(), param);
-        }
-        public ICommandBuilder Class(ITypeToken param = null)
-        {
-            return ParametrizedCommand(_orientFactory.ClassToken(), param);
-        }
-       
         public ICommandBuilder PropertyItem(ITypeToken class_,ITypeToken prop_ )
         {
             List<ITypeToken> tokenList = new List<ITypeToken>();
 
             tokenList.Add(_orientFactory.PropertyToken());
-            tokenList.Add(_miniFactory.EmptyString());
+            tokenList.Add(_miniFactory.Gap());
             tokenList.Add(class_);
             tokenList.Add(_miniFactory.Dot());
             tokenList.Add(prop_);
-
-            return BuildNew(tokenList, _miniFactory.EmptyString());        
+            ParametrizedCommand(tokenList,null);
+            return GetBuilder();           
         }
         public ICommandBuilder PropertyType(ITypeToken type_)
         {
@@ -1229,13 +1266,14 @@ namespace OrientRealization
             tokenList.Add(type_);
             tokenList.Add(_miniFactory.Gap());
 
-            return BuildNew(tokenList, _miniFactory.EmptyString());
+            ParametrizedCommand(tokenList, null);
+            return GetBuilder();
         }
         public ICommandBuilder PropertyCondition(ITypeToken mandatory_, ITypeToken notnull_)
         {
             List<ITypeToken> tokenList = new List<ITypeToken>();
 
-            tokenList.Add(_miniFactory.Gap());
+
             tokenList.Add(_orientFactory.LeftRoundBraket());
             tokenList.Add(_orientFactory.Mandatory());
             tokenList.Add(_miniFactory.Gap());
@@ -1245,23 +1283,26 @@ namespace OrientRealization
             tokenList.Add(_miniFactory.Gap());
             tokenList.Add(notnull_);
             tokenList.Add(_orientFactory.RightRoundBraket());
-            tokenList.Add(_miniFactory.Gap());
-
-            return BuildNew(tokenList, _miniFactory.EmptyString());
+          
+            ParametrizedCommand(tokenList, null);
+            return GetBuilder();
         }
 
         public ICommandBuilder Vertex(ITypeToken param = null)
         {
-            return ParametrizedCommand(_orientFactory.VertexToken(), param);
+            ParametrizedCommand(_orientFactory.VertexToken(), param);
+            return GetBuilder();
         }
         public ICommandBuilder Edge(ITypeToken param = null)
         {
-            return ParametrizedCommand(_orientFactory.EdgeToken(), param);
+            ParametrizedCommand(_orientFactory.EdgeToken(), param);
+            return GetBuilder();
         }
 
-        public ICommandBuilder Create(ICommandBuilder param = null)
+        public ICommandBuilder Create(ICommandBuilder param_ = null)
         {
-            return ParametrizedCommand(_orientFactory.CreateToken(), param, false);
+            ParametrizedCommand(_orientFactory.CreateToken(), param_);
+            return GetBuilder();
         }
 
         /// <summary>
@@ -1271,20 +1312,10 @@ namespace OrientRealization
         /// <returns></returns>
         public ICommandBuilder Select(ICommandBuilder param_ = null)
         {
-            List<ICommandBuilder> buildersList = new List<ICommandBuilder>();
-            List<ITypeToken> tokens = new List<ITypeToken>();
 
-            tokens.Add(this._orientFactory.SelectToken());
-
-            buildersList.Add(BuildNew(tokens, this._miniFactory.EmptyString()));
-            if (param_ != null)
-            {
-                buildersList.Add(BuildNew(param_.Tokens, this._miniFactory.Coma()));
-            }
-            this._commandBuilder = BuildNew(buildersList, this._miniFactory.Gap());
-            //return ParametrizedCommandRebuild(orientFactory.SelectToken(),param_,this._commandBuilder,false);
-
+            ParametrizedCommand(_orientFactory.SelectToken(),param_);
             return GetBuilder();
+
             /*
             List<ITypeToken> tokenList = new List<ITypeToken>();
             ITypeToken token = factory.NewToken();
@@ -1322,17 +1353,21 @@ namespace OrientRealization
         }
         public ICommandBuilder From(ITypeToken param_ = null)
         {
-            return ParametrizedCommand(_orientFactory.FromToken(), param_);
-        }
-        public ICommandBuilder To(ITypeToken param_ = null)
-        {
-            return ParametrizedCommand(_orientFactory.ToToken(), param_);
-        }
+            ParametrizedCommand(_orientFactory.FromToken(), param_);
 
+            return GetBuilder();
+        }
         public ICommandBuilder Where(ICommandBuilder param_ = null)
         {
-            return ParametrizedCommand(_orientFactory.WhereToken(), param_,true);
+            ParametrizedCommand(_orientFactory.WhereToken(), param_);
+            return GetBuilder();
         }
+
+        public ICommandBuilder To(ITypeToken param_ = null)
+        {
+            ParametrizedCommand(_orientFactory.ToToken(), param_);
+            return GetBuilder();
+        }      
 
     }
     /// <summary>

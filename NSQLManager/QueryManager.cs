@@ -76,7 +76,12 @@ namespace QueryManagers
         {
             return new CommandBuilder(tokenFactory_, formatFactory_);
         }
-     
+        
+        public ICommandBuilder CommandBuilder(ITokenMiniFactory tokenFactory_, IFormatFactory formatFactory_
+            , List<ITypeToken> tokens_, ITypeToken format_)
+        {
+            return new CommandBuilder(tokenFactory_, formatFactory_, tokens_, format_);
+        }
     }
     public class FormatFactory : IFormatFactory
     {
@@ -281,6 +286,12 @@ namespace QueryManagers
             
             return GetText();
         }
+        public string Build(List<ITypeToken> tokens_, ITypeToken FormatPattern_)
+        {
+            BindTokens(tokens_);
+            BindFormat(FormatPattern_);
+            return Build();
+        }
 
         public enum BuildTypeFormates { FULL, NESTED }
 
@@ -319,16 +330,16 @@ namespace QueryManagers
 
             if (FormatPattern_==null)
             {
-                if (this.FormatPattern==null || this.FormatPattern.Text == null)
-                {
+                //if (this.FormatPattern==null || this.FormatPattern.Text == null)
+                //{
                     //try to generate if no format passed
                     try
                     {
                         if (formatGenerator == null) { throw new Exception("No ForamtPattern no FormatGenerator not binded"); }
-                        FormatPattern = formatGenerator.FormatFromListGenerate(this.Tokens);
+                        FormatPattern = formatGenerator.FormatFromListGenerate(str,"");
                     }
                     catch (Exception e) { }
-                }             
+                //}             
             }
             else
             {
