@@ -24,7 +24,7 @@ namespace IQueryManagers
 
     public interface ITokenMiniFactory
     {
-        ITypeToken NewToken();
+        ITypeToken NewToken(string text_=null);
         ITypeToken EmptyString();
 
         ITypeToken Dot();
@@ -87,7 +87,8 @@ namespace IQueryManagers
 
         ICommandBuilder CommandBuilder(ITokenMiniFactory tokenFactory_, IFormatFactory formatFactory_
             , List<ITypeToken> tokens_, ITypeToken format_);
-        
+
+
     }
 
     public interface IFormatFactory
@@ -97,10 +98,9 @@ namespace IQueryManagers
 
     public interface IFormatFromListGenerator
     {
-        ITypeToken FormatFromListGenerate(List<ITypeToken> tokens);
-        ITypeToken FormatFromListGenerate(List<ITypeToken> tokens, string delimeter);
-        ITypeToken FormatFromListGenerate<T>(List<T> items, string delimeter = null)
-            where T : class;
+        ITypeToken FromatFromTokenArray(List<ITypeToken> tokens_, ITypeToken delimeter_ = null);
+        ITypeToken FromatFromTokenArray(List<ICommandBuilder> tokens_, ITypeToken delimeter_ = null);
+
     }
 
     //Building Item from Token types

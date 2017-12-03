@@ -697,6 +697,7 @@ namespace OrientRealization
             return this._commandBuilder;
         }
               
+        
 
         public CommandsChain NestSq()
         {
@@ -723,34 +724,70 @@ namespace OrientRealization
             return this;
         }
 
+      
+
         public CommandsChain Where(ICommandBuilder param = null)
         {
-            this._commands.Add(_commandShemas.Where(param));
-            this._commandBuilder.BindBuilders(this._commands);
+            this._commands = new List<ICommandBuilder>();
+
+            if (this._commandBuilder.Tokens != null)
+            {
+                this._commands.Add(this._commandBuilder);
+            }
+            this._commands.Add(_commandShemas.Where());
+            this._commands.Add(param);
+
+            this._commandBuilder.BindBuilders(this._commands, this._formatGenerator.FromatFromTokenArray(this._commands, _tokenMiniFactory.Gap()));
             return this;
         }
+        public CommandsChain From(ITypeToken param_ = null)
+        {
+            this._commands = new List<ICommandBuilder>();
 
+            this._commands.Add(_commandShemas.From());
+            if (param_ == null)
+            {
+                if (this._commandBuilder.Tokens != null)
+                {
+                    this._commands.Add(this._commandBuilder);
+                }
+            }
+            else
+            {
+                this._commands.Add(
+                    _commandFactory.CommandBuilder(this._tokenMiniFactory, this._formatFactory, new List<ITypeToken>() { param_ }, null)
+                    );
+            }
+
+            this._commandBuilder.BindBuilders(this._commands, this._formatGenerator.FromatFromTokenArray(this._commands, _tokenMiniFactory.Gap()));
+            this._commandBuilder.Build();
+            return this;
+        }
         public CommandsChain Select(ICommandBuilder columns_ = null)
         {
-            this._commands.Insert(0,this._commandShemas.Select(columns_));
-            this._commandBuilder.BindBuilders(this._commands);
+            this._commands = new List<ICommandBuilder>();
+
+            this._commands.Add( this._commandShemas.Select());
+            this._commands.Add(columns_);
+            if (this._commandBuilder.Tokens != null)
+            {
+                this._commands.Add(this._commandBuilder);
+            }
+            this._commandBuilder.BindBuilders(this._commands,this._formatGenerator.FromatFromTokenArray(this._commands,_tokenMiniFactory.Gap()));
             this._commandBuilder.Build();
+
             return this;
         }
-
-        public CommandsChain From(ITypeToken param = null)
-        {
-            this._commands.Add(_commandShemas.From(param));
-            this._commandBuilder.BindBuilders(this._commands);
-            this._commandBuilder.Build();
-            return this;
-        }
-
        
-        public CommandsChain Create(ICommandBuilder param = null)
+        public CommandsChain Create(ITypeToken param_ = null)
         {
-            this._commands.Add(_commandShemas.Create(param));
+
+            this._commands = new List<ICommandBuilder>();
+
+            this._commands.Add(_commandShemas.Create(param_));
+
             this._commandBuilder.BindBuilders(this._commands);
+            this._commandBuilder.Build();
             return this;
         }
         public CommandsChain Class(ITypeToken param = null)
@@ -779,6 +816,9 @@ namespace OrientRealization
         }
         
     }
+
+
+    #region Schemas
 
     /// <summary>
     /// Base class for shemas building.
@@ -828,7 +868,7 @@ namespace OrientRealization
             ITypeToken token = _miniFactory.NewToken();
             if (format == null)
             {
-                token = _formatGenerator.FormatFromListGenerate(tokenList_);
+                token = _formatGenerator.FromatFromTokenArray(tokenList_);
             }
             else { token = format; }
             this._commandBuilder.AddFormat(token);
@@ -843,7 +883,7 @@ namespace OrientRealization
             ITypeToken token = _miniFactory.NewToken();
             if (format == null)
             {
-                token = _formatGenerator.FormatFromListGenerate(tokenList_);
+                token = _formatGenerator.FromatFromTokenArray(tokenList_);
             }
             else { token = format; }
 
@@ -875,16 +915,16 @@ namespace OrientRealization
         }
         public ICommandBuilder BuildNew(List<ICommandBuilder> tokenList_, ITypeToken delimeter)
         {
-            this._commandBuilder.BindBuilders(tokenList_, this._formatGenerator.FormatFromListGenerate(
-                tokenList_, delimeter.Text));
+            this._commandBuilder.BindBuilders(tokenList_, this._formatGenerator.FromatFromTokenArray(
+                tokenList_, delimeter));
             this._commandBuilder.Build();
             return GetBuilder();
         }
         public ICommandBuilder BuildNew(List<ITypeToken> tokenList_, ITypeToken delimeter)
         {
             this._commandBuilder.BindTokens(tokenList_);
-            this._commandBuilder.BindFormat(this._formatGenerator.FormatFromListGenerate(
-                tokenList_, delimeter.Text));
+            this._commandBuilder.BindFormat(this._formatGenerator.FromatFromTokenArray(
+                tokenList_, delimeter));
             this._commandBuilder.Build();
             return GetBuilder();
         }
@@ -892,7 +932,7 @@ namespace OrientRealization
         public ICommandBuilder AddLeft(ICommandBuilder b1, ICommandBuilder b2, ITypeToken delimeter)
         {
             List<ICommandBuilder> builder = new List<ICommandBuilder>() { b1, b2 };
-            ITypeToken format = this._formatGenerator.FormatFromListGenerate<ICommandBuilder>(builder, delimeter.Text);          
+            ITypeToken format = this._formatGenerator.FromatFromTokenArray(builder, delimeter);          
             this._commandBuilder.BindBuilders(builder, format);
             this._commandBuilder.Build();
             return GetBuilder();
@@ -900,7 +940,7 @@ namespace OrientRealization
         public ICommandBuilder AddRight(ICommandBuilder b1, ICommandBuilder b2, ITypeToken delimeter)
         {
             List<ICommandBuilder> builder = new List<ICommandBuilder>() { b2, b1 };
-            ITypeToken format = this._formatGenerator.FormatFromListGenerate<ICommandBuilder>(builder, delimeter.Text);         
+            ITypeToken format = this._formatGenerator.FromatFromTokenArray(builder, delimeter);         
             this._commandBuilder.BindBuilders(builder, format);
             this._commandBuilder.Build();
             return GetBuilder();
@@ -956,7 +996,7 @@ namespace OrientRealization
             ITypeToken token = _miniFactory.NewToken();
             if (format == null)
             {
-                token = _formatGenerator.FormatFromListGenerate(tokenList_);
+                token = _formatGenerator.FromatFromTokenArray(tokenList_);
             }
             else { token = format; }
 
@@ -972,7 +1012,7 @@ namespace OrientRealization
             ITypeToken token = _miniFactory.NewToken();
             if (format == null)
             {
-                token = _formatGenerator.FormatFromListGenerate(tokenList_);
+                token = _formatGenerator.FromatFromTokenArray(tokenList_);
             }
             else { token = format; }
 
@@ -997,8 +1037,7 @@ namespace OrientRealization
             buildersList.Add(BuildNew(tokens, this._miniFactory.EmptyString()));
             if (param_ != null)
             {
-                buildersList.Add(param_);
-                tokens.Add(_miniFactory.Gap());
+                buildersList.Add(param_);               
             }
           
             this._commandBuilder = BuildNew(buildersList, this._miniFactory.EmptyString());          
@@ -1066,7 +1105,7 @@ namespace OrientRealization
                 tokenList.AddRange(builder_.Tokens);
             }
 
-            Build(tokenList, _formatGenerator.FormatFromListGenerate(tokenList, _miniFactory.EmptyString().Text));
+            Build(tokenList, _formatGenerator.FromatFromTokenArray(tokenList, _miniFactory.EmptyString()));
             return this._commandBuilder;
         }
         /// <summary>
@@ -1103,7 +1142,7 @@ namespace OrientRealization
                 }
             }
 
-            ReBuild(tokenList, _formatGenerator.FormatFromListGenerate(tokenList, _miniFactory.EmptyString().Text));
+            ReBuild(tokenList, _formatGenerator.FromatFromTokenArray(tokenList, _miniFactory.EmptyString()));
             return this._commandBuilder;
         }
 
@@ -1124,7 +1163,7 @@ namespace OrientRealization
 
             //generate format from token list with system.empty placeholder List<n> => "{0} ..{}.. {n}"
             ITypeToken token = _miniFactory.NewToken();
-            token = formatgenerator_.FormatFromListGenerate(tokenList_);
+            token = formatgenerator_.FromatFromTokenArray(tokenList_);
 
             this._commandBuilder.AddFormat(token);
             lastGeneneratedCommand = this._commandBuilder.Build();
@@ -1142,7 +1181,7 @@ namespace OrientRealization
             if (format == null)
             {
                 //generate format from token list with system.empty placeholder List<n> => "{0} ..{}.. {n}"
-                token = _formatGenerator.FormatFromListGenerate(tokenList_);
+                token = _formatGenerator.FromatFromTokenArray(tokenList_);
             }
             else { token = format; }
 
@@ -1196,7 +1235,7 @@ namespace OrientRealization
             rt = (rightToken_ == null) ? _orientFactory.RightRoundBraket() : rightToken_;
 
             List<ITypeToken> ltL = new List<ITypeToken> { lt };
-            ITypeToken t1 = _formatFactory.FormatGenerator(_miniFactory).FormatFromListGenerate(ltL);
+            ITypeToken t1 = _formatFactory.FormatGenerator(_miniFactory).FromatFromTokenArray(ltL);
             commands_.Add(_commandFactory.CommandBuilder(_miniFactory, _formatFactory, ltL, t1));
 
             if (param.Tokens != null || param.Text!=null)
@@ -1205,11 +1244,11 @@ namespace OrientRealization
             }
 
             List<ITypeToken> ltR = new List<ITypeToken> { rt };
-            ITypeToken t2 = _formatFactory.FormatGenerator(_miniFactory).FormatFromListGenerate(ltL);
+            ITypeToken t2 = _formatFactory.FormatGenerator(_miniFactory).FromatFromTokenArray(ltL);
             commands_.Add(_commandFactory.CommandBuilder(_miniFactory, _formatFactory, ltR, t2));
 
             this._commandBuilder.BindBuilders(
-                commands_, _formatFactory.FormatGenerator(_miniFactory).FormatFromListGenerate(commands_,_miniFactory.EmptyString().Text)
+                commands_, _formatFactory.FormatGenerator(_miniFactory).FromatFromTokenArray(commands_,_miniFactory.EmptyString())
                 );
 
             return GetBuilder();
@@ -1299,9 +1338,15 @@ namespace OrientRealization
             return GetBuilder();
         }
 
-        public ICommandBuilder Create(ICommandBuilder param_ = null)
+        public ICommandBuilder Create(ITypeToken param_)
         {
-            ParametrizedCommand(_orientFactory.CreateToken(), param_);
+            List<ITypeToken> tokenList = new List<ITypeToken>();
+
+            tokenList.Add(_orientFactory.CreateToken());
+            tokenList.Add(_miniFactory.Gap());
+            tokenList.Add(param_);
+
+            ParametrizedCommand(tokenList, null);
             return GetBuilder();
         }
 
@@ -1310,10 +1355,13 @@ namespace OrientRealization
         /// </summary>
         /// <param name="param_">Command builder containining what to select </param>
         /// <returns></returns>
-        public ICommandBuilder Select(ICommandBuilder param_ = null)
+        public ICommandBuilder Select()
         {
+            List<ITypeToken> tokenList = new List<ITypeToken>();
 
-            ParametrizedCommand(_orientFactory.SelectToken(),param_);
+            tokenList.Add(_orientFactory.SelectToken());         
+
+            ParametrizedCommand(tokenList, null);
             return GetBuilder();
 
             /*
@@ -1353,13 +1401,21 @@ namespace OrientRealization
         }
         public ICommandBuilder From(ITypeToken param_ = null)
         {
-            ParametrizedCommand(_orientFactory.FromToken(), param_);
+            List<ITypeToken> tokenList = new List<ITypeToken>();
+            
+            tokenList.Add(_orientFactory.FromToken());
+            if (param_ != null) { tokenList.Add(param_); }
 
+            ParametrizedCommand(tokenList, null);
             return GetBuilder();
         }
         public ICommandBuilder Where(ICommandBuilder param_ = null)
         {
-            ParametrizedCommand(_orientFactory.WhereToken(), param_);
+            List<ITypeToken> tokenList = new List<ITypeToken>();
+
+            tokenList.Add(_orientFactory.WhereToken());
+
+            ParametrizedCommand(tokenList, null);
             return GetBuilder();
         }
 
@@ -1426,7 +1482,7 @@ namespace OrientRealization
             ITypeToken token = _miniFactory.NewToken();
             if (format == null)
             {
-                token = _formatGenerator.FormatFromListGenerate(tokenList_);
+                token = _formatGenerator.FromatFromTokenArray(tokenList_);
             }
             else { token = format; }
 
@@ -1441,7 +1497,7 @@ namespace OrientRealization
             ITypeToken token = _miniFactory.NewToken();
             if (format == null)
             {
-                token = _formatGenerator.FormatFromListGenerate(tokenList_);
+                token = _formatGenerator.FromatFromTokenArray(tokenList_);
             }
             else { token = format; }
 
@@ -1457,10 +1513,10 @@ namespace OrientRealization
             ITypeToken token = _miniFactory.NewToken();
             if (delimeter_ == null)
             {
-                token = _formatGenerator.FormatFromListGenerate(tokenList_);
+                token = _formatGenerator.FromatFromTokenArray(tokenList_);
             }
             else {
-                token = _formatGenerator.FormatFromListGenerate(tokenList_, delimeter_.Text);
+                token = _formatGenerator.FromatFromTokenArray(tokenList_, delimeter_);
             }
 
             this._commandBuilder.BindFormat(token);
@@ -1670,6 +1726,9 @@ namespace OrientRealization
         }
 
     }
+    
+    #endregion
+
 
     //<<<
     /// <summary>
