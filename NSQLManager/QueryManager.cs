@@ -100,6 +100,7 @@ namespace QueryManagers
 
         public IFormatFromListGenerator formatGenerator { get; set; }
         public IFormatFactory _formatFactory { get; set; }
+        public ITokenMiniFactory miniFactory { get; set; }
 
         public ITypeToken typeToken { get; set; }
         public ITypeToken Text { get; set; }
@@ -109,12 +110,14 @@ namespace QueryManagers
         public CommandBuilder(ITokenMiniFactory tokenFactory_,IFormatFactory formatFactory_)
         {
             this._formatFactory = formatFactory_;
+            this.miniFactory = tokenFactory_;
             formatGenerator = formatFactory_.FormatGenerator(tokenFactory_);
         }
         public CommandBuilder(ITokenMiniFactory tokenFactory_, IFormatFactory formatFactory_
             ,List<ITypeToken> tokens_, ITypeToken format_=null)
         {
             this._formatFactory = formatFactory_;
+            this.miniFactory = tokenFactory_;
             formatGenerator = formatFactory_.FormatGenerator(tokenFactory_);
             AddTokens(tokens_);
             AddFormat(format_);
@@ -124,7 +127,7 @@ namespace QueryManagers
         {
             List<ITypeToken> tokens_ = new List<ITypeToken>();
             tokens_.Add(token_);
-
+            this.miniFactory = tokenFactory_;
             this._formatFactory = formatFactory_;
             formatGenerator = formatFactory_.FormatGenerator(tokenFactory_);
             AddTokens(tokens_);
@@ -261,20 +264,18 @@ namespace QueryManagers
         }
         public string GetText()
         {
-            try
+            if (this.Text.Text != null)
             {
-                Build();
+                return this.Text.Text;
             }
-            catch (Exception e) { throw e; }
-
-            return this.Text.Text;
+            return null;
         }
-        public string Build()
+        public ICommandBuilder Build()
         {
             if (this.Tokens == null) { throw new Exception("No tokens"); }
             CheckFormat();
             SetText(this.Tokens, this.FormatPattern);
-            return this.Text.Text;
+            return this;
         }
         ///<summary>Defined NESTED, concatenates every command according to it format. 
         ///Results concatenated according to passed FormatPettern. 
@@ -312,7 +313,7 @@ namespace QueryManagers
         {
             BindTokens(tokens_);
             BindFormat(FormatPattern_);
-            return Build();
+            return Build().GetText();
         }
 
         public enum BuildTypeFormates { FULL, NESTED }
@@ -328,7 +329,7 @@ namespace QueryManagers
 
             List<ITypeToken> tempTokens = new List<ITypeToken>();
             List<ITypeToken> str = new List<ITypeToken>();
-            string newFromat = null;
+            ITypeToken newFromat = miniFactory.NewToken();
 
             foreach (ICommandBuilder tb in texts_)
             {
@@ -367,17 +368,17 @@ namespace QueryManagers
                         FormatPattern = formatGenerator.FromatFromTokenArray(str, null);
                     }
                     catch (Exception e) { }
+                    newFromat.Text = FormatStringReArrange(string.Format(this.FormatPattern.Text, arr));
                 //}             
             }
             else
             {
-                this.FormatPattern = FormatPattern_;
+                newFromat = FormatPattern_;
             }
             try
-            {
-                newFromat = FormatStringReArrange(string.Format(this.FormatPattern.Text, arr));
+            {               
                 this.Tokens = tempTokens;
-                this.FormatPattern.Text = newFromat;
+                this.FormatPattern = newFromat;
             }
             catch (Exception e) { }
             
@@ -648,31 +649,50 @@ namespace QueryManagers
         public ITypeToken FromatFromTokenArray(List<ICommandBuilder> builders_, ITypeToken delimeter_ = null)
         {
             ITypeToken res = _factory.NewToken();
+            this.elements_ = new List<int>(){};
             string result_ = null;
             delimeterCheck(delimeter_);
+
             if (builders_ != null)
             {
                 int i2 = 0;
-                this.elements_ = new List<int>(builders_.Where(s => s.Tokens != null).Count()) {  };
-                for (int i = 0; i < builders_.Count; i++)
+
+                foreach (ICommandBuilder cb_ in builders_)
                 {
-                    if (builders_[i].Tokens != null)
+                    if(cb_!=null)
                     {
-                        this.elements_.Add(i2);
-                        i2 += 1;
+                        if(cb_.Tokens!=null)
+                        {
+                            this.elements_.Add(i2);
+                            i2 += 1;
+                        }
                     }
-                }            
+                }               
+
+                //for (int i = 0; i < builders_.Count; i++)
+                //{
+                //    if (builders_[i].Tokens != null)
+                //    {
+                //        this.elements_.Add(i2);
+                //        i2 += 1;
+                //    }
+                //}
             }
+
             result_=formatFromArray();
 
             List<ITypeToken> formats_ = new List<ITypeToken>();
             foreach(ICommandBuilder b in builders_)
             {
-                if (b.FormatPattern != null) { formats_.Add(b.FormatPattern); }
-                else {                   
-                    formats_.Add(
-                        FromatFromTokenArray(b.Tokens, (ITypeToken)null)
-                    );
+                if (b != null)
+                {
+                    if (b.FormatPattern != null) { formats_.Add(b.FormatPattern); }
+                    else
+                    {
+                        formats_.Add(
+                            FromatFromTokenArray(b.Tokens, (ITypeToken)null)
+                        );
+                    }
                 }
             }
 

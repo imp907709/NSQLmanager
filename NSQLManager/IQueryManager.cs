@@ -120,7 +120,7 @@ namespace IQueryManagers
 
         void BindBuilders(List<ICommandBuilder> texts_, ITypeToken FormatPattern_ = null);
 
-        string Build();
+        ICommandBuilder Build();
         string Build(List<ICommandBuilder> tokens_, ITypeToken FormatPattern_);
         string GetText();
         void SetText(List<ITypeToken> tokens_, ITypeToken FormatPattern_);

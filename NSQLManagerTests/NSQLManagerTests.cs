@@ -296,17 +296,39 @@ namespace NSQLManagerTests.Tests
 
         CommandsChain commandOne;
         CommandBuilder commandBuilder, commandBuilder_SelectFrom;
-        ITypeToken V, VSC;
+        ITypeToken V,VSC,Person;
+        List<ITypeToken> NGA;
+        
+        ICommandBuilder SelectNGAfromPerson;
+
+        TokenMiniFactory miniFactory;        
+        FormatFactory formatFactory;
+        CommandFactory commandFactory;
 
         public CommandTest()
         {
+
+            miniFactory = new TokenMiniFactory();
+            formatFactory = new FormatFactory();
+            commandFactory = new CommandFactory();           
+
             commandBuilder = new CommandBuilder(new TokenMiniFactory(), new FormatFactory());
             commandBuilder_SelectFrom = new CommandBuilder(new TokenMiniFactory(), new FormatFactory());
             commandBuilder_SelectFrom.AddTokens(new List<ITypeToken> { new TextToken() { Text = "Name,GUID" } });
             commandBuilder_SelectFrom.AddFormat(new TextToken() { Text = "{0}" });
 
-            V = new TextToken() { Text = "V" };
-            VSC = new TextToken() { Text = "VSC" };
+            V = miniFactory.NewToken("V");
+            VSC = miniFactory.NewToken("VSC");
+            Person = miniFactory.NewToken("Person");
+            NGA = new List<ITypeToken>() {
+                miniFactory.NewToken("Name"),miniFactory.NewToken("GUID"),miniFactory.NewToken("Acc")
+            };
+            SelectNGAfromPerson=commandFactory.CommandBuilder(miniFactory
+                , formatFactory
+                , NGA
+                , formatFactory.FormatGenerator(miniFactory)
+                    .FromatFromTokenArray(NGA, miniFactory.Coma())
+            );
 
             this.commandOne = CommandInit();
         }
@@ -484,14 +506,14 @@ namespace NSQLManagerTests.Tests
         [Fact]
         public void CommandSelectFromCheck()
         {
-            string result = CommandInit().Select().From().GetBuilder().GetText();
-            Assert.Equal("Select from ", result);
+            string result = CommandInit().From().Select().GetBuilder().GetText();
+            Assert.Equal("Select  from ", result);
         }
         [Fact]
         public void CommandSelectFromParamCheck()
         {
-            string result = CommandInit().Select().From().GetBuilder().GetText();
-            Assert.Equal("Select from ", result);
+            string result = CommandInit().From(Person).Select(SelectNGAfromPerson).GetBuilder().GetText();
+            Assert.Equal("Select Name,GUID,Acc from Person", result);
         }
 
 
@@ -794,8 +816,7 @@ namespace NSQLManagerTests.Tests
         public void BodyBatchShemaCheck()
         {
             string result = Bodyshema.Batch(cb).GetText();
-            string expected = "{\"transaction\":TRUE,\"operations\":[{\"type\":\"script\",\"language\":\"sql\",\"script\":[ Create Class Property ]}]}";
-
+            string expected = "{\"transaction\":TRUE,\"operations\":[{\"type\":\"script\",\"language\":\"sql\",\"script\":[ Create Class Property ]}]}";            
             Assert.Equal(expected, result);
         }
     }
@@ -804,6 +825,10 @@ namespace NSQLManagerTests.Tests
         CommandShemasExplicit commandShemas;
         CommandBuilder commandBuilder, commandBuilder_SelectFrom;
         TokenMiniFactory tokenfactory;
+
+        List<ITypeToken>
+            selectNameGuidAccTokenListForBuiler
+            , selectNameGuidAccTokenList;
 
         public CommandShemaTest()
         {
@@ -820,6 +845,12 @@ namespace NSQLManagerTests.Tests
                 , new OrientQueryFactory()
                 );
 
+            selectNameGuidAccTokenListForBuiler = new List<ITypeToken>() {
+                new TextToken() { Text="Name"},new TextToken() { Text="GUID"},new TextToken() { Text="Acc"}};
+            selectNameGuidAccTokenList = new List<ITypeToken>() {
+                new TextToken() { Text="Name"},new TextToken() { Text=","}
+                ,new TextToken() { Text="GUID"},new TextToken() { Text=","}
+                ,new TextToken() { Text="Acc"}};
         }
 
         [Fact]
@@ -842,6 +873,7 @@ namespace NSQLManagerTests.Tests
             Assert.Equal("Select Name , GUID from where", select);
         }
 
+        #region Property 
         [Fact]
         public void ShemaPropertyCheck()
         {
@@ -888,11 +920,13 @@ namespace NSQLManagerTests.Tests
 
             Assert.Equal(@"(MANDATORY TRUE,NOTNULL TRUE)", res);
         }
+        #endregion
+
+        #region Nest
 
         [Fact]
-        public void ShemaNestCheck()
+        public void ShemaNestParamCheck()
         {           
-
             CommandBuilder commandBuilder = new CommandBuilder(new TokenMiniFactory(), new FormatFactory());
             commandBuilder.AddTokens(new List<ITypeToken>() { new TextToken() { Text = "Select from" } });
             commandBuilder.AddFormat(new TextToken() { Text = "{0}" });
@@ -901,7 +935,10 @@ namespace NSQLManagerTests.Tests
             this.commandShemas.Nest(commandBuilder, new OrientRoundBraketLeftToken(), new OrientRoundBraketRightToken(), new TextToken() { Text = string.Empty }).Text.Text;
 
             Assert.Equal("(Select from)", result);
-        }
+        }      
+
+        #endregion
+
         [Fact]
         public void ShemaExtendesCheck()
         {
@@ -909,31 +946,79 @@ namespace NSQLManagerTests.Tests
             string result = this.commandShemas.Extends(param).GetText();
             Assert.Equal("Extends Person ", result);
         }
-        [Fact]
-        public void ShemaCreateClassCheck()
-        {                       
 
-            string result = this.commandShemas.Create(new TextToken() { Text = "class" }).GetText();
-            Assert.Equal("Create class", result);
+
+
+        #region Vertex
+
+        [Fact]
+        public void ShemaVertexCheck()
+        {
+            string result = this.commandShemas.Vertex().GetText();
+            Assert.Equal(" Vertex", result);
         }
+        [Fact]
+        public void ShemaVertexParamCheck()
+        {
+            string result = this.commandShemas.Vertex(new TextToken() { Text = "Person" }).GetText();
+            Assert.Equal(" Vertex Person", result);
+        }
+
+        #endregion
+
+        #region Create
+
+        [Fact]
+        public void ShemaCreateCheck()
+        {
+            string result = this.commandShemas.Create().GetText();
+            Assert.Equal("Create ", result);
+        }
+        [Fact]
+        public void ShemaCreateParamCheck()
+        {                       
+            string result = this.commandShemas.Create(new TextToken() { Text = "class" }).GetText();
+            Assert.Equal("Create class ", result);
+        }
+
+        #endregion
+
+        #region Where
 
         [Fact]
         public void ShemaWhereCheck()
+        {          
+            string result = this.commandShemas.Where().GetText();
+            Assert.Equal(" where", result);
+        }
+        [Fact]
+        public void ShemaWhereWithParamsDoubleCheck()
         {        
             List<ITypeToken> tokenList = new List<ITypeToken>() {
                 new TextToken() { Text="1=1"},new TextToken() { Text="and"},new TextToken() { Text="2=2"}};
             this.commandBuilder.Build(tokenList, new FormatFromListGenerator(new TokenMiniFactory()).FromatFromTokenArray(tokenList, tokenfactory.Gap()));
             string result = this.commandShemas.Where(this.commandBuilder).GetText();
-            Assert.Equal("where 1=1 and 2=2", result);
+            Assert.Equal(" where 1=1 and 2=2", result);
         }
 
+        #endregion
+
+        #region From
         [Fact]
         public void ShemaFromCheck()
         {         
-            string result = this.commandShemas.From(new TextToken() { Text = "Person" }).GetText();
-            Assert.Equal("from Person ", result);
+            string result = this.commandShemas.From().GetText();
+            Assert.Equal(" from", result);
         }
+        [Fact]
+        public void ShemaFromParamCheck()
+        {
+            string result = this.commandShemas.From(new TextToken() { Text = "Person" }).GetText();
+            Assert.Equal(" from Person", result);
+        }
+        #endregion
 
+        #region Select
         [Fact]
         public void ShemaSelectCheck()
         {
@@ -943,18 +1028,19 @@ namespace NSQLManagerTests.Tests
         [Fact]
         public void ShemaSelectParametersCheck()
         {
-            string result = this.commandShemas.Select().GetText();
-            Assert.Equal("Select ", result);
+            string result = this.commandShemas.Select(selectNameGuidAccTokenList).GetText();
+            Assert.Equal("Select Name,GUID,Acc", result);
         }
         [Fact]
         public void ShemaSelectParametersTokenListCheck()
-        {
-            List<ITypeToken> tokenList = new List<ITypeToken>() {
-                new TextToken() { Text="Name"},new TextToken() { Text="GUID"},new TextToken() { Text="Acc"}};
-            this.commandBuilder.Build(tokenList, new FormatFromListGenerator(new TokenMiniFactory()).FromatFromTokenArray(tokenList, tokenfactory.Coma()));
-            string result = this.commandShemas.Select().GetText();
-            Assert.Equal("Select ", result);
+        {            
+            this.commandBuilder.Build(selectNameGuidAccTokenListForBuiler,
+                new FormatFromListGenerator(new TokenMiniFactory()).FromatFromTokenArray(selectNameGuidAccTokenListForBuiler, tokenfactory.Coma()));
+            string result = this.commandShemas.Select(this.commandBuilder).GetText();
+            Assert.Equal("Select Name,GUID,Acc ", result);
         }
+        #endregion
+
     }
 
     public class FormatGeneratorTest
