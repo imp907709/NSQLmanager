@@ -1858,11 +1858,12 @@ namespace OrientRealization
                         //:
                         typeToken.Add(this._QueryFactory.Colon());
                         
-                        //[
+                        //["
                         typeToken.Add(this._QueryFactory.LeftSqGap());
-    
-    //build left part of body with no gaps and add to builder list
-    commandBuilers.Add(BuildNew(typeToken, _miniFactory.EmptyString()));
+                        typeToken.Add(this._QueryFactory.Quotes());
+
+            //build left part of body with no gaps and add to builder list
+            commandBuilers.Add(BuildNew(typeToken, _miniFactory.EmptyString()));
 
             //build command preserving with command format pattern gaps and add to builder list
             commandBuilers.Add(
@@ -1871,7 +1872,8 @@ namespace OrientRealization
 
     typeToken = new List<ITypeToken>();
 
-            //]}]}
+            //"]}]}
+            typeToken.Add(this._QueryFactory.Quotes());
             typeToken.Add(this._QueryFactory.RightSqGap());
             typeToken.Add(this._QueryFactory.RightFgGap());
             typeToken.Add(this._QueryFactory.RightSqGap());            

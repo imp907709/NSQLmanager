@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Threading;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace WebManagers
 {
@@ -240,7 +241,8 @@ namespace WebManagers
 
         public void SetContent(string value)
         {
-            value.ToCharArray().CopyTo(_content, 0);
+            _content = Encoding.ASCII.GetBytes(value);
+           
         }
         void bindContent()
         {
@@ -250,9 +252,12 @@ namespace WebManagers
             {
                 try
                 {
+
+                    this._request.ContentType = "application/json";
+                    this._request.ContentLength = _content.Length;
                     using (Stream str = this._request.GetRequestStream())
                     {
-                        str.WriteAsync(_content, 0, _content.Length);
+                        str.Write(_content, 0, _content.Length);
                     }
                 }
                 catch (Exception e) { }
@@ -398,12 +403,19 @@ namespace WebManagers
             CheckReq();
             SetBase64AuthHeader();
             SetMethod(method);            
-            bindTimeout();            
+            bindTimeout();                
             SwapMethod(method);
 
             try
-            {            
+            {               
                 return (HttpWebResponse)this._request.GetResponse();
+            }
+            catch(WebException e)
+            {
+                var resp = new StreamReader(e.Response.GetResponseStream()).ReadToEnd();
+                var obj = JsonConvert.DeserializeObject(resp);
+                
+                throw e;
             }
             catch (Exception e)
             {

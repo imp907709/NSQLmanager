@@ -19,6 +19,9 @@ using OrientRealization;
 using Repos;
 using UOWs;
 
+using System.Net;
+using System.Text;
+
 namespace NSQLManager
 {
 
@@ -92,7 +95,8 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
 
 
         public void GO()
-        {            
+        {
+            checkReq();
 
             TrackBirthdaysPtP();
             DeleteBirthdays();
@@ -106,6 +110,35 @@ new MainAssignment() { Name = "0", GUID = "0", Changed = new DateTime(2017, 01, 
             DeleteCheck();
             ExplicitCommandsCheck();
             BirthdayConditionAdd();
+        }
+
+        public void checkReq()
+        {
+
+            WebRequest request = WebRequest.Create("http://localhost:2480/batch/test_db");
+
+            request.Headers.Add(HttpRequestHeader.Authorization, "Basic " + System.Convert.ToBase64String(
+              Encoding.ASCII.GetBytes("root:root")
+              ));
+
+            string stringData = "{\"transaction\":true,\"operations\":[   {\"type\":\"script\",\"language\":\"sql\",\"script\":[   \"Create Vertex Person content {\"Name\":\"0\",\"GUID\":\"1\",\"Created\":\"2017-01-01 00:00:00\",\"Changed\":\"2017-01-01 00:00:00\"}\"   ]}]}"; //place body here
+            var data = Encoding.ASCII.GetBytes(stringData); // or UTF8
+
+            request.Method = "POST";
+            request.ContentType = ""; //place MIME type here
+            request.ContentLength = data.Length;
+
+            var newStream = request.GetRequestStream();
+            newStream.Write(data, 0, data.Length);
+            newStream.Close();
+           
+
+            try
+            {
+                var a = (HttpWebResponse)request.GetResponse();
+            }
+            catch (Exception e) { }
+
         }
 
         public void APItester_sngltnCheck()
