@@ -249,14 +249,10 @@ namespace NSQLManagerTests.Tests
                 ,Name= "0"
             };
 
-            //serializing Person POCO object to json string
             string content_ = jsonManage.SerializeObject(p_);
-            //creating one item token list from content string
             List< ITypeToken> content = new List<ITypeToken> { _miniFactory.NewToken(content_) };
-            //creating person class token (later implement via type converter)
             ITypeToken person = _miniFactory.NewToken("Person");
 
-            //building class create command for batch or script
             ICommandBuilder contentBody = _commandFactory
                 .CommandBuilder(_miniFactory, _formatFactory, content, _miniFactory.NewToken("{0}")).Build();
 
@@ -281,26 +277,18 @@ namespace NSQLManagerTests.Tests
             }
             catch (Exception e) { }
 
-            //create Person object insert command body for command or batch
             ICommandBuilder commandBody=commandOne.Create().Vertex(person).Content(contentBody)
                 .GetBuilder().Build();
 
-            _bodyShema.AddHost(hostToken);
-
-            //create command body string for command or batch request body
             string commandBodyStr = _bodyShema.Batch(commandBody).Build().GetText();
-            //build orient command url string
             string urlStr = _urlShemas.Command(dbName).Build().GetText();
 
             urlCommand = _urlShemas.Command(dbName).GetText();
+            webRequestManager.SwapRequestsURL(urlCommand);
+            webRequestManager.SetContent(commandBodyStr);
 
-            //webRequestManager.SetContent(commandBodyStr);
-            string stringData = "{\"transaction\":true,\"operations\":[   {\"type\":\"script\",\"language\":\"sql\",\"script\":[   \"Create Vertex Person content {\"Name\":\"0\",\"GUID\":\"1\",\"Created\":\"2017-01-01 00:00:00\",\"Changed\":\"2017-01-01 00:00:00\"}\"   ]}]}";
-            webRequestManager.SetContent(stringData);
-            webRequestManager.SwapRequestsURL(urlCommand);            
-            
             try
-            {
+            {                
                 webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
             }
             catch (Exception e) { }
@@ -335,13 +323,9 @@ namespace NSQLManagerTests.Tests
 
             //Create DB
             //get response of POST method 
-            try
-            {
-                createDb = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
-            }
-            catch (Exception e) { }
-
-          
+            createDb = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+      
+            Assert.NotNull(createDb);
 
             //
             List<ITypeToken> tokens_ = new List<ITypeToken>() {
@@ -353,14 +337,7 @@ namespace NSQLManagerTests.Tests
 
             //delete DB
             //get response of DELETE method 
-            //get response of DELETE method 
-            try
-            {
-                dropDb = webResponseReader.ReadResponse(webRequestManager.GetResponse64("DELETE"));
-            }
-            catch (Exception e) { }
-
-            Assert.NotNull(createDb);
+            string dropDb = webResponseReader.ReadResponse(webRequestManager.GetResponse64("DELETE"));
             Assert.Equal(string.Empty, dropDb);
         }
 
@@ -1085,7 +1062,7 @@ namespace NSQLManagerTests.Tests
 
             Bodyshema = new BodyShemas(commandFactory, formatFactory,tokenFactory,queryFactory);
             Bodyshema.AddHost(new TextToken() { Text = ConfigurationManager.AppSettings["ParentHost"] });
-            testDBname = ConfigurationManager.AppSettings["TestDbname"];
+            testDBname = ConfigurationManager.AppSettings["testDbname"];
         }
         [Fact]
         public void BodyCommandShemaCheck()
@@ -1099,7 +1076,7 @@ namespace NSQLManagerTests.Tests
         public void BodyBatchShemaCheck()
         {
             string result = Bodyshema.Batch(cb).GetText();
-            string expected = "{\"transaction\":TRUE,\"operations\":[{\"type\":\"script\",\"language\":\"sql\",\"script\":[\" Create Class Property \"]}]}";            
+            string expected = "{\"transaction\":TRUE,\"operations\":[{\"type\":\"script\",\"language\":\"sql\",\"script\":[ Create Class Property ]}]}";            
             Assert.Equal(expected, result);
         }
     }
