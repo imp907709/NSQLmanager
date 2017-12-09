@@ -195,7 +195,8 @@ namespace NSQLManagerTests.Tests
         ITypeToken hostToken;
 
     
-        string orientAuth, createDb, dropDb,databaseName;
+        string orientAuth, databaseName,
+            createClassResult,propertyStrResult, propertyBoolResult,insertVertexResult, createDbResult, dropDbResult;
      
         public IntegrationCombatTest()
         {            
@@ -238,9 +239,16 @@ namespace NSQLManagerTests.Tests
             databaseName = ConfigurationManager.AppSettings["TestDBname"];
         }
 
-        [Fact]
-        public void IntegrationCombatCreateDatabaseCombat()
+        public CommandsChain getChain()
         {
+            return new CommandsChain(_miniFactory, _orientQueryFactory, _formatFactory, _commandFactory);
+        }
+
+        [Fact]
+        public void IntegrationCombatCreateDbPropVertDropDb()
+        {
+
+            ITypeToken dbName = new TextToken() { Text = databaseName };
 
             Person p_ = new Person() {
                 Changed = new DateTime(2017, 01, 01, 00, 00, 00)
@@ -248,18 +256,21 @@ namespace NSQLManagerTests.Tests
                 ,GUID = "1"
                 ,Name= "0"
             };
+            
 
-            string content_ = jsonManage.SerializeObject(p_);
-            List< ITypeToken> content = new List<ITypeToken> { _miniFactory.NewToken(content_) };
-            ITypeToken person = _miniFactory.NewToken("Person");
-
-            ICommandBuilder contentBody = _commandFactory
-                .CommandBuilder(_miniFactory, _formatFactory, content, _miniFactory.NewToken("{0}")).Build();
-
-            ITypeToken dbName = new TextToken() {Text = databaseName};
-
-            //binding host from dbname to shema builder
+            //binding host from dbname to body shema builder
+            _bodyShema.AddHost(hostToken);
+            //binding host from dbname to url shema builder
             _urlShemas.AddHost(hostToken);
+
+            string personObjectContent = jsonManage.SerializeObject(p_);
+            List< ITypeToken> personObjectContentToken = new List<ITypeToken> { _miniFactory.NewToken(personObjectContent) };
+            ITypeToken personToken = _miniFactory.NewToken("Person");
+            ITypeToken vToken = _miniFactory.NewToken("V");
+            ITypeToken propertyStrToken = _miniFactory.NewToken("TestPropStr");
+            ITypeToken propertyBoolToken = _miniFactory.NewToken("TestPropBool");
+
+            //Create DB
             //creating Orient REST API url for db creation from db name, using shemas
             string urlCommand = _urlShemas.Database(dbName).GetText();
             //bind request to Webmanager
@@ -267,41 +278,104 @@ namespace NSQLManagerTests.Tests
             //bind credentials to request
             webRequestManager.SetCredentials(nc);
             //build and bind authentication header from passed credentials
-            webRequestManager.SetBase64AuthHeader(orientAuth);
-
-            //Create DB
+            webRequestManager.SetBase64AuthHeader(orientAuth);           
             //get response of POST method 
             try
             {
-                createDb = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
-            }
-            catch (Exception e) { }
+                createDbResult=webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+            }catch (Exception e) { }
 
-            ICommandBuilder commandBody=commandOne.Create().Vertex(person).Content(contentBody)
+
+            //Create class
+            ICommandBuilder commandBody = commandOne.Create().Class(personToken).Extends(vToken)
                 .GetBuilder().Build();
-
-            string commandBodyStr = _bodyShema.Batch(commandBody).Build().GetText();
+            string requestBody = _bodyShema.Command(commandBody).Build().GetText();
             string urlStr = _urlShemas.Command(dbName).Build().GetText();
-
             urlCommand = _urlShemas.Command(dbName).GetText();
             webRequestManager.SwapRequestsURL(urlCommand);
-            webRequestManager.SetContent(commandBodyStr);
-
+            webRequestManager.SetContent(requestBody);
             try
-            {                
-                webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+            {
+                createClassResult=webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+            }catch (Exception e) { }
+
+
+            //Add property str
+            ICommandBuilder addPropertyBody = 
+            getChain().Create().Property(personToken, propertyStrToken, _orientBodyFactory.StringToken(), _orientBodyFactory.False(), _orientBodyFactory.False())
+                .GetBuilder().Build();
+
+            requestBody = _bodyShema.Command(addPropertyBody).Build().GetText();
+            urlStr = _urlShemas.Command(dbName).Build().GetText();
+            urlCommand = _urlShemas.Command(dbName).GetText();
+            webRequestManager.SwapRequestsURL(urlCommand);
+            webRequestManager.SetContent(requestBody);
+            try
+            {
+                propertyStrResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
             }
             catch (Exception e) { }
 
-            //delete DB
-            //get response of DELETE method 
-            try { 
-                dropDb = webResponseReader.ReadResponse(webRequestManager.GetResponse64("DELETE"));
-            }
-            catch (Exception e) { }
 
-            Assert.NotNull(createDb);
-            Assert.Equal(string.Empty,dropDb);
+            //Add property bool
+            ICommandBuilder addPropertyStrBody =
+            getChain().Create().Property(personToken
+            , propertyBoolToken
+            ,_orientBodyFactory.BooleanToken()
+            , _orientBodyFactory.False()
+            , _orientBodyFactory.False())
+                .GetBuilder().Build();
+
+            requestBody = _bodyShema.Command(addPropertyStrBody).Build().GetText();
+            urlStr = _urlShemas.Command(dbName).Build().GetText();
+            urlCommand = _urlShemas.Command(dbName).GetText();
+            webRequestManager.SwapRequestsURL(urlCommand);
+            webRequestManager.SetContent(requestBody);
+            try
+            {
+                propertyBoolResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+            }catch (Exception e) { }
+
+
+            //Insert vertex
+            ICommandBuilder contentBody = _commandFactory
+               .CommandBuilder(_miniFactory, _formatFactory, personObjectContentToken, _miniFactory.NewToken("{0}")).Build();
+            ICommandBuilder insertVertexBody= getChain().Create().Vertex(personToken).Content(contentBody)
+                .GetBuilder().Build();
+
+            requestBody = _bodyShema.Batch(insertVertexBody).Build().GetText();
+            urlStr = _urlShemas.Command(dbName).Build().GetText();
+            urlCommand = _urlShemas.Batch(dbName).GetText();
+            webRequestManager.SwapRequestsURL(urlCommand);
+            webRequestManager.SetContent(requestBody);
+            try
+            {
+                insertVertexResult=webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+            }catch (Exception e) { }
+
+
+            //delete DB 
+            urlCommand = _urlShemas.Database(dbName).GetText();
+            //bind request to Webmanager
+            webRequestManager.AddRequest(urlCommand);
+            //bind credentials to request
+            webRequestManager.SetCredentials(nc);
+            //build and bind authentication header from passed credentials
+            webRequestManager.SetBase64AuthHeader(orientAuth);
+            //get response of POST method 
+            try
+            {
+                dropDbResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("DELETE"));
+            }catch (Exception e) { }
+
+
+
+            Assert.NotNull(createDbResult);
+            Assert.NotNull(createClassResult);
+            Assert.NotNull(propertyStrResult);
+            Assert.NotNull(propertyBoolResult);
+            Assert.NotNull(insertVertexResult);
+            Assert.Equal(string.Empty, dropDbResult);
         }
 
         [Fact]
@@ -323,9 +397,9 @@ namespace NSQLManagerTests.Tests
 
             //Create DB
             //get response of POST method 
-            createDb = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+            createDbResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
       
-            Assert.NotNull(createDb);
+            Assert.NotNull(createDbResult);
 
             //
             List<ITypeToken> tokens_ = new List<ITypeToken>() {
@@ -1076,7 +1150,7 @@ namespace NSQLManagerTests.Tests
         public void BodyBatchShemaCheck()
         {
             string result = Bodyshema.Batch(cb).GetText();
-            string expected = "{\"transaction\":TRUE,\"operations\":[{\"type\":\"script\",\"language\":\"sql\",\"script\":[ Create Class Property ]}]}";            
+            string expected = "{\"transaction\":TRUE,\"operations\":[{\"type\":\"script\",\"language\":\"sql\",\"script\":[\" Create Class Property \"]}]}";
             Assert.Equal(expected, result);
         }
     }

@@ -347,9 +347,13 @@ namespace OrientRealization
     {
         public string Text {get; set;}="Id";
    }
-  
+
 
     //orient dateformats tokens
+    public class OrientBOOLEANToken : ITypeToken
+    {
+        public string Text { get; set; } = "BOOLEAN";
+    }
     public class OrientSTRINGToken : ITypeToken
     {
         public string Text {get; set;}="STRING";
@@ -526,7 +530,8 @@ namespace OrientRealization
             return new OrientNotNULLToken();
        }
 
-   }
+
+    }
     public class OrientBodyFactory : IOrientBodyFactory
     {
 
@@ -546,6 +551,10 @@ namespace OrientRealization
         {
             return new OrientTRUEToken();
        }
+        public ITypeToken False()
+        {
+            return new OrientFLASEToken();
+        }
         public ITypeToken Content()
         {
             return new OrientContentToken();
@@ -626,7 +635,17 @@ namespace OrientRealization
         {
             return new OrientBodyScriptToken();
        }
-   }    
+
+
+        public ITypeToken StringToken()
+        {
+            return new OrientSTRINGToken();
+        }
+        public ITypeToken BooleanToken()
+        {
+            return new OrientBOOLEANToken();
+        }
+    }    
 
     #endregion
 
@@ -2591,4 +2610,19 @@ namespace OrientRealization
 
     }
     
+
+
+
+    public interface IContext
+    {
+        IContext CreateDb(string name, string host);
+        void DeleteDb(string name, string host);
+        
+        IOrientClass CreateClass(ITypeToken class_, ITypeToken extends_);
+        IOrientProperty CreateProperty(ITypeToken class_,ITypeToken name_,ITypeToken type_,ITypeToken mandatory_, ITypeToken notnull_);
+        IOrientVertex CreateVertex(ITypeToken vertex_, ICommandBuilder content_=null);
+        IOrientEdge CreateEdge(ITypeToken edge_, ITypeToken fromID_, ITypeToken toID_);
+    }
+
+
 }

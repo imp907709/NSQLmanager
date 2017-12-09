@@ -29,7 +29,7 @@ namespace UOWs
     
     public class PersonUOW : IPersonUOW
     {
-        IRepo _repo;
+        IRepo_v1 _repo;
         OreintNewsTokenBuilder ob=new OreintNewsTokenBuilder();
         ITypeConverter _typeConverter;
         ICommandBuilder _CommandBuilder;

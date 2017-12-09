@@ -476,10 +476,10 @@ namespace WebManagers
             try
             {
                 result=new StreamReader(response.GetResponseStream()).ReadToEnd();
-           }
+            }
             catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
             return result;
-       }
+        }
         public string ReadResponse(HttpWebResponse response)
         {
             string result=string.Empty;
@@ -491,7 +491,7 @@ namespace WebManagers
 			}
             catch(Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
             return result;
-       }
+        }
         public string ReadResponse(HttpResponseMessage response)
         {
             string result=string.Empty;
@@ -499,7 +499,7 @@ namespace WebManagers
             Task<string> res=sm.ReadAsStringAsync();
             result=res.Result;
             return result;
-       }
+        }
         public string ReadResponse(Task<HttpResponseMessage> response)
         {
             string result=string.Empty;
@@ -508,11 +508,11 @@ namespace WebManagers
             {
                 st=response.Result.Content.ReadAsStringAsync();
                 result=st.Result;
-           }
+            }
             catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
 
             return result;
-       }
+        }
         public string ReadResponse(IHttpActionResult response)
         {
             string result  =null;
@@ -520,12 +520,12 @@ namespace WebManagers
             try
             {
                 result=mes.Result.Content.ReadAsStringAsync().Result;
-           }
+            }
             catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
             return result;
        }
 
-   }
+    }
 
     /// <summary>
     /// Wraps result in IhttpActionResult for ApiController return
@@ -539,7 +539,7 @@ namespace WebManagers
         {
             this._returnedTask=ar_;
             this._result=result_;
-       }
+        }
 
         async Task<HttpResponseMessage> IHttpActionResult.ExecuteAsync(CancellationToken cancellationToken)
         {
@@ -547,8 +547,8 @@ namespace WebManagers
             response.Content=new StringContent(_result, Encoding.UTF8, "text/plain");
 
             return await Task.FromResult(response);
-       }
-   }
+        }
+    }
 
     /// <summary>
     /// WEB scope deprecation posible (Only if several credentials to different hosts needed, several DBs? )
@@ -563,11 +563,11 @@ namespace WebManagers
         {
             credentialsCache=new CredentialCache();
             credentialsCache.Add(uri, type, new NetworkCredential(username, password));
-       }
+        }
         public NetworkCredential credentials(Uri uri_, string type_)
         {
             return credentialsCache.GetCredential(uri_, type_);
        }
-   }
+    }
 
 }

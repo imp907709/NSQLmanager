@@ -54,7 +54,8 @@ namespace IQueryManagers
         ITypeToken ToToken();
         ITypeToken VertexToken();
         ITypeToken WhereToken();
-   }
+
+    }
     public interface IOrientBodyFactory
     {
        
@@ -78,8 +79,13 @@ namespace IQueryManagers
         ITypeToken Sctipt();
         ITypeToken Transactions();
         ITypeToken True();
+        ITypeToken False();
         ITypeToken Type();
-   } 
+
+
+        ITypeToken StringToken();
+        ITypeToken BooleanToken();
+    } 
 
     public interface ICommandFactory
     {
