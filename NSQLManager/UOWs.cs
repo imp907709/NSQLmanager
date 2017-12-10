@@ -31,7 +31,7 @@ namespace UOWs
     {
         IRepo_v1 _repo;
         OreintNewsTokenBuilder ob=new OreintNewsTokenBuilder();
-        ITypeConverter _typeConverter;
+        ITypeTokenConverter _typeConverter;
         ICommandBuilder _CommandBuilder;
         IJsonManger _jsonManager;
         ITokenBuilder _tokenAggregator;
@@ -42,7 +42,7 @@ namespace UOWs
         {
             _jsonManager=new JSONManager();
             _tokenAggregator=new OrientTokenBuilder();
-            _typeConverter=new TypeConverter();
+            _typeConverter=new TypeTokenConverter();
             _CommandBuilder=new OrientCommandBuilder(new TokenMiniFactory(), new FormatFactory());
             wm=new OrientWebManager();
             wr=new WebResponseReader();

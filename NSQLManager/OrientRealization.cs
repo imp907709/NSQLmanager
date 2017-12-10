@@ -13,6 +13,10 @@ using IQueryManagers;
 using QueryManagers;
 using IOrientObjects;
 
+using IJsonManagers;
+using IWebManagers;
+using System.Reflection;
+
 using POCO;
 
 
@@ -427,13 +431,7 @@ namespace OrientRealization
         public string Text {get; set;}="result";
    }
     #endregion
-
-    #region Formats
-    public class PropertyItemFormat : ITypeToken
-    {
-        public string Text {get;set;}=@"{0} {1}{2}{3}";
-   }
-    #endregion
+   
 
     #region Factories
 
@@ -444,11 +442,7 @@ namespace OrientRealization
         {
             return new OrientCreateToken();
        }
-
-        public ITypeToken PropertyItemFormatToken()
-        {
-            return new PropertyItemFormat();
-       }
+      
 
         public ITypeToken SelectToken()
         {
@@ -1381,8 +1375,7 @@ namespace OrientRealization
            }
 
             ParametrizedCommand(tokenList, null);
-            return GetBuilder();
-            return GetBuilder();
+            return GetBuilder();           
        }
         public ICommandBuilder Class(ITypeToken param=null)
         {
@@ -1790,8 +1783,7 @@ namespace OrientRealization
        }    
 
         public ICommandBuilder Command(ICommandBuilder command_)
-        {
-            ChekHost();
+        {           
             List<ITypeToken> typeToken=new List<ITypeToken>();
             List<ICommandBuilder> commandBuilers=new List<ICommandBuilder>();
 
@@ -1820,7 +1812,7 @@ namespace OrientRealization
 
         public ICommandBuilder Batch(ICommandBuilder command_)
         {
-            ChekHost();
+       
             List<ITypeToken> typeToken=new List<ITypeToken>();
             List<ICommandBuilder> commandBuilers=new List<ICommandBuilder>();
             
@@ -2066,7 +2058,7 @@ namespace OrientRealization
 
     public class OreintNewsTokenBuilder
     {
-        TypeConverter typeConverter_=new TypeConverter();
+        TypeTokenConverter typeConverter_=new TypeTokenConverter();
 
         public List<ITypeToken> outEinVExp(ITypeToken command_, ITypeToken vertex_, ITypeToken edge_, ITypeToken condition_)
         {
@@ -2165,9 +2157,9 @@ namespace OrientRealization
     public class OrientCommandBuilderImplicit : ITokenBuilderTypeGen
     {
 
-        ITypeConverter _typeConverter;
+        ITypeTokenConverter _typeConverter;
 
-        public void BindConverter(ITypeConverter typecOnverter_)
+        public void BindConverter(ITypeTokenConverter typecOnverter_)
         {
             this._typeConverter=typecOnverter_;
        }
@@ -2545,14 +2537,13 @@ namespace OrientRealization
 	
     ///<summary>Converts from model poco classes types to ItypeToken types
     ///</summary>
-    public class TypeConverter : ITypeConverter
+    public class TypeTokenConverter : ITypeTokenConverter
     {
 
         Dictionary<Type, ITypeToken> types;
 
-        public TypeConverter()
+        public TypeTokenConverter()
         {
-
             types=new Dictionary<Type, ITypeToken>();
 
             types.Add(typeof(OrientVertex), new OrientVertexToken());
@@ -2607,22 +2598,89 @@ namespace OrientRealization
 
             return token_;
         }
+        public ITypeToken Get(string object_)
+        {
+            ITypeToken token_ = null;
+
+            token_ = Get(GegtypeFromAsm(object_));
+
+            return token_;
+        }
+        public ITypeToken GetBase(string object_)
+        {
+            ITypeToken token_ = null;
+            Type tp = object_.GetType().BaseType;
+            IOrientVertex t2 = (IOrientVertex)tp;
+
+            types.TryGetValue(object_.GetType().BaseType, out token_);
+
+            return token_;
+        }
+
+        public Type GegtypeFromAsm(string typeName_,string asm_=null)
+        {
+            Type result=null;
+
+            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();               
+            Type[] assemblyTypes = assembly.GetTypes();
+            if(asm_==null)
+            {
+                result = assemblyTypes.FirstOrDefault(s => s.Name == typeName_);
+            }
+            else {
+                result = assemblyTypes.FirstOrDefault(s => s.FullName.Contains(asm_) && s.Name == typeName_);
+            }                
+
+            return result;
+        }
+
+    }
+        
+
+    public class Manager : Imanager
+    {
+        ITypeTokenConverter _typeCOnverter;
+        IJsonManagers.IJsonManger _jsonmanager;
+        TokenMiniFactory _miniFactory;
+
+        UrlShemasExplicit _urlShema;
+        IWebManagers.IWebManager _webmanager;
+
+        public Manager
+        (ITypeTokenConverter typeCOnverter_,IJsonManagers.IJsonManger jsonmanager_,TokenMiniFactory miniFactory_,
+        UrlShemasExplicit urlShema_,
+        IWebManagers.IWebManager webmanager_)
+        {
+            this._typeCOnverter = typeCOnverter_;
+            this._jsonmanager = jsonmanager_;
+            this._miniFactory = miniFactory_;
+            this._urlShema = urlShema_;
+            this._webmanager = webmanager_;
+        }
+        public Imanager CreateDb(string name, string host) { return this; }
+        public void DeleteDb(string name, string host) { }
+
+    }
+
+    public interface Imanager
+    {       
+
+        Imanager CreateDb(string name, string host);
+        void DeleteDb(string name, string host);
+        
+        //IOrientClass CreateClass(string class_, string extends_);
+        //IOrientClass DeleteClass(string class_);
+
+        //IOrientProperty CreateProperty(ITypeToken class_,ITypeToken name_,ITypeToken type_,ITypeToken mandatory_, ITypeToken notnull_);
+
+        //IOrientVertex CreateVertex(ITypeToken vertex_, ICommandBuilder content_=null);
+        //IOrientVertex DeleteVertex(ITypeToken vertex_, ICommandBuilder condition_ = null);
+
+        //IOrientEdge CreateEdge(ITypeToken edge_, ITypeToken fromID_, ITypeToken toID_);
+        //IOrientEdge DeleteEdge(ITypeToken edge_, ITypeToken fromID_, ITypeToken toID_);
 
     }
     
-
-
-
-    public interface IContext
-    {
-        IContext CreateDb(string name, string host);
-        void DeleteDb(string name, string host);
-        
-        IOrientClass CreateClass(ITypeToken class_, ITypeToken extends_);
-        IOrientProperty CreateProperty(ITypeToken class_,ITypeToken name_,ITypeToken type_,ITypeToken mandatory_, ITypeToken notnull_);
-        IOrientVertex CreateVertex(ITypeToken vertex_, ICommandBuilder content_=null);
-        IOrientEdge CreateEdge(ITypeToken edge_, ITypeToken fromID_, ITypeToken toID_);
-    }
 
 
 }

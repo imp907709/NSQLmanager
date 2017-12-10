@@ -27,10 +27,13 @@ namespace NSQLManager
 
         static void Main(string[] args)
         {
-            Trash.FormatRearrange.StringsCheck();
+
+            //Trash.FormatRearrange.StringsCheck();
 
             RepoCheck rc=new RepoCheck();
-            rc.QuizCheck();
+            rc.AsmReflectionCheck();
+            //rc.QuizCheck();
+
        }
 
    }
@@ -40,7 +43,7 @@ namespace NSQLManager
 
         JSONManager jm;
         OrientTokenBuilder tb;
-        TypeConverter tc;
+        TypeTokenConverter tc;
         CommandBuilder ocb;
         OrientWebManager wm ;
         WebResponseReader wr;
@@ -62,7 +65,7 @@ namespace NSQLManager
             
             jm=new JSONManager();
             tb=new OrientTokenBuilder();
-            tc=new TypeConverter();
+            tc=new TypeTokenConverter();
             ocb=new OrientCommandBuilder(new TokenMiniFactory(), new FormatFactory());
             wm=new OrientWebManager();
             wr=new WebResponseReader();
@@ -109,11 +112,25 @@ new MainAssignment() {Name="0", GUID="0", Changed=new DateTime(2017, 01, 01, 00,
             BirthdayConditionAdd();
 
        }
+
+        public void AsmReflectionCheck()
+        {
+
+            TypeTokenConverter tc=new TypeTokenConverter();
+
+            var p=tc.GegtypeFromAsm("Person");
+            var p2 = tc.GegtypeFromAsm("Person","POCO");
+            var p3 = tc.Get("Person");
+
+            string personContent = "{\"Changed\": \"2017-10-19 18:00:09\", \"Created\": \"2015-02-02 12:43:56\", \"GUID\": \"2\", \"Name\": \"0\"}";
+            tc.GegtypeFromAsm("Person");
+
+        }
         public void QuizCheck()
         {
             Quizes.QuizRepo qr=new Quizes.QuizRepo();
             qr.Quiz();
-       }
+        }
         public void BatchBodyContentCheck()
         {
 
@@ -141,13 +158,13 @@ new MainAssignment() {Name="0", GUID="0", Changed=new DateTime(2017, 01, 01, 00,
            }
             catch (Exception e) {}
 
-       }    
+        }    
         public void APItester_sngltnCheck()
         {
             APItester_sngltn at=new APItester_sngltn();
             at.Initialize();
             at.GO();
-       }
+        }
         public void AddCheck()
         {
             int lim=10;
@@ -157,17 +174,17 @@ new MainAssignment() {Name="0", GUID="0", Changed=new DateTime(2017, 01, 01, 00,
                 lp.Add(jm.DeserializeFromParentNode<Person>(repo.Add(p), new RESULT().Text).Select(s => s.id.Replace(@"#","")).FirstOrDefault());
                 lu.Add(jm.DeserializeFromParentNode<Unit>(repo.Add(u), new RESULT().Text).Select(s=>s.id.Replace(@"#", "")).FirstOrDefault());
               
-           }
+            }
             for (int i=0; i <= lim/2; i++)
             {             
                 repo.Add(m, new TextToken() {Text=lu[i]}, new TextToken() {Text=lp[i + 1]});                
-           }
+            }
             for (int i=0; i <= lim / 2; i++)
             {
                 repo.Add(s, new TextToken() {Text=lu[i]}, new TextToken() {Text=lu[i + 1]});
-           }
+            }
            
-       }
+        }
         public void DeleteCheck()
         {
             string str;
@@ -175,13 +192,13 @@ new MainAssignment() {Name="0", GUID="0", Changed=new DateTime(2017, 01, 01, 00,
             str=repo.Delete(typeof(Unit), new TextToken() {Text=@"Name =0"});
             str=repo.Delete(typeof(MainAssignment), new TextToken() {Text=@"Name =0"});
             str=repo.Delete(typeof(SubUnit), new TextToken() {Text=@"Name =0"});
-       }
+        }
         public void ExplicitCommandsCheck()
         {
 
             OrientCommandBuilder cb=new OrientCommandBuilder(new TokenMiniFactory(), new FormatFactory());
             OrientTokenBuilderExplicit eb=new OrientTokenBuilderExplicit();
-            ITypeConverter tc=new TypeConverter();
+            ITypeTokenConverter tc=new TypeTokenConverter();
 
             List<IQueryManagers.ITypeToken> lt=new List<IQueryManagers.ITypeToken>();
             List<string> ls=new List<string>();
@@ -220,7 +237,7 @@ ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new T
 
 
 
-       }
+        }
         public void BirthdayConditionAdd()
         {
 
@@ -236,27 +253,27 @@ ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new T
             foreach(Person pers in PersList)
             {
                 persIds.Add(pers.id.Replace(@"#", ""));
-           }          
+            }          
 
             for (int i=0; i < persIds.Count(); i++)
             {
                 string id=jm.DeserializeFromParentNode<UserSettings>(repo.Add(us), new RESULT().Text).Select(s => s.id.Replace(@"#", "")).FirstOrDefault();
 
                 repo.Add(cs, new TextToken() {Text=persIds[i]}, new TextToken() {Text=id});
-           }
+            }
 
 
             repo.Delete(typeof(UserSettings), new TextToken() {Text=@"1 =1"});
             repo.Delete(typeof(CommonSettings), new TextToken() {Text=@"1 =1"});
 
-       }
+        }
         public void DbCreateDeleteCheck()
         {
 
             repo.Add(new TextToken() {Text="test_db"}, new DELETE());
             repo.Add(new TextToken() {Text="test_db"}, new POST());
 
-       }
+        }
         public void TrackBirthdaysOneToAll()
         {
             repo.changeAuthCredentials(
@@ -274,11 +291,11 @@ ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new T
             foreach (Person pt in personsTo)
             {
                 ids.Add(repo.Add(tb, fromPerson, pt));
-           }
+            }
 
             repo.Delete(typeof(TrackBirthdays), new TextToken() {Text= "1=1"} );
 
-       }
+        }
         public void TrackBirthdaysPtP()
         {
             repo.changeAuthCredentials(
@@ -302,9 +319,9 @@ ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new T
                     if (pf.GUID != pt.GUID)
                     {
                         ids.Add(pUOW.AddTrackBirthday(tb, pf.GUID, pt.GUID));
-                   }
-               }               
-           }
+                    }
+                }               
+            }
 
             personsfrom=pUOW.GetTrackedBirthday(personsTo.FirstOrDefault().GUID);
 
@@ -315,12 +332,12 @@ ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new T
                     if (pf.GUID != pt.GUID)
                     {
                         ids.Add(pUOW.DeleteTrackedBirthday(tb, pf.GUID, pt.GUID));
-                   }
-               }
-           }
+                    }
+                }
+            }
 
            
-       }
+        }
         public void DeleteBirthdays()
         {
             repo.changeAuthCredentials(
@@ -331,9 +348,9 @@ ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new T
             PersonUOW pUOW=new PersonUOW();
             TrackBirthdays tb=new TrackBirthdays();
 
-       }
+        }
 
-   }
+    }
     
 }
 

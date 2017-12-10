@@ -166,7 +166,7 @@ namespace NSQLManagerTests.Tests
 
     public class IntegrationCombatTest
     {
-        CommandsChain commandOne;
+     
 
         JSONManager jsonManage;
 
@@ -188,6 +188,8 @@ namespace NSQLManagerTests.Tests
 
         IOrientBodyFactory _orientBodyFactory;
         IOrientQueryFactory _orientQueryFactory;
+
+        CommandsChain commandOne;
 
         UrlShemasExplicit _urlShemas;
         CommandShemasExplicit _commandSchema;
@@ -249,6 +251,7 @@ namespace NSQLManagerTests.Tests
         {
 
             ITypeToken dbName = new TextToken() { Text = databaseName };
+            string personContent = "{\"Changed\": \"2017-10-19 18:00:09\", \"Created\": \"2015-02-02 12:43:56\", \"GUID\": \"2\", \"Name\": \"0\"}";
 
             Person p_ = new Person() {
                 Changed = new DateTime(2017, 01, 01, 00, 00, 00)
@@ -259,7 +262,7 @@ namespace NSQLManagerTests.Tests
             
 
             //binding host from dbname to body shema builder
-            _bodyShema.AddHost(hostToken);
+            //_bodyShema.AddHost(hostToken);
             //binding host from dbname to url shema builder
             _urlShemas.AddHost(hostToken);
 
@@ -2000,7 +2003,7 @@ namespace NSQLManagerTests.Tests
 
         }
 
-        public void AddActualUrls()
+        void AddActualUrls()
         {
 
             _CommandBuilder.SetText(

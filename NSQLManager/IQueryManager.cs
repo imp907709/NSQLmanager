@@ -45,7 +45,7 @@ namespace IQueryManagers
         ITypeToken LeftSquareBraket();
         ITypeToken Mandatory();
         ITypeToken NotNull();
-        ITypeToken PropertyItemFormatToken();
+       
         ITypeToken PropertyToken();
         ITypeToken PropertyTypeToken();
         ITypeToken RightRoundBraket();
@@ -135,14 +135,16 @@ namespace IQueryManagers
     /// <summary>
     /// Converts from Database and POCO classes to Tokens
     /// </summary>
-    public interface ITypeConverter
+    public interface ITypeTokenConverter
     {
         void Add(Type type_, ITypeToken token_);
         ITypeToken Get(IOrientObject object_);
         ITypeToken GetBase(IOrientObject object_);
         ITypeToken Get(Type type_);
         ITypeToken GetBase(Type type_);
-   }
+        ITypeToken Get(string object_);
+        ITypeToken GetBase(string object_);
+    }
 
     //<<< obsolette
     public interface ITokenBuilder

@@ -603,14 +603,12 @@ namespace QueryManagers
     public class FormatFromListGenerator : IFormatFromListGenerator
     {
         ITokenMiniFactory _factory;
-        string _result;
         string placeholder;
         List<int> elements_;
        
         public FormatFromListGenerator(ITokenMiniFactory factory)
         {
-            this._factory=factory;
-            _result="{}";                        
+            this._factory=factory;                               
             placeholder=@"} {";
         }
         void delimeterCheck(ITypeToken delimeter_=null)
