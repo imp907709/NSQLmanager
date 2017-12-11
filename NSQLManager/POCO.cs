@@ -34,7 +34,7 @@ namespace POCO
         public string name {get;set;}
 
    }
-    public class OrientVertex : IOrientVertex
+    public class V : IOrientVertex
     {
         public string type {get;set;}
         [JsonProperty("@rid")]
@@ -44,7 +44,7 @@ namespace POCO
 
         public string class_ {get; set;}
    }
-    public class OrientEdge : IOrientEdge
+    public class E : IOrientEdge
     {
         public string type {get; set;}
 
@@ -63,7 +63,7 @@ namespace POCO
     /// </summary>
 
     //Vertexes
-    public class Person : OrientVertex
+    public class Person : V
     {
 
         public long? Seed {get; set;}
@@ -100,7 +100,7 @@ namespace POCO
         public string @fieldTypes {get; set;}
 
    }
-    public class Unit : OrientVertex
+    public class Unit : V
     {
         public long? Seed {get; set;}
         public DateTime? Created {get; set;}
@@ -114,13 +114,13 @@ namespace POCO
         public string Name {get; set;}
 
    }
-    public class UserSettings : OrientVertex
+    public class UserSettings : V
     {
         public bool showBirthday {get; set;}
    }
 
     //Edges
-    public class MainAssignment : OrientEdge
+    public class MainAssignment : E
     {
         [JsonProperty("Name", Order=1)]
         public string Name {get; set;}
@@ -131,24 +131,24 @@ namespace POCO
         [JsonProperty("Changed", Order=4)]
         public DateTime? Changed {get; set;}
    }
-    public class OldMainAssignment : OrientEdge
+    public class OldMainAssignment : E
     {
 
    }
-    public class OutExtAssignment : OrientEdge
+    public class OutExtAssignment : E
     {
    }
-    public class SubUnit : OrientEdge
-    {
-
-   }
-    public class CommonSettings : OrientEdge
+    public class SubUnit : E
     {
 
    }
+    public class CommonSettings : E
+    {
+
+   }
 
 
-    public class TrackBirthdays : OrientEdge
+    public class TrackBirthdays : E
     {
 
    }
@@ -170,13 +170,13 @@ namespace POCO
     #endregion
 
     #region BreweryPOCOs
-    public class Brewery : OrientVertex
+    public class Brewery : V
     {
         string Name {get; set;}
         DateTime Created {get; set;}
         string Changed {get; set;}
    }
-    public class Beer : OrientVertex
+    public class Beer : V
     {       
         string Sort {get; set;}
         DateTime Created {get; set;}
@@ -186,7 +186,7 @@ namespace POCO
 
     #region Quiz
 
-    public class QuizGet : OrientVertex
+    public class QuizGet : V
     {
         [JsonProperty("Author")]
         public string Author {get; set;}=null;

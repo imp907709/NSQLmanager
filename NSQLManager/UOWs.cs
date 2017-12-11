@@ -42,7 +42,7 @@ namespace UOWs
         {
             _jsonManager=new JSONManager();
             _tokenAggregator=new OrientTokenBuilder();
-            _typeConverter=new TypeTokenConverter();
+            _typeConverter=new TypeConverter();
             _CommandBuilder=new OrientCommandBuilder(new TokenMiniFactory(), new FormatFactory());
             wm=new OrientWebManager();
             wr=new WebResponseReader();
@@ -109,7 +109,7 @@ namespace UOWs
             return result;
        }
 
-        public string AddTrackBirthday(OrientEdge edge_, string guidFrom, string guidTo)
+        public string AddTrackBirthday(E edge_, string guidFrom, string guidTo)
         {
             string result=null;
             Person from=GetObjByGUID(guidFrom).FirstOrDefault();
@@ -121,7 +121,7 @@ namespace UOWs
            }
             return result;
        }
-        public string DeleteTrackedBirthday(OrientEdge edge_, string guidFrom, string guidTo)
+        public string DeleteTrackedBirthday(E edge_, string guidFrom, string guidTo)
         {
             string result=null;
             Person from=GetObjByGUID(guidFrom).FirstOrDefault();
@@ -156,7 +156,7 @@ namespace AdinTce
     {
 
         IQueryManagers.ICommandBuilder _CommandBuilder;
-        IWebManagers.IWebManager _webManager;
+        IWebManagers.IWebRequestManager _webManager;
         IWebManagers.IResponseReader _responseReader;
         IJsonManagers.IJsonManger _jsonManager;
 
@@ -165,8 +165,8 @@ namespace AdinTce
         AdinTceExplicitTokenBuilder tokenBuilder;
 
         AdinTcePOCO adp=new AdinTcePOCO();
-        IEnumerable<Holiday> holidays=null;
-        IEnumerable<Vacation> vacations=null;
+        List<Holiday> holidays=null;
+        List<Vacation> vacations=null;
         IEnumerable<GraphRead> graphs=null;
         IEnumerable<GUIDPOCO> guidpocos=null;
 
@@ -175,7 +175,7 @@ namespace AdinTce
 
         public AdinTceRepo(
             IQueryManagers.ICommandBuilder CommandBuilder_,
-            IWebManagers.IWebManager webManager_,
+            IWebManagers.IWebRequestManager webManager_,
             IWebManagers.IResponseReader responseReader_,
             IJsonManagers.IJsonManger jsonManager_)
         {
@@ -230,30 +230,48 @@ namespace AdinTce
             if (adp==null)
             {
                 adp=new AdinTcePOCO();
-           }
+            }
 
             if (guidpocos==null)
             {
                 guidpocos=_jsonManager.DeserializeFromParentNode<GUIDPOCO>(holidaysResp);
-           }
+            }
             if (holidays==null)
             {
-                holidays=_jsonManager.DeserializeFromParentChildren<Holiday>(holidaysResp, "Holidays");
-           }
+
+                IEnumerable<List<AdinTce.Holiday>> hl = _jsonManager.DeserializeFromParentChildren<List<Holiday>>(holidaysResp, "Holidays");
+                holidays = new List<Holiday>();
+                foreach (List<Holiday> lt_ in hl)
+                {                   
+                    holidays.AddRange(lt_);                                      
+                }
+                
+            }
+            if (vacations == null)
+            {
+
+                IEnumerable<List<AdinTce.Vacation>> hl = _jsonManager.DeserializeFromParentChildren<List<Vacation>>(vacationsResp, "Holidays");
+                vacations = new List<Vacation>();
+                foreach (List<Vacation> lt_ in hl)
+                {
+                    vacations.AddRange(lt_);
+                }
+
+            }
             if (adp.GUID_==null)
             {
                 adp.GUID_=guidpocos.Select(s => s).FirstOrDefault().GUID_;
-           }
+            }
             if (adp.holidays==null)
             {
                 adp.Position=guidpocos.Select(s => s).FirstOrDefault().Position;
-           }
+            }
 
-       }
+        }
         void GetResp()
         {
             Parallel.Invoke(new Action[] {HolidaysResp, VacationsResp, GraphResp});
-       }
+        }
         private async Task<string> Request(string command_)
         {
             _webManager.AddRequest(command_);
@@ -263,7 +281,7 @@ namespace AdinTce
                 );
             await task_;
             return task_.Result;
-       }
+        }
         void ParseResponseTry()
         {
 
@@ -273,9 +291,9 @@ namespace AdinTce
                 try
                 {
                     adp.holidays=holidays.ToList();
-               }
+                }
                 catch (Exception e) {}
-           }
+            }
 
             if (vacationsResp != null && vacationsResp != string.Empty)
             {
@@ -283,9 +301,9 @@ namespace AdinTce
                 try
                 {
                     adp.vacations=vacations.ToList();
-               }
+                }
                 catch (Exception e) {}
-           }
+            }
 
             if (graphResp != null && graphResp != string.Empty)
             {
@@ -295,10 +313,10 @@ namespace AdinTce
                 {
                     graphs=_jsonManager.DeserializeFromParentChildren<GraphRead>(graphResp, "Holidays");
                     adp.Graphs=GrapthReadToWriteDateCheck(graphs.ToList());
-               }
+                }
                 catch (Exception e) {}
-           }
-       }
+            }
+        }
         public List<GraphWrite> GrapthReadToWriteDateCheck(List<GraphRead> ghl_)
         {
             List<GraphWrite> gw=new List<GraphWrite>();
@@ -313,9 +331,9 @@ namespace AdinTce
 
                 gw.Add(gfw);
 
-           }
+            }
             return gw;
-       }
+        }
 
         void HolidaysResp()
         {
@@ -325,7 +343,7 @@ namespace AdinTce
             webManagerAc.AddRequest(holidayCommand);
             holidaysResp=_responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
 
-       }
+        }
         void VacationsResp()
         {
             AdinTceWebManager webManagerAc=new AdinTceWebManager();
@@ -334,7 +352,7 @@ namespace AdinTce
             webManagerAc.AddRequest(vacationCommand);
             vacationsResp=_responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
 
-       }
+        }
         void GraphResp()
         {
             AdinTceWebManager webManagerAc=new AdinTceWebManager();
@@ -342,9 +360,9 @@ namespace AdinTce
              ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
             webManagerAc.AddRequest(graphCommand);
             graphResp=_responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
-       }
+        }
 
-   }
+    }
 
     #endregion
 
@@ -357,21 +375,21 @@ namespace AdinTce
             List<IQueryManagers.ITypeToken> result=new List<IQueryManagers.ITypeToken>()
             {new AdinTceURLToken(), new AdinTceHolidatyToken(), new AdinTcePartToken(), GUID};
             return result;
-       }
+        }
         public List<IQueryManagers.ITypeToken> VacationsCommand(IQueryManagers.ITypeToken GUID)
         {
             List<IQueryManagers.ITypeToken> result=new List<IQueryManagers.ITypeToken>()
             {new AdinTceURLToken(), new AdinTceVacationToken(), new AdinTcePartToken(), GUID};
             return result;
-       }
+        }
 
         public List<IQueryManagers.ITypeToken> GraphCommand(IQueryManagers.ITypeToken GUID)
         {
             List<IQueryManagers.ITypeToken> result=new List<IQueryManagers.ITypeToken>()
             {new AdinTceURLToken(), new AdinTceGraphToken(), new AdinTcePartToken(), GUID};
             return result;
-       }
-   }
+        }
+    }
 
     #region AdinTceTokens
 
@@ -552,7 +570,7 @@ namespace Quizes
     public class QuizRepo
     {
 
-        IWebManager wm;
+        //IWebManager wm;
         IResponseReader wr;
         IJsonManger jm;
         string orientHost, orientDbName;
@@ -560,7 +578,7 @@ namespace Quizes
         public QuizRepo()
         {
             string nonConfigDb="Intranet";
-            wm=new WebManager();
+            //wm=new WebManager();
             wr=new WebResponseReader();
             jm=new JSONManager();
 

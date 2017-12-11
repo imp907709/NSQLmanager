@@ -15,9 +15,15 @@ using IQueryManagers;
 using OrientRealization;
 using Repos;
 using UOWs;
+using POCO;
 
 using System.Net;
 using System.Text;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Converters;
+using System.Reflection;
 
 namespace NSQLManager
 {
@@ -27,23 +33,21 @@ namespace NSQLManager
 
         static void Main(string[] args)
         {
-
-            //Trash.FormatRearrange.StringsCheck();
+            Trash.FormatRearrange.StringsCheck();
 
             RepoCheck rc=new RepoCheck();
-            rc.AsmReflectionCheck();
-            //rc.QuizCheck();
+            
+            rc.ManagerCheck();
+        }
 
-       }
-
-   }
+    }
 
     public class RepoCheck
     {
 
         JSONManager jm;
         OrientTokenBuilder tb;
-        TypeTokenConverter tc;
+        TypeConverter tc;
         CommandBuilder ocb;
         OrientWebManager wm ;
         WebResponseReader wr;
@@ -65,7 +69,7 @@ namespace NSQLManager
             
             jm=new JSONManager();
             tb=new OrientTokenBuilder();
-            tc=new TypeTokenConverter();
+            tc=new TypeConverter();
             ocb=new OrientCommandBuilder(new TokenMiniFactory(), new FormatFactory());
             wm=new OrientWebManager();
             wr=new WebResponseReader();
@@ -95,7 +99,7 @@ new MainAssignment() {Name="0", GUID="0", Changed=new DateTime(2017, 01, 01, 00,
 
 
         void GO()
-        {
+        {            
 
             BatchBodyContentCheck();
 
@@ -105,25 +109,109 @@ new MainAssignment() {Name="0", GUID="0", Changed=new DateTime(2017, 01, 01, 00,
             AddCheck();
             APItester_sngltnCheck();
                         
-            TrackBirthdaysOneToAll();          
+            TrackBirthdaysOneToAll();
             
             DeleteCheck();
             ExplicitCommandsCheck();
             BirthdayConditionAdd();
 
-       }
+        }
 
-        public void AsmReflectionCheck()
+        public void PropCheck()
+        {
+            propSearch<Person>(new Person() { Seed = 123  });
+
+        }
+        public void propSearch<T>(T item)
+        {
+            var pc = item.GetType().GetProperties();
+            var pc2 = typeof(T).GetProperties();
+     
+            foreach (PropertyInfo ps in pc)
+            {
+                MethodInfo[] mi = ps.GetAccessors(true);
+                Type pt = ps.PropertyType.GetType();
+                Type t = ps.PropertyType;
+                TypeInfo ti = ps.PropertyType.GetTypeInfo();
+                Type ptt = item.GetType().GetProperty(ps.Name).GetType();
+                var a = typeof(T).GetProperty(ps.Name).GetValue(item).GetType();
+                Type tt = a.GetType();
+            }
+        }
+        public void ManagerCheck()
         {
 
-            TypeTokenConverter tc=new TypeTokenConverter();
+            string login = ConfigurationManager.AppSettings["orient_login"];
+            string password = ConfigurationManager.AppSettings["orient_pswd"];
+            string dbHost = string.Format("{0}:{1}" 
+                ,ConfigurationManager.AppSettings["ParentHost"]
+                , ConfigurationManager.AppSettings["ParentPort"]);
+            string dbName = ConfigurationManager.AppSettings["TestDBname"];
 
-            var p=tc.GegtypeFromAsm("Person");
-            var p2 = tc.GegtypeFromAsm("Person","POCO");
-            var p3 = tc.Get("Person");
+            TypeConverter tc = new TypeConverter();
+            JsonManagers.JSONManager jm = new JSONManager();
+            TokenMiniFactory tf = new TokenMiniFactory();
+            UrlShemasExplicit us = new UrlShemasExplicit(
+                new CommandBuilder(tf,new FormatFactory()) 
+                ,new FormatFromListGenerator(new TokenMiniFactory())
+                , tf, new OrientBodyFactory());
 
-            string personContent = "{\"Changed\": \"2017-10-19 18:00:09\", \"Created\": \"2015-02-02 12:43:56\", \"GUID\": \"2\", \"Name\": \"0\"}";
-            tc.GegtypeFromAsm("Person");
+            BodyShemas bs = new BodyShemas(new CommandFactory(),new FormatFactory(),new TokenMiniFactory(),
+                new OrientBodyFactory());
+
+            us.AddHost(dbHost);
+            WebResponseReader wr = new WebResponseReader();
+            WebRequestManager wm = new WebRequestManager();
+            wm.SetCredentials(new NetworkCredential(login,password));
+            CommandFactory cf = new CommandFactory();
+            FormatFactory ff = new FormatFactory();
+            OrientQueryFactory oqf = new OrientQueryFactory();
+            OrientCLRconverter pc = new OrientCLRconverter();
+
+            Manager mng = new Manager(tc,jm,tf,us, bs, wm,wr,cf,ff,oqf,pc);
+
+            
+            //db delete
+            mng.DeleteDb(dbName, dbHost);
+
+            //db crete
+            mng.CreateDb(dbName,dbHost);
+
+            //create class
+            mng.CreateClass<Unit>(u, typeof(V), dbName);
+            mng.CreateClass("Person","V", dbName);
+            
+
+            //create property
+            mng.CreateProperty<Person>(p,null);
+            mng.CreateProperty("Unit", "Name", typeof(string), false, false);
+
+            //add vertex
+            mng.CreateVertex<Person>(p, dbName);
+            mng.CreateVertex("Unit", "{\"Name\":\"TestName\"}",null);
+
+            mng.Select(
+                mng.NewChain().From(new TextToken() { Text = "Person" }).Select(), null
+            );
+
+            mng.SelectB(
+               mng.NewChain().From(new TextToken() { Text = "Person" }).Select(), null
+           );
+
+            //db delete
+            mng.DeleteDb(dbName, dbHost);
+
+        }
+
+        public void JsonManagerCheck()
+        {
+            string holidaysResp =
+"{ \"GUID\": \"542ceb48-8454-11e4-acb0-00c2c66d13b0\", \"Holidays\": [{ \"Position\": \"Главный специалист\", \"Holidays\": [{ \"LeaveType\": \"Основной\", \"Days\": 13 }] }, { \"Position\": \"Ведущий специалист\", \"Holidays\": [{ \"LeaveType\": \"Основной\", \"Days\": 13 }] }] } ";
+            string hs =
+"[ { \"GUID\": \"542ceb48-8454-11e4-acb0-00c2c66d13b0\", \"Position\": \"Главный специалист\", \"Holidays\": [ { \"LeaveType\": \"Основной\", \"Days\": 13 } ] }, { \"GUID\": \"542ceb48-8454-11e4-acb0-00c2c66d13b0\", \"Position\": \"Ведущий специалист\", \"Holidays\": [ { \"LeaveType\": \"Основной\", \"Days\": 0 } ] } ] ";
+            JSONManager jm = new JSONManager();
+
+            IEnumerable<List<AdinTce.Holiday>> a = jm.DeserializeFromParentChildren<List<AdinTce.Holiday>>(hs, "Holidays");
 
         }
         public void QuizCheck()
@@ -155,7 +243,7 @@ new MainAssignment() {Name="0", GUID="0", Changed=new DateTime(2017, 01, 01, 00,
             try
             {
                 var a=(HttpWebResponse)request.GetResponse();
-           }
+            }
             catch (Exception e) {}
 
         }    
@@ -172,8 +260,7 @@ new MainAssignment() {Name="0", GUID="0", Changed=new DateTime(2017, 01, 01, 00,
             for (int i=0; i <= lim; i++)
             {
                 lp.Add(jm.DeserializeFromParentNode<Person>(repo.Add(p), new RESULT().Text).Select(s => s.id.Replace(@"#","")).FirstOrDefault());
-                lu.Add(jm.DeserializeFromParentNode<Unit>(repo.Add(u), new RESULT().Text).Select(s=>s.id.Replace(@"#", "")).FirstOrDefault());
-              
+                lu.Add(jm.DeserializeFromParentNode<Unit>(repo.Add(u), new RESULT().Text).Select(s=>s.id.Replace(@"#", "")).FirstOrDefault());              
             }
             for (int i=0; i <= lim/2; i++)
             {             
@@ -183,7 +270,7 @@ new MainAssignment() {Name="0", GUID="0", Changed=new DateTime(2017, 01, 01, 00,
             {
                 repo.Add(s, new TextToken() {Text=lu[i]}, new TextToken() {Text=lu[i + 1]});
             }
-           
+
         }
         public void DeleteCheck()
         {
@@ -198,7 +285,7 @@ new MainAssignment() {Name="0", GUID="0", Changed=new DateTime(2017, 01, 01, 00,
 
             OrientCommandBuilder cb=new OrientCommandBuilder(new TokenMiniFactory(), new FormatFactory());
             OrientTokenBuilderExplicit eb=new OrientTokenBuilderExplicit();
-            ITypeTokenConverter tc=new TypeTokenConverter();
+            ITypeTokenConverter tc=new TypeConverter();
 
             List<IQueryManagers.ITypeToken> lt=new List<IQueryManagers.ITypeToken>();
             List<string> ls=new List<string>();
@@ -349,8 +436,8 @@ ls.Add(new CommandBuilder(new TokenMiniFactory(), new FormatFactory(), lt, new T
             TrackBirthdays tb=new TrackBirthdays();
 
         }
-
+ 
     }
-    
+
 }
 

@@ -669,7 +669,7 @@ namespace Trash
 
         JSONManager jm;
         OrientTokenBuilder ta;
-        TypeTokenConverter tc;
+        TypeConverter tc;
         CommandBuilder ocb;
         OrientWebManager wm;
         WebResponseReader wr;
@@ -692,7 +692,7 @@ namespace Trash
             pUOW=new PersonUOW();
             jm=new JSONManager();
             ta=new OrientTokenBuilder();
-            tc=new TypeTokenConverter();
+            tc=new TypeConverter();
             ocb=new OrientCommandBuilder(new TokenMiniFactory(), new FormatFactory());
             wm=new OrientWebManager();
             wr=new WebResponseReader();
