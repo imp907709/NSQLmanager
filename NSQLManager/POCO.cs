@@ -19,21 +19,21 @@ namespace POCO
    public class OrientDatabase : IOrientDatabase
     {
 
-   }
+    }
     public class OrientClass : IOrientClass
     {
         public string type {get;set;}
 
         public string name {get;set;}
        
-   }
+    }
     public class OrientProperty : IOrientProperty
     {
         public string type {get;set;}
 
         public string name {get;set;}
 
-   }
+    }
     public class V : IOrientVertex
     {
         public string type {get;set;}
@@ -43,7 +43,7 @@ namespace POCO
         public string version {get;set;}
 
         public string class_ {get; set;}
-   }
+    }
     public class E : IOrientEdge
     {
         public string type {get; set;}
@@ -56,23 +56,23 @@ namespace POCO
 
         public string In {get; set;}
         public string Out {get; set;}
-   }
+    }
 
     /// <summary>
     /// Orient Objects
     /// </summary>
 
-    //Vertexes
+    //Vertexes      
     public class Person : V
     {
 
         public long? Seed {get; set;}
         [JsonProperty("Created", Order=3)]
-        public DateTime? Created {get; set;}
+        public DateTime? Created {get; set;} = DateTime.Now;
         [JsonProperty("GUID", Order=2)]
         public string GUID {get; set;}
-        [JsonProperty("Changed", Order=4)]
-        public DateTime? Changed {get; set;}
+        [JsonProperty("Changed", Order = 4)]
+        public DateTime? Changed { get; set; } = DateTime.Now;
         public string FirstName {get; set;}
         public string LastName {get; set;}
         public string MiddleName {get; set;}
@@ -99,7 +99,7 @@ namespace POCO
         [JsonProperty("fieldTypes")]
         public string @fieldTypes {get; set;}
 
-   }
+    }
     public class Unit : V
     {
         public long? Seed {get; set;}
@@ -113,11 +113,11 @@ namespace POCO
         public string Hash {get; set;}
         public string Name {get; set;}
 
-   }
+    }
     public class UserSettings : V
     {
         public bool showBirthday {get; set;}
-   }
+    }
 
     //Edges
     public class MainAssignment : E
@@ -130,28 +130,28 @@ namespace POCO
         public DateTime? Created {get; set;}
         [JsonProperty("Changed", Order=4)]
         public DateTime? Changed {get; set;}
-   }
+    }
     public class OldMainAssignment : E
     {
 
-   }
+    }
     public class OutExtAssignment : E
     {
-   }
+    }
     public class SubUnit : E
     {
 
-   }
+    }
     public class CommonSettings : E
     {
 
-   }
+    }
 
 
     public class TrackBirthdays : E
     {
 
-   }
+    }
 
     /*
     CREATE class UserSettings extends V;
@@ -159,13 +159,38 @@ namespace POCO
     CREATE CLASS CommonSettings EXTENDS E;
     */
 
+    //Note
+    public class Note : V
+    {
+        string somethingNew { get; set; }
+        string Name { get; set; }
+        string name { get; set; }
+        string Content { get; set; }
+    }
+    public class Comment : E
+    {
+        DateTime? When { get; set; }
+    }
+    public class Authorship : E
+    {
+        string strField { get; set; }
+    }
+    public class Like : E
+    {
+        int cnt { get; set; }
+    }
+    public class Tag : E
+    {
+        string tagText{ get; set; }
+    }
+
     //for spagetty check
     public class MigrateCollection
     {
         public string @rid {get; set;}
         public string @class {get; set;}
         public string GUID {get; set;}
-   }
+    }
 
     #endregion
 
@@ -175,13 +200,13 @@ namespace POCO
         string Name {get; set;}
         DateTime Created {get; set;}
         string Changed {get; set;}
-   }
+    }
     public class Beer : V
     {       
         string Sort {get; set;}
         DateTime Created {get; set;}
         string Changed {get; set;}
-   }
+    }
     #endregion
 
     #region Quiz
@@ -199,7 +224,7 @@ namespace POCO
         [JsonProperty("EndDate"), JsonConverter(typeof(YDMminus))]
         public DateTime EndDate {get; set;}=DateTime.Now;
         
-   }
+    }
     public class QuizSend
     {      
         public string title {get; set;}=null;       
@@ -208,12 +233,12 @@ namespace POCO
         public int? id {get; set;}=500;
         [JsonProperty("parentid")]
         public int? parentid {get; set;}=50;
-   }
+    }
     public class QuizHrefNode
     {
         public string link {get; set;}=null;
         public string target {get; set;}="_self";
-   }
+    }
     
     #endregion
 
@@ -226,7 +251,7 @@ namespace POCO
         {
             DateTimeFormat="dd.MM.yyyy";
        }
-   }
+    }
 
     class MonthDayYearDateNoDotsConverter : IsoDateTimeConverter
     {
@@ -234,7 +259,7 @@ namespace POCO
         {
             DateTimeFormat="yyyyMMdd";
        }
-   }
+    }
 
     class YDMminus : IsoDateTimeConverter
     {
@@ -242,7 +267,7 @@ namespace POCO
         {
             DateTimeFormat="yyyy-MM-dd hh:mm:ss";
        }
-   }
+    }
     #endregion
 
 }

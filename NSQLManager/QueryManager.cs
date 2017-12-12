@@ -228,7 +228,7 @@ namespace QueryManagers
             }
             //<<< change
             else {
-                if (formatPatern_ != null) {
+                if (formatPatern_ != null && formatPatern_.Text != string.Empty) {
                     this.FormatPattern=formatPatern_;                   
                }else
                 {

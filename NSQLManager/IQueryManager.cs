@@ -37,6 +37,7 @@ namespace IQueryManagers
         ITypeToken ClassToken();
         ITypeToken ContentToken();
         ITypeToken CreateToken();
+        ITypeToken DeleteToken();
         ITypeToken EdgeToken();
         ITypeToken Equals();
         ITypeToken ExtendsToken();

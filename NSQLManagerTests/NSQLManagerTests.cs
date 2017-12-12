@@ -440,6 +440,7 @@ namespace NSQLManagerTests.Tests
        }
 
     }
+    
 
     public class OrientWebManagerIntegrationTests
     {
