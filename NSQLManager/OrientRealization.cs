@@ -371,8 +371,12 @@ namespace OrientRealization
     {
         public string Text {get; set;}="DATETIME";
    }
+    public class OrientIntToken : ITypeToken
+    {
+        public string Text { get; set; } = "INTEGER";
+    }
 
-        
+    
     //orient Class tokens
     public class OrientPersonToken : ITypeToken
     {
@@ -418,7 +422,43 @@ namespace OrientRealization
     {
         public string Text {get; set;}=ConfigurationManager.AppSettings["TestDBname"];
    }
-
+    public class OrientNoteToken : ITypeToken
+    {
+        public string Text { get; set; } = "Note";
+    }
+    public class OrientAuthorshipToken : ITypeToken
+    {
+        public string Text { get; set; } = "Authorship";
+    }    
+    public class OrientCommentToken : ITypeToken
+    {
+        public string Text { get; set; } = "Comment";
+    }
+    public class OrientLikeToken : ITypeToken
+    {
+        public string Text { get; set; } = "Like";
+    }
+    public class OrientTaggedToken : ITypeToken
+    {
+        public string Text { get; set; } = "Tagged";
+    }
+    public class OrientTagToken : ITypeToken
+    {
+        public string Text { get; set; } = "Tag";
+    }
+    public class OrientObjectScToken : ITypeToken
+    {
+        public string Text { get; set; } = "Object_SC";
+    }
+    
+    public class UOWDeletedToken : ITypeToken
+    {
+        public string Text { get; set; } = "Deleted";
+    }
+    public class UOWCreatedToken : ITypeToken
+    {
+        public string Text { get; set; } = "Created";
+    }
     ///<summary>
     ///Web response reader Tokens
     /// </summary>
@@ -762,10 +802,10 @@ namespace OrientRealization
             {
                 this._commands.Add(this._commandBuilder);
             }
-            this._commands.Add(_commandShemas.Where());
+        
             if (param != null)
             {
-                this._commands.Add(param);
+                this._commands.Add(_commandShemas.Where(param));      
             }
             this._commandBuilder.BindBuilders(this._commands, this._formatGenerator.FromatFromTokenArray(this._commands, _tokenMiniFactory.Gap()));
             return this;
@@ -965,7 +1005,7 @@ namespace OrientRealization
             return this;
         }
 
-        public CommandsChain Delete(ITypeToken param_=null)
+        public CommandsChain Delete(ITypeToken param_ = null)
         {
             this._commands = new List<ICommandBuilder>();
 
@@ -973,10 +1013,13 @@ namespace OrientRealization
             {
                 this._commands.Add(this._commandBuilder);
             }
+
             if (param_ != null && param_.Text != null)
             {
                 this._commands.Add(_commandShemas.Delete(param_));
             }
+            else {this._commands.Add(_commandShemas.Delete());}
+
             this._commandBuilder.BindBuilders(this._commands
                 , this._formatGenerator.FromatFromTokenArray(this._commands, _tokenMiniFactory.EmptyString()));
             this._commandBuilder.Build();
@@ -1691,17 +1734,17 @@ namespace OrientRealization
         {
             List<ITypeToken> tokens_=new List<ITypeToken>();
             List<ICommandBuilder> builders_=new List<ICommandBuilder>();
-          
-            tokens_.Add(_miniFactory.Gap());
-            tokens_.Add(_orientFactory.WhereToken());        
-
-            builders_.Add(
-            _commandFactory.CommandBuilder(_miniFactory, _formatFactory
-                , tokens_, _formatGenerator.FromatFromTokenArray(tokens_, _miniFactory.EmptyString()))
-                );
 
             if (param_ != null)
             {
+                tokens_.Add(_miniFactory.Gap());
+                tokens_.Add(_orientFactory.WhereToken());
+
+                builders_.Add(
+                _commandFactory.CommandBuilder(_miniFactory, _formatFactory
+                    , tokens_, _formatGenerator.FromatFromTokenArray(tokens_, _miniFactory.EmptyString()))
+                    );
+
                 tokens_.Clear();
                 tokens_.Add(_miniFactory.Gap());
                 builders_.Add(
@@ -1737,7 +1780,6 @@ namespace OrientRealization
             List<ITypeToken> tokens_ = new List<ITypeToken>();
                         
             tokens_.Add(_orientFactory.DeleteToken());
-            tokens_.Add(_miniFactory.Gap());
 
             if (param_ != null)
             {
@@ -2750,6 +2792,14 @@ namespace OrientRealization
             types.Add(typeof(CommonSettings), new OrientCommonSettingsToken());
             
             types.Add(typeof(TrackBirthdays), new OrientTrackBirthdaysToken());
+
+            types.Add(typeof(Note), new OrientNoteToken());
+            types.Add(typeof(Authorship), new OrientAuthorshipToken());
+            types.Add(typeof(Comment), new OrientCommentToken());
+            types.Add(typeof(Like), new OrientLikeToken());
+            types.Add(typeof(Tag), new OrientTagToken());
+            types.Add(typeof(Tagged), new OrientTaggedToken());
+            types.Add(typeof(Object_SC), new OrientObjectScToken());
         }
         public void Add(Type type_, ITypeToken token_)
         {
@@ -2758,7 +2808,6 @@ namespace OrientRealization
         public ITypeToken Get(Type type_)
         {
             ITypeToken token_=null;
-
             types.TryGetValue(type_, out token_);
 
             return token_;
@@ -2842,6 +2891,8 @@ namespace OrientRealization
             types.Add(typeof(String), new OrientSTRINGToken());
             types.Add(typeof(bool), new OrientBOOLEANToken());
             types.Add(typeof(DateTime), new OrientDATETIMEToken());
+            types.Add(typeof(Int64), new OrientIntToken());
+            types.Add(typeof(Int32), new OrientIntToken());
         }
         public ITypeToken Get(Type type_)
         {
@@ -2859,13 +2910,17 @@ namespace OrientRealization
 
     }
 
+    
     /// <summary>
     /// Manager for generating,sending, parsing commands to Orient db.
     /// </summary>
     public class Manager : IManager
     {
+        ICommandBuilder commandBody = null;
+        ITypeToken result_;
+        string response_;
 
-        string result_, dbName, requestBody, urlStr;        
+        string dbName, requestBody, urlStr;        
 
         ITypeTokenConverter _typeConverter;
         IPropertyConverter _propertyConverter;
@@ -2915,7 +2970,48 @@ namespace OrientRealization
             }
             else { this.dbName = dbName_; }          
         }
-        
+
+        void BindCommandBody()
+        {
+            if (this.commandBody != null)
+            {
+                this.requestBody = _bodyShema.Command(this.commandBody).Build().GetText();
+            }
+        }
+        void BindBatchBody()
+        {
+            if (this.commandBody != null)
+            {
+                this.requestBody = _bodyShema.Batch(this.commandBody).Build().GetText();
+            }
+        }
+        void BindCommandUrl()
+        {            
+            this.urlStr = _urlShema.Command(_miniFactory.NewToken(this.dbName)).Build().GetText();
+        }
+        void BindBatchUrl()
+        {
+            this.urlStr = _urlShema.Batch(_miniFactory.NewToken(this.dbName)).Build().GetText();
+        }
+
+        void BindWebRequest()
+        {
+            _webmanager.SwapRequestsURL(this.urlStr);
+            if (this.commandBody != null)
+            {
+                _webmanager.SetContent(requestBody);
+            }
+        }
+        void ReadResponseStr(string method_,ITypeToken passed_=null)
+        {
+            response_= _webResponseReader.ReadResponse(_webmanager.GetResponse64(method_));
+
+            if (this.response_ != null && this.response_ != string.Empty)
+            {
+                this.result_ = passed_;
+            }
+        }
+
         public PropertyInfo[] Props<T>() where T:IOrientObject
         {
             PropertyInfo[] psc = typeof(T).GetType().GetProperties();
@@ -2945,19 +3041,19 @@ namespace OrientRealization
 
         public string GetResult()
         {
-            return this.result_;
+            return this.result_.Text;
         }
 
         public IManager CreateDb(string name, string host) {
             
             _webmanager.AddRequest(_urlShema.Database(_miniFactory.NewToken(name)).GetText());
             try
-            {
-                result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
-                if (result_ != null && result_ != string.Empty)
+            {             
+                ReadResponseStr("POST");
+                if (this.response_ != null)
                 {
                     dbName = name;
-                    result_ = "Created";
+                    this.result_ = _miniFactory.Created();
                 }
             }
             catch (Exception e) { }
@@ -2968,10 +3064,12 @@ namespace OrientRealization
             _webmanager.AddRequest(_urlShema.Database(_miniFactory.NewToken(name)).GetText());
             try
             {
-                result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("DELETE"));
-                if (result_ != null )
+                ReadResponseStr("DELETE");
+
+                if (this.response_ != null)
                 {
-                    result_ = "Deleted";
+                    dbName = name;
+                    this.result_ = _miniFactory.Deleted();
                 }
             }
             catch (Exception e) { }
@@ -2979,14 +3077,16 @@ namespace OrientRealization
             return this;
         }
       
-        public IManager Delete<T>(T item,string condition_=null) 
+        public IManager Delete<T>(T item=null,string condition_=null,string dbName_=null) 
             where T:class, IOrientEntity
         {
-
-            ICommandBuilder commandBody=null;
-            ITypeToken token_=_typeConverter.GetBase(typeof(T));
+                        
+            ITypeToken token_=_typeConverter.Get(typeof(T));
             List<ITypeToken> tt = null;
             ICommandBuilder where_ = null;
+            Type baseType=typeof(T).BaseType;
+
+            CheckDb(dbName_);
 
             if (condition_ != null)
             {
@@ -2994,7 +3094,10 @@ namespace OrientRealization
             }
             else
             {
-                tt=new List<ITypeToken>() { _miniFactory.NewToken("@rid="+ item.id) };
+                if (item != null)
+                {
+                    tt=new List<ITypeToken>() { _miniFactory.NewToken("@rid=" + item.id) };
+                }
             }
  
             if (tt != null)
@@ -3002,29 +3105,109 @@ namespace OrientRealization
                 where_ =
                    _commandFactory.CommandBuilder(_miniFactory, _formatFactory, tt, _miniFactory.EmptyString()).Build();
             }
+      
 
-            if (typeof(T)is IOrientVertex)
+            if (baseType == typeof(V))
             {
-                commandBody = NewChain().Delete().Vertex(token_).Where(where_)
+                this.commandBody = NewChain().Delete().Vertex(token_).Where(where_)
                     .GetBuilder().Build();
             }
-            if (typeof(T) is IOrientEdge)
+            if (baseType == typeof(E))
             {
-                commandBody = NewChain().Delete().Edge(token_).Where(where_)
+                this.commandBody = NewChain().Delete().Edge(token_).Where(where_)
                     .GetBuilder().Build();
             }
 
-            requestBody = _bodyShema.Command(commandBody).Build().GetText();
-            urlStr = _urlShema.Command(_miniFactory.NewToken(this.dbName)).Build().GetText();
+            BindBatchBody();
+            BindBatchUrl();
+            BindWebRequest();
+            ReadResponseStr("POST", _miniFactory.Deleted());
+                         
+            return this;
+        }     
+        public IManager DeleteEdge<T>(string from, string to, string condition_ = null, string dbName_=null) where T : E
+        {
+           
+            ITypeToken relTypeToken_ = _typeConverter.Get(typeof(T));
+            List<ITypeToken> tt = null;
+            ICommandBuilder where_ = null;
+            Type baseType = typeof(T).BaseType;
+            ITypeToken fromID = _miniFactory.NewToken(from);
+            ITypeToken toID = _miniFactory.NewToken(to);
+            CheckDb(dbName_);
 
-            _webmanager.SwapRequestsURL(urlStr);
-            _webmanager.SetContent(requestBody);
-
-            result_=_webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
-            if (result_ != null)
+            if (condition_ != null)
             {
-                this.result_ = "Deleted";
+                tt = new List<ITypeToken>() { _miniFactory.NewToken(condition_) };
             }
+            if (tt != null)
+            {
+                where_ =
+                   _commandFactory.CommandBuilder(_miniFactory, _formatFactory, tt, _miniFactory.EmptyString()).Build();
+            }
+            if (baseType == typeof(E))
+            {
+                commandBody = NewChain().Delete().Edge(relTypeToken_).FromV(fromID).ToV(toID).Where(where_)
+                    .GetBuilder().Build();
+            }
+
+            BindCommandUrl();
+            BindCommandBody();
+            BindWebRequest();
+            ReadResponseStr("POST", _miniFactory.Deleted());
+
+            return this;
+        }
+        public IManager DeleteEdge<T,K,C>(K from,C to,string condition_=null,string dbName_=null)
+            where T:E where K:V where C:V
+        {
+           
+          
+            ITypeToken relTypeToken_ = _typeConverter.Get(typeof(T));
+            List<ITypeToken> tt = null;
+            ICommandBuilder where_ = null;
+            Type baseType = typeof(T).BaseType;
+            ITypeToken fromID = null;
+            ITypeToken toID = null;
+
+            if (from != null)
+            {
+                fromID = _miniFactory.NewToken(from.id);
+            }
+            if (to != null)
+            {
+                toID = _miniFactory.NewToken(to.id);
+            }
+
+            CheckDb(dbName_);
+
+            if (condition_ != null)
+            {
+                tt = new List<ITypeToken>() { _miniFactory.NewToken(condition_) };
+            }
+            if (tt != null)
+            {
+                where_ =
+                   _commandFactory.CommandBuilder(_miniFactory, _formatFactory, tt, _miniFactory.EmptyString()).Build();
+            }
+
+            if (baseType == typeof(E))
+            {
+                if (from != null && to != null)
+                {
+                    this.commandBody=NewChain().Delete().Edge(relTypeToken_).FromV(fromID).ToV(toID).Where(where_)
+                        .GetBuilder().Build();
+                }else{
+                    this.commandBody=NewChain().Delete().Edge(relTypeToken_).Where(where_)
+                        .GetBuilder().Build();
+                }
+            }
+
+            BindCommandUrl();
+            BindCommandBody();
+            BindWebRequest();
+            ReadResponseStr("POST", _miniFactory.Deleted());
+           
             return this;
         }
 
@@ -3035,18 +3218,16 @@ namespace OrientRealization
 
             if (clTk!=null && extTk!=null && clTk.Text!=string.Empty && extTk.Text!=null)
             {
-                ICommandBuilder commandBody=NewChain().Create().Class(clTk).Extends(extTk)
+                this.commandBody = NewChain().Create().Class(clTk).Extends(extTk)
                     .GetBuilder().Build();
 
                 CheckDb(dbName_);
-               
-                requestBody = _bodyShema.Command(commandBody).Build().GetText();
-                urlStr = _urlShema.Command(_miniFactory.NewToken(this.dbName)).Build().GetText();
 
-                _webmanager.SwapRequestsURL(urlStr);
-                _webmanager.SetContent(requestBody);
-
-                result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));             
+                BindCommandUrl();
+                BindCommandBody();
+                BindWebRequest();
+                ReadResponseStr("POST", _miniFactory.Created());
+                
             }
             return this;
         }
@@ -3058,30 +3239,30 @@ namespace OrientRealization
 
             if (clTk != null && extTk != null && clTk.Text != string.Empty && extTk.Text != null)
             {
-                ICommandBuilder commandBody = NewChain().Create().Class(clTk).Extends(extTk)
-                    .GetBuilder().Build();
-               
+                this.commandBody = NewChain().Create().Class(clTk).Extends(extTk)
+                    .GetBuilder().Build();               
 
                 CheckDb(dbName_);
 
-                requestBody = _bodyShema.Command(commandBody).Build().GetText();
-                urlStr = _urlShema.Command(_miniFactory.NewToken(this.dbName)).Build().GetText();
+                BindCommandUrl();
+                BindCommandBody();
+                BindWebRequest();                
+                ReadResponseStr("POST", _miniFactory.Created());
 
-                _webmanager.SwapRequestsURL(urlStr);
-                _webmanager.SetContent(requestBody);
-
-                try
+                if (this.response_ != null && this.response_ != string.Empty)
                 {
-                    result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
-                    ret_ = clTk.GetType();
+                    try
+                    {
+                        ret_ = clTk.GetType();
+                    }
+                    catch (Exception e) { }
                 }
-                catch (Exception e) { }
+                
             }
 
             return ret_;
         }
-
-
+    
         public IManager CreateProperty(string class_, string property_, Type type_,bool mandatory_,bool notnull_, string dbName_ = null)
         {
             ITypeToken clTk = _miniFactory.NewToken(class_);
@@ -3092,17 +3273,14 @@ namespace OrientRealization
 
             CheckDb(dbName_);
 
-            ICommandBuilder commandBody = NewChain().Create().Property(clTk, propTk,
+            this.commandBody = NewChain().Create().Property(clTk, propTk,
             orientType, mandatoryTk, notNnullTk)
                 .GetBuilder().Build();
 
-            requestBody = _bodyShema.Command(commandBody).Build().GetText();
-            urlStr = _urlShema.Command(_miniFactory.NewToken(this.dbName)).Build().GetText();
-
-            _webmanager.SwapRequestsURL(urlStr);
-            _webmanager.SetContent(requestBody);
-
-            result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
+            BindCommandUrl();
+            BindCommandBody();
+            BindWebRequest();
+            ReadResponseStr("POST", _miniFactory.Created());           
 
             return this;
         }
@@ -3132,29 +3310,30 @@ namespace OrientRealization
                     ITypeToken mandatoryTk = this._propertyConverter.GetBoolean(true);
                     ITypeToken notNnullTk = this._propertyConverter.GetBoolean(true);
 
-                    if (pt.IsGenericType &&
-                    pt.GetGenericTypeDefinition() == typeof(Nullable<>))
+                    if (clTk != null && propTk != null && orientType != null)
                     {
-                        mandatoryTk = this._propertyConverter.GetBoolean(false);
-                        notNnullTk = this._propertyConverter.GetBoolean(false);
+                        if (pt.IsGenericType &&
+                        pt.GetGenericTypeDefinition() == typeof(Nullable<>))
+                        {
+                            mandatoryTk = this._propertyConverter.GetBoolean(false);
+                            notNnullTk = this._propertyConverter.GetBoolean(false);
+                        }
+
+                        this.commandBody = NewChain().Create().Property(clTk, propTk,
+                        orientType, mandatoryTk, notNnullTk)
+                            .GetBuilder().Build();
+
+                        BindCommandUrl();
+                        BindCommandBody();
+                        BindWebRequest();
+                        ReadResponseStr("POST", _miniFactory.Created());
                     }
 
-                    ICommandBuilder commandBody = NewChain().Create().Property(clTk, propTk,
-                    orientType, mandatoryTk, notNnullTk)
-                        .GetBuilder().Build();
-
-                    requestBody = _bodyShema.Command(commandBody).Build().GetText();
-                    urlStr = _urlShema.Command(_miniFactory.NewToken(this.dbName)).Build().GetText();
-
-                    _webmanager.SwapRequestsURL(urlStr);
-                    _webmanager.SetContent(requestBody);
-
-                    result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
-                    if (result_ != null && result_ != string.Empty)
+                    if (this.response_ != null && this.response_ != string.Empty)
                     {
                         try
                         {
-                            ret_ = _jsonmanager.DeserializeFromParentNode<T>(result_, "result").FirstOrDefault();
+                            ret_ = _jsonmanager.DeserializeFromParentNode<T>(this.response_, "result").FirstOrDefault();
                         }
                         catch (Exception e) { }
                     }
@@ -3195,24 +3374,21 @@ namespace OrientRealization
                         notNnullTk = this._propertyConverter.GetBoolean(false);
                     }
 
-                    ICommandBuilder commandBody = NewChain().Create().Property(clTk, propTk,
+                    this.commandBody = NewChain().Create().Property(clTk, propTk,
                     orientType, mandatoryTk, notNnullTk)
                         .GetBuilder().Build();
 
-                    requestBody = _bodyShema.Command(commandBody).Build().GetText();
-                    urlStr = _urlShema.Command(_miniFactory.NewToken(this.dbName)).Build().GetText();
+                    BindCommandUrl();
+                    BindCommandBody();
+                    BindWebRequest();
+                    ReadResponseStr("POST", _miniFactory.Created());                   
 
-                    _webmanager.SwapRequestsURL(urlStr);
-                    _webmanager.SetContent(requestBody);
-
-                    result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
                 }
 
             }
 
             return this;
         }
-
 
         public IManager CreateVertex(string vertex, string content_ = null, string dbName_ = null)
         {
@@ -3225,16 +3401,14 @@ namespace OrientRealization
             {
                 //_commandFactory.CommandBuilder(_miniFactory, _formatFactory, prsTk, _miniFactory.NewToken("{0}"));
 
-                ICommandBuilder commandBody = NewChain().Create().Vertex(clTk).Content(prsTk)
+                this.commandBody = NewChain().Create().Vertex(clTk).Content(prsTk)
                     .GetBuilder().Build();
 
-                requestBody = _bodyShema.Batch(commandBody).Build().GetText();
-                urlStr = _urlShema.Batch(_miniFactory.NewToken(this.dbName)).Build().GetText();
-
-                _webmanager.SwapRequestsURL(urlStr);
-                _webmanager.SetContent(requestBody);
-
-                result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
+                BindBatchUrl();
+                BindBatchBody();
+                BindWebRequest();
+                ReadResponseStr("POST", _miniFactory.Created());
+               
             }
             return this;
         }
@@ -3252,24 +3426,23 @@ namespace OrientRealization
             {
                 //_commandFactory.CommandBuilder(_miniFactory, _formatFactory, prsTk, _miniFactory.NewToken("{0}"));
 
-                ICommandBuilder commandBody = NewChain().Create().Vertex(clTk).Content(prsTk)
+                this.commandBody = NewChain().Create().Vertex(clTk).Content(prsTk)
                     .GetBuilder().Build();
 
-                requestBody = _bodyShema.Batch(commandBody).Build().GetText();
-                urlStr = _urlShema.Batch(_miniFactory.NewToken(this.dbName)).Build().GetText();
+                BindBatchUrl();
+                BindBatchBody();
+                BindWebRequest();
+                ReadResponseStr("POST", _miniFactory.Created());
 
-                _webmanager.SwapRequestsURL(urlStr);
-                _webmanager.SetContent(requestBody);
-
-                result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
-                if (result_ != null && result_ != string.Empty)
+                if (this.response_ != null && this.response_ != string.Empty)
                 {
                     try
                     {
-                        ret_ = _jsonmanager.DeserializeFromParentNode<T>(result_, "result").FirstOrDefault();
+                        ret_ = _jsonmanager.DeserializeFromParentNode<T>(this.response_, "result").FirstOrDefault();
                     }
                     catch (Exception e) { }
                 }
+
             }
             return ret_;
         }      
@@ -3285,21 +3458,19 @@ namespace OrientRealization
             {
                 //_commandFactory.CommandBuilder(_miniFactory, _formatFactory, prsTk, _miniFactory.NewToken("{0}"));
 
-                ICommandBuilder commandBody = NewChain().Create().Vertex(clTk).Content(prsTk)
+                this.commandBody = NewChain().Create().Vertex(clTk).Content(prsTk)
                     .GetBuilder().Build();
 
-                requestBody = _bodyShema.Batch(commandBody).Build().GetText();
-                urlStr = _urlShema.Batch(_miniFactory.NewToken(this.dbName)).Build().GetText();
+                BindBatchUrl();
+                BindBatchBody();
+                BindWebRequest();
+                ReadResponseStr("POST", _miniFactory.Created());
 
-                _webmanager.SwapRequestsURL(urlStr);
-                _webmanager.SetContent(requestBody);
-
-                result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
-                if (result_ != null && result_ != string.Empty)
+                if (this.response_ != null && this.response_ != string.Empty)
                 {
                     try
                     {
-                        ret_ = _jsonmanager.DeserializeFromParentNode<T>(result_, "result").FirstOrDefault();
+                        ret_ = _jsonmanager.DeserializeFromParentNode<T>(this.response_, "result").FirstOrDefault();
                     }
                     catch (Exception e) { }
                 }
@@ -3307,7 +3478,6 @@ namespace OrientRealization
 
             return ret_;
         }
-
 
         public T CreateEdge<T>(T edge_, IOrientVertex vFrom, IOrientVertex vTo,string dbName_=null) 
             where T:class,IOrientEdge            
@@ -3329,8 +3499,7 @@ namespace OrientRealization
 
             //ITypeToken fromTk = _typeConverter.Get(typeof(K));
             //ITypeToken toTk = _typeConverter.Get(typeof(C));
-         
-            
+                     
             T ret_=null;
 
             CheckDb(dbName_);
@@ -3340,66 +3509,62 @@ namespace OrientRealization
             
                 //_commandFactory.CommandBuilder(_miniFactory, _formatFactory, prsTk, _miniFactory.NewToken("{0}"));
 
-                ICommandBuilder commandBody = NewChain().Create().Edge(edgeTk).FromV(fromId).ToV(toId).Content(edgCnt)
+                this.commandBody=NewChain().Create().Edge(edgeTk).FromV(fromId).ToV(toId).Content(edgCnt)
                     .GetBuilder().Build();
 
-                requestBody = _bodyShema.Batch(commandBody).Build().GetText();
-                urlStr = _urlShema.Batch(_miniFactory.NewToken(this.dbName)).Build().GetText();
+                BindBatchUrl();
+                BindBatchBody();
+                BindWebRequest();
+                ReadResponseStr("POST", _miniFactory.Created());
 
-                _webmanager.SwapRequestsURL(urlStr);
-                _webmanager.SetContent(requestBody);
-
-                result_ = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
-                if (result_ != null && result_ != string.Empty)
+                if (this.response_ != null && this.response_ != string.Empty)
                 {
                     try
                     {
-                        ret_ = _jsonmanager.DeserializeFromParentNode<T>(result_, "result").FirstOrDefault();
+                        ret_ = _jsonmanager.DeserializeFromParentNode<T>(this.response_, "result").FirstOrDefault();
                     }
                     catch (Exception e) { }
                 }
+
             }
 
             return ret_;
         }
 
-
         public IEnumerable<T> SelectAll<T>(IOrientObject t_, string dbName_) where T:class
         {
             CheckDb(dbName_);
             ITypeToken pTk = _typeConverter.Get(t_);
-            IEnumerable<T> result_ = new List<T>();
+            IEnumerable<T> ret_ = new List<T>();
 
             if (t_ != null)
             {
                 //_commandFactory.CommandBuilder(_miniFactory, _formatFactory, prsTk, _miniFactory.NewToken("{0}"));
 
-                ICommandBuilder commandBody =
+                this.commandBody =
                     NewChain().From(pTk).Select().GetBuilder().Build();
 
-                requestBody = _bodyShema.Batch(commandBody).Build().GetText();
-                urlStr = _urlShema.Batch(_miniFactory.NewToken(this.dbName)).Build().GetText();
+                BindBatchUrl();
+                BindBatchBody();
+                BindWebRequest();
+                ReadResponseStr("POST", _miniFactory.Created());
 
-                _webmanager.SwapRequestsURL(urlStr);
-                _webmanager.SetContent(requestBody);
-
-                string res = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
-
-                if(res != null)
+                if (this.response_ != null && this.response_ != string.Empty)
                 {
                     try
                     {
-                        result_=_jsonmanager.DeserializeFromParentNode<T>(res, "result");
-                    }catch (Exception e) { }
+                        ret_ = _jsonmanager.DeserializeFromParentNode<T>(this.response_, "result");
+                    }
+                    catch (Exception e) { }
                 }
             }
-            return result_;
+            return ret_;
         }
         public IEnumerable<T> Select<T>(string cond_, string dbName_) where T : class
         {
             CheckDb(dbName_);
             ITypeToken pTk = _typeConverter.Get(typeof(T));
-            IEnumerable<T> result_ = new List<T>();
+            IEnumerable<T> ret_ = new List<T>();
             List<ITypeToken> tt = new List<ITypeToken>() { _miniFactory.NewToken(cond_) };
 
             if (pTk != null)
@@ -3408,33 +3573,30 @@ namespace OrientRealization
                 ICommandBuilder where_ =
                     _commandFactory.CommandBuilder(_miniFactory,_formatFactory, tt,_miniFactory.EmptyString()).Build();
 
-                ICommandBuilder commandBody =
+                this.commandBody =
                     NewChain().From(pTk).Select().Where(where_).GetBuilder().Build();
 
-                requestBody = _bodyShema.Batch(commandBody).Build().GetText();
-                urlStr = _urlShema.Batch(_miniFactory.NewToken(this.dbName)).Build().GetText();
+                BindBatchUrl();
+                BindBatchBody();
+                BindWebRequest();
+                ReadResponseStr("POST", _miniFactory.Created());
 
-                _webmanager.SwapRequestsURL(urlStr);
-                _webmanager.SetContent(requestBody);
-
-                string res = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
-
-                if (res != null)
+                if (this.response_ != null && this.response_ != string.Empty)
                 {
                     try
                     {
-                        result_ = _jsonmanager.DeserializeFromParentNode<T>(res, "result");
+                        ret_ = _jsonmanager.DeserializeFromParentNode<T>(this.response_, "result");
                     }
                     catch (Exception e) { }
                 }
             }
-            return result_;
+            return ret_;
         }
-        public T SelectItem<T>(string cond_, string dbName_) where T : class, IOrientObject
+        public T SelectSingle<T>(string cond_, string dbName_=null) where T : class, IOrientObject
         {
             CheckDb(dbName_);
             ITypeToken pTk = _typeConverter.Get(typeof(T));
-            T result_=null;
+            T ret_ = null;
             List<ITypeToken> tt = new List<ITypeToken>() { _miniFactory.NewToken(cond_) };
 
             if (pTk != null)
@@ -3446,26 +3608,53 @@ namespace OrientRealization
                 ICommandBuilder commandBody =
                     NewChain().From(pTk).Select().Where(where_).GetBuilder().Build();
 
-                requestBody = _bodyShema.Batch(commandBody).Build().GetText();
-                urlStr = _urlShema.Batch(_miniFactory.NewToken(this.dbName)).Build().GetText();
+                BindBatchUrl();
+                BindBatchBody();
+                BindWebRequest();
+                ReadResponseStr("POST", _miniFactory.Created());
 
-                _webmanager.SwapRequestsURL(urlStr);
-                _webmanager.SetContent(requestBody);
-
-                string res = _webResponseReader.ReadResponse(_webmanager.GetResponse64("POST"));
-
-                if (res != null)
+                if (this.response_ != null && this.response_ != string.Empty)
                 {
                     try
                     {
-                        result_ = _jsonmanager.DeserializeFromParentNode<T>(res, "result").FirstOrDefault();
+                        ret_ = _jsonmanager.DeserializeFromParentNode<T>(this.response_, "result").FirstOrDefault();
                     }
                     catch (Exception e) { }
                 }
             }
-            return result_;
+            return ret_;
         }
-       
+        
+        public IEnumerable<InV> Select<OutE,InV>(string dbName_ = null) 
+            where OutE : E where InV : V
+        {
+            IEnumerable<InV> result = null;
+            ITypeToken outEtk = null;
+            ITypeToken inVtk = null;
+            IEnumerable<InV> ret_ = null;
+
+            outEtk =_typeConverter.Get(typeof(OutE));
+            inVtk=_typeConverter.Get(typeof(OutE));
+
+            if(outEtk !=null && inVtk !=null)
+            {
+                BindBatchUrl();
+                BindBatchBody();
+                BindWebRequest();
+                ReadResponseStr("POST", _miniFactory.Created());
+
+                if (this.response_ != null && this.response_ != string.Empty)
+                {
+                    try
+                    {
+                        ret_ = _jsonmanager.DeserializeFromParentNode<InV>(this.response_, "result");
+                    }
+                    catch (Exception e) { }
+                }
+            }
+            return ret_;
+        }
+
     }    
 
     public interface IManager
@@ -3479,12 +3668,16 @@ namespace OrientRealization
         T CreateProperty<T>(T item, string dbName_ = null) where T : class;
         IManager CreateVertex(string vertex, string content_ = null, string dbName_ = null);
         T CreateVertex<T>(IOrientVertex vertex, string dbName_ = null) where T : class;
+        IManager DeleteEdge<T, K, C>(K from, C to, string condition_=null,string dbName_ = null)
+            where T : E where K : V where C : V;
+        IManager DeleteEdge<T>(string from, string to, string condition_ = null, string dbName_ = null) 
+            where T : E;
         IManager DeleteDb(string name, string host);
         string GetResult();
         CommandsChain NewChain();
         IEnumerable<T> Select<T>(string cond_, string dbName_) where T : class;
         IEnumerable<T> SelectAll<T>(IOrientObject t_, string dbName_) where T : class;
-        T SelectItem<T>(string cond_, string dbName_) where T : class, IOrientObject;
+        T SelectSingle<T>(string cond_, string dbName_) where T : class, IOrientObject;
     }
 
 }

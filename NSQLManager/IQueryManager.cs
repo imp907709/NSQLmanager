@@ -30,6 +30,9 @@ namespace IQueryManagers
         ITypeToken Dot();
         ITypeToken Coma();
         ITypeToken Gap();
+
+        ITypeToken Deleted();
+        ITypeToken Created();
     }
     
     public interface IOrientQueryFactory
