@@ -52,7 +52,7 @@ namespace POCO
         public DateTime? changed { get; set; } = null;
         [JsonProperty("Disabled", Order = 5)]
         public DateTime? disabled { get; set; } = null;
-        [JsonProperty("Content", Order = 2)]
+        [JsonProperty("Content_", Order = 2)]
         public string content { get; set; } = null;
     }
     public class E : IOrientEdge
@@ -67,6 +67,15 @@ namespace POCO
 
         public string In {get; set;}
         public string Out {get; set;}
+
+        [JsonProperty("Name", Order = 1)]
+        public string Name { get; set; }
+        [JsonProperty("GUID", Order = 2)]
+        public string GUID { get; set; }
+        [JsonProperty("Created", Order = 3)]
+        public DateTime? Created { get; set; } = DateTime.Now;
+        [JsonProperty("Changed", Order = 4)]
+        public DateTime? Changed { get; set; } = DateTime.Now;
     }
 
     /// <summary>
@@ -77,11 +86,11 @@ namespace POCO
     public class Person : V
     {
 
-        public long? Seed {get; set;}
+        public long? Seed { get; set; } = 0;
         [JsonProperty("Created", Order=3)]
         public DateTime? Created {get; set;} = DateTime.Now;
-        [JsonProperty("GUID", Order=2)]
-        public string GUID {get; set;}
+        [JsonProperty("GUID", Order = 2)]
+        public string GUID { get; set; } = string.Empty;
         [JsonProperty("Changed", Order = 4)]
         public DateTime? Changed { get; set; } = DateTime.Now;
         public string FirstName {get; set;}
@@ -133,14 +142,7 @@ namespace POCO
     //Edges
     public class MainAssignment : E
     {
-        [JsonProperty("Name", Order=1)]
-        public string Name {get; set;}
-        [JsonProperty("GUID", Order=2)]
-        public string GUID {get; set;}
-        [JsonProperty("Created", Order=3)]
-        public DateTime? Created {get; set;}
-        [JsonProperty("Changed", Order=4)]
-        public DateTime? Changed {get; set;}
+      
     }
     public class OldMainAssignment : E
     {
@@ -185,6 +187,8 @@ namespace POCO
         public DateTime? pinned { get; set; } = null;
         public DateTime? published { get; set; } = null;
 
+        public int? commentDepth { get; set; } = 0;
+        public bool hasComments { get; set; } = false;
         int likes { get; set; } = 0;
         bool liked { get; set; } = false;
     }
