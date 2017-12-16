@@ -3138,7 +3138,14 @@ namespace OrientRealization
         {
             ITypeToken token_=null;
             types.TryGetValue(type_, out token_);
-
+            if(token_==null)
+            {
+              Type tp=GegtypeFromAsm(type_.Name,null);
+              if(tp!=null)
+              {
+                token_=new TextToken() {Text=tp.Name};
+              }
+            }
             return token_;
         }
         public ITypeToken GetBase(Type type_)
@@ -3629,15 +3636,16 @@ namespace OrientRealization
 
             return this;
         }
-        public T CreateProperty<T>(T item,string dbName_=null) 
+        public T CreateProperty<T>(T item=null,string dbName_=null) 
           where T:class,IorientDefaultObject
         {
             CheckDb(dbName_);
             T ret_ = null;
-            var a = from s in item.GetType().GetProperties() select s;
+           IEnumerable<PropertyInfo> poperties_ = from s in typeof(T).GetProperties() select s;
 
-            foreach (PropertyInfo ps in item.GetType().GetProperties())
+            foreach (PropertyInfo ps in poperties_)
             {
+                this.response_=null;
                 Type pt=null;
                
                 try
@@ -3645,8 +3653,10 @@ namespace OrientRealization
                     pt = item.GetType().GetProperty(ps.Name).GetValue(item).GetType();
                 }
                 catch (Exception e) { }
-
-                if (pt != null)
+                if(pt==null) {
+                  pt=ps.PropertyType;
+                }
+                if (pt != null && (ps.Name!="In"||ps.Name!="Out"))
                 {
 
                     ITypeToken clTk = _typeConverter.Get(typeof(T));
@@ -3679,13 +3689,14 @@ namespace OrientRealization
                         }
 
                         this.commandBody = NewChain().Create().Property(clTk, propTk,
-                        orientType, mandatoryTk, notNnullTk)
+                        orientType, mandatoryTk, notNnullTk)                        
                             .GetBuilder().Build();
 
+                      
                         BindCommandUrl();
                         BindCommandBody();
                         BindWebRequest();
-                        ReadResponseStr("POST", _miniFactory.Created());
+                        ReadResponseStr("POST", _miniFactory.Created());                                                
 
                         if (ps.Name == "GUID")
                         {
@@ -3856,7 +3867,7 @@ namespace OrientRealization
             //edge type string for query
             ITypeToken edgeTk=_typeConverter.Get(typeof(T));
             //edge count
-            ITypeToken edgCnt=_miniFactory.NewToken(_jsonmanager.SerializeObject(edge_));
+            ITypeToken edgCnt=_miniFactory.NewToken(_jsonmanager.SerializeObject(edge_).Replace("\"", "\\\""));
             if(edgCnt==null)
             {
                 edgCnt=null;

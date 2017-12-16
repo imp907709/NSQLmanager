@@ -920,8 +920,8 @@ namespace NewsUOWs
 
       public Note CreateCommentary(Person from,string newsId_,string comment_)
       {
-          Authorship auth=new Authorship(){type="Printed"};
-          Comment commented=new Comment(){type="Printed"};
+          Authorship auth=new Authorship(){};
+          Comment commented=new Comment(){};
           Note commentaryTochange_=null;
           Note commentaryToAdd_=null;
           Note newsToComment_=manager.SelectSingle<Note>("@rid="+newsId_,dbName);
@@ -960,8 +960,8 @@ namespace NewsUOWs
       }
       public Note CreateCommentary(Person from,Note comment_,Note newsId_)
       {
-          Authorship auth = new Authorship() { type = "Printed" };
-          Comment commented = new Comment() { type = "Printed" };
+          Authorship auth = new Authorship() { };
+          Comment commented = new Comment() {  };
 
           Note prev = IsComment(newsId_.id);
           if(prev!=null)
@@ -1003,7 +1003,7 @@ namespace NewsUOWs
       }
       public Note CreateNews(Person from,Note note_)
       {
-          Authorship auth=new Authorship() {type = "Printed"};
+          Authorship auth=new Authorship();
           Note nt_=manager.CreateVertex<Note>(note_, dbName);
           Authorship newAuth=manager.CreateEdge<Authorship>(auth,from,nt_);
 

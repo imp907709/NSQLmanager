@@ -27,9 +27,9 @@ namespace IOrientObjects
         [JsonProperty("@rid", Order = 1)]
         string id { get; set; }
         [JsonProperty("@type")]
-        string type {get; set;}          
+        string type {get;}          
         [JsonProperty("@version")]
-        string version {get; set;}   
+        string version {get; }   
         [JsonProperty("@class")]
         string class_ {get; set;} 
     }
@@ -40,8 +40,8 @@ namespace IOrientObjects
     //Specific for OrientDb (additional for Edges)
     public interface IOrientEdge : IOrientEntity
     {
-        string Out {get; set;}
-        string In {get; set;}
+        //string Out {get; set;}
+        //string In {get; set;}
     }
     
     public interface IorientDefaultObject : IOrientEntity

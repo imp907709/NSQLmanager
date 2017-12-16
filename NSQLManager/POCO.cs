@@ -39,13 +39,21 @@ namespace POCO
         [JsonProperty("@rid", Order = 1)]
         public virtual string id { get; set; }
         [JsonProperty("@type")]
-        public string type {get; set;}   
+        public string type {get; set; }   
          
         [JsonProperty("@version")]
-        public virtual string version {get; set;}   
+        public virtual string version {get;  set;}   
         [JsonProperty("@class")]
         public string class_ {get; set;} 
-    
+        
+        public bool ShouldSerializeclass()
+        {
+          return false;
+        }
+        public bool ShouldSerializetype()
+        {
+          return false;
+        }
     }
     
     public class OrientDefaultObject :OrientEntity,IorientDefaultObject
@@ -53,17 +61,22 @@ namespace POCO
     
         [JsonProperty("GUID", Order = 2)]
         public string GUID { get; set; } = null;
-        [JsonProperty("Created", Order = 3)]
+        [JsonProperty("Created", Order = 3),JsonConverter(typeof(orientFuckedUpDatetime))]
         public DateTime? created { get; set; } = DateTime.Now;
-        [JsonProperty("Changed", Order = 4)]
+        [JsonProperty("Changed", Order = 4),JsonConverter(typeof(orientFuckedUpDatetime))]
         public DateTime? changed { get; set; } = null;
-        [JsonProperty("Disabled", Order = 5)]
+        [JsonProperty("Disabled", Order = 5),JsonConverter(typeof(orientFuckedUpDatetime))]
         public DateTime? disabled { get; set; } = null;
+       
     }
     public class OrientEdge :OrientDefaultObject, IOrientEdge
     {
-        public virtual string Out {get; set;}
-        public virtual string In {get; set;}
+        [JsonIgnore]
+        [JsonProperty("out")]
+        string Out {get; set;}
+        [JsonIgnore]
+        [JsonProperty("in")]
+        string In {get; set;}
     }
 
 
@@ -97,14 +110,9 @@ namespace POCO
     {     
                     
         [JsonProperty("@rid", Order = 1)]
-        public override string id { get; set; }       
+        public override string id { get; set; }
         [JsonProperty("@version")]
-        public override string @version {get; set;}        
-     
-        [JsonProperty("out")]
-        public override string Out {get; set;}
-        [JsonProperty("in")]
-        public override string In {get; set;}
+        public override string @version {get; set;}
         
         public bool ShouldSerializeid()
         {
@@ -139,6 +147,7 @@ namespace POCO
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string MiddleName { get; set; }
+        [JsonConverter(typeof(orientFuckedUpDatetime))]
         public DateTime? Birthday { get; set; }
         public string mail { get; set; }
         public int? telephoneNumber { get; set; }
@@ -171,6 +180,7 @@ namespace POCO
         public string PGUID { get; set; }
         public string DepartmentColorRGB { get; set; }
         public string DepartmentColorClass { get; set; }
+        [JsonConverter(typeof(orientFuckedUpDatetime))]
         public DateTime? Disabled { get; set; }
         public string Hash { get; set; }
         public string Name { get; set; }
@@ -184,8 +194,9 @@ namespace POCO
     //Edges
     public class MainAssignment : E
     {
-
+   
     }
+
     public class OldMainAssignment : E
     {
 
@@ -344,7 +355,7 @@ namespace POCO
     {
         public orientFuckedUpDatetime()
         {
-            DateTimeFormat = "yyyy-MM-ddhh:mm:ss";
+            DateTimeFormat = "yyyy-MM-dd hh:mm:ss";
         }
     }
     #endregion

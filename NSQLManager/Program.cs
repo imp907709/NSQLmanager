@@ -38,8 +38,8 @@ namespace NSQLManager
           RepoCheck rc=new RepoCheck();
           RepoCheck.startcond sc=RepoCheck.startcond.MNL;
 
-          //rc.ManagerCheck(false);rc.UOWRandomcheck(sc);
-          rc.UOWstringobjectCheck();
+          rc.ManagerCheck(false);rc.UOWRandomcheck(sc);
+          //rc.UOWstringobjectCheck();
         }
 
     }
@@ -212,6 +212,7 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",GUID="000"
             manager.DbPredefinedParameters();
 
             //create class
+            Type oE=manager.CreateClass<OrientEdge,E>(dbName);
             Type maCl=manager.CreateClass<MainAssignment,E>(dbName);
             Type obc = manager.CreateClass<Object_SC, V>(dbName);
             Type tp = manager.CreateClass<Unit, V>(dbName);
@@ -227,10 +228,20 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",GUID="000"
             manager.CreateVertex<Object_SC>(obs, dbName);
 
             manager.CreateClass("Person","V",dbName);
-            
+            MainAssignment ma = new MainAssignment() { };
+
             //create property
+            //will not create properties - not initialized object all property types anonimous.
+            manager.CreateProperty<OrientEdge>(null, null);
+            //create all properties even if all null.
+            manager.CreateProperty<MainAssignment>( new MainAssignment(), null);
+            manager.CreateProperty<Unit>( new Unit(), null);
+            manager.CreateProperty<Note>( new Note(), null);
+            manager.CreateProperty<Authorship>( new Authorship(), null);
+            manager.CreateProperty<Comment>( new Comment(), null);
             manager.CreateProperty<Person>(personOne, null);
-            manager.CreateProperty("Unit", "Name", typeof(string), false, false);
+            //create single property from names
+            //manager.CreateProperty("Unit", "Name", typeof(string), false, false);
 
             //add node
             Person p0 = manager.CreateVertex<Person>(personTwo, dbName);        
@@ -657,24 +668,20 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
         public void UOWstringobjectCheck()
         {
             NewsUOWs.NewsUow nu = new NewsUOWs.NewsUow("test_db");
-            V p=nu.GetByGUID("abcd");
-            string pStr = nu.ObjectToString<V>(p);
-            V pGen = nu.StringToObject<V>(pStr);
-
-
-
              string pStr1=
             "{\"@type\":\"d\",\"@rid\":\"#75:0\",\"@version\":1,\"@class\":\"Person\",\"GUID\":\"GUID0\",\"Seed\":0,\"sAMAccountName\":\"Person0\",\"Name\":\"Person0\",\"created\":\"2017-12-16 16:26:32\",\"content_\":\"\",\"@fieldTypes\":\"created=t\"}";
-            Person p2=new Person() {GUID="g10",Name="N10",sAMAccountName="acc1",id="id1",version="1"};
+            Person p2=new Person() {GUID="g10",Name="N10",sAMAccountName="acc1",id="id1"};
             
             string pStr2 = JsonConvert.SerializeObject(p2);
 
             Person pGen2 = JsonConvert.DeserializeObject<Person>(pStr2);                       
             Person pGen1 =JsonConvert.DeserializeObject<Person>(pStr1);
 
+            Person person1=nu.StringToObject<Person>(pStr1);
+            string strperson1=nu.ObjectToString<Person>(person1);
 
 
-            OrientDefaultObject v1=new OrientDefaultObject() {GUID="g10",id="id1",version="1"};
+            OrientDefaultObject v1=new OrientDefaultObject() {GUID="g10",id="id1"};
 
             string v1Str = JsonConvert.SerializeObject(v1);
 
