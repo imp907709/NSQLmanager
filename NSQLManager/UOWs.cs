@@ -823,248 +823,323 @@ namespace NewsUOWs
     public class NewsUow
     {
 
-        Manager manager;
-        string dbName;
+      Manager manager;
+      string dbName;
 
-        public NewsUow(string databaseName=null)
-        {
+      public NewsUow(string databaseName=null)
+      {
 
-            string login = ConfigurationManager.AppSettings["orient_login"];
-            string password = ConfigurationManager.AppSettings["orient_pswd"];
-            string dbHost = string.Format("{0}:{1}"
-                , ConfigurationManager.AppSettings["ParentHost"]
-                , ConfigurationManager.AppSettings["ParentPort"]);
-            if (databaseName == null)
-            {
-                dbName = ConfigurationManager.AppSettings["ParentDB"];
-            }
-            else { dbName = databaseName; }
+          string login = ConfigurationManager.AppSettings["orient_login"];
+          string password = ConfigurationManager.AppSettings["orient_pswd"];
+          string dbHost = string.Format("{0}:{1}"
+              , ConfigurationManager.AppSettings["ParentHost"]
+              , ConfigurationManager.AppSettings["ParentPort"]);
+          if (databaseName == null)
+          {
+              dbName = ConfigurationManager.AppSettings["ParentDB"];
+          }
+          else { dbName = databaseName; }
 
-            TypeConverter typeConverter = new TypeConverter();
-            JsonManagers.JSONManager jsonMnager = new JSONManager();
-            TokenMiniFactory tokenFactory = new TokenMiniFactory();
-            UrlShemasExplicit UrlShema = new UrlShemasExplicit(
-                new CommandBuilder(tokenFactory, new FormatFactory())
-                , new FormatFromListGenerator(new TokenMiniFactory())
-                , tokenFactory, new OrientBodyFactory());
+          TypeConverter typeConverter = new TypeConverter();
+          JsonManagers.JSONManager jsonMnager = new JSONManager();
+          TokenMiniFactory tokenFactory = new TokenMiniFactory();
+          UrlShemasExplicit UrlShema = new UrlShemasExplicit(
+              new CommandBuilder(tokenFactory, new FormatFactory())
+              , new FormatFromListGenerator(new TokenMiniFactory())
+              , tokenFactory, new OrientBodyFactory());
 
-            BodyShemas bodyShema = new BodyShemas(new CommandFactory(), new FormatFactory(), new TokenMiniFactory(),
-                new OrientBodyFactory());
+          BodyShemas bodyShema = new BodyShemas(new CommandFactory(), new FormatFactory(), new TokenMiniFactory(),
+              new OrientBodyFactory());
 
-            UrlShema.AddHost(dbHost);
-            WebResponseReader webResponseReader = new WebResponseReader();
-            WebRequestManager webRequestManager = new WebRequestManager();
-            webRequestManager.SetCredentials(new NetworkCredential(login, password));
-            CommandFactory commandFactory = new CommandFactory();
-            FormatFactory formatFactory = new FormatFactory();
-            OrientQueryFactory orientQueryFactory = new OrientQueryFactory();
-            OrientCLRconverter orientCLRconverter = new OrientCLRconverter();
+          UrlShema.AddHost(dbHost);
+          WebResponseReader webResponseReader = new WebResponseReader();
+          WebRequestManager webRequestManager = new WebRequestManager();
+          webRequestManager.SetCredentials(new NetworkCredential(login, password));
+          CommandFactory commandFactory = new CommandFactory();
+          FormatFactory formatFactory = new FormatFactory();
+          OrientQueryFactory orientQueryFactory = new OrientQueryFactory();
+          OrientCLRconverter orientCLRconverter = new OrientCLRconverter();
 
-            manager = new Manager(typeConverter, jsonMnager, tokenFactory, UrlShema, bodyShema, webRequestManager
-                , webResponseReader, commandFactory, formatFactory, orientQueryFactory, orientCLRconverter);
+          CommandShemasExplicit commandShema_ = new CommandShemasExplicit(commandFactory, formatFactory,
+          new TokenMiniFactory(), new OrientQueryFactory());
 
-        }
+          manager = new Manager(typeConverter, jsonMnager, tokenFactory, UrlShema, bodyShema, commandShema_
+          , webRequestManager, webResponseReader, commandFactory, formatFactory, orientQueryFactory, orientCLRconverter);
 
-        public Person GetByAccount(string accountName_)
-        {
-            Person result=null;
-            var a=from s in manager.Props<Person>().ToList() where s.Name=="sAMAccountName" select s;
-            result=manager.SelectSingle<Person>("sAMAccountName='" + accountName_+"'", dbName);
-            return result;
-        }
-        public Person GetByGUID(string GUID_)
-        {
-            Person result = null;            
-            result = manager.SelectSingle<Person>("GUID='" + GUID_ + "'", dbName);
-            return result;
-        }
-        public IEnumerable<Person> SearchByName(string Name_)
-        {
-            IEnumerable<Person> result=null;
-            result=manager
-                .Select<Person>("Name like '%"+Name_+"%' or sAMAccountName like '%"+Name_+"%'or mail like '%"+Name_+"%'"
-                ,dbName);
-            return result;
-        }        
+      }
 
-        public T GetOrientObjectById<T>(string id_)
-            where T: class, IOrientObjects.IOrientEntity
-        {
-            T result = null;
-            result = manager.Select<T>("@rid=" + id_ , dbName).FirstOrDefault();
-            return result;
-        }
-        public T GetOrientObject<T>(T object_)
-            where T : class, IOrientObjects.IOrientEntity
-        {
-            T result = null;
-            result = manager.Select<T>("@rid=" + object_.id, dbName).FirstOrDefault();
-            return result;
-        }
-        public IEnumerable<T> GetOrientObjects<T>(string cond_=null)
-           where T : class, IOrientObjects.IOrientEntity
-        {
-            IEnumerable<T> result = null;
-            result = manager.Select<T>(cond_, dbName);
-            return result;
-        }
+      public Person GetByAccount(string accountName_)
+      {
+          Person result=null;
+          var a=from s in manager.Props<Person>().ToList() where s.Name=="sAMAccountName" select s;
+          result=manager.SelectSingle<Person>("sAMAccountName='" + accountName_+"'", dbName);
+          return result;
+      }
+      public Person GetByGUID(string GUID_)
+      {
+          Person result = null;            
+          result = manager.SelectSingle<Person>("GUID='" + GUID_ + "'", dbName);
+          return result;
+      }
+      public Note GetNewsByGUID(string GUID_)
+      {
+          Note result = null;
+          result = manager.SelectSingle<Note>("GUID='" + GUID_ + "'", dbName);
+          return result;
+      }
+      public IEnumerable<Person> SearchByName(string Name_)
+      {
+          IEnumerable<Person> result=null;
+          result=manager
+              .Select<Person>("Name like '%"+Name_+"%' or sAMAccountName like '%"+Name_+"%'or mail like '%"+Name_+"%'"
+              ,dbName);
+          return result;
+      }        
 
-        public Note CreateCommentary(Person from,string newsId_,string comment_)
-        {
-            Authorship auth=new Authorship(){type="Printed"};
-            Comment commented=new Comment(){type="Printed"};
-            Note commentaryTochange_=null;
-            Note commentaryToAdd_=null;
-            Note newsToComment_=manager.SelectSingle<Note>("@rid="+newsId_,dbName);
+      public T GetOrientObjectById<T>(string id_)
+          where T: class, IOrientObjects.IorientDefaultObject
+      {
+          T result = null;
+          result = manager.Select<T>("@rid=" + id_ , dbName).FirstOrDefault();
+          return result;
+      }
+      public T GetOrientObject<T>(T object_)
+          where T : class, IOrientObjects.IorientDefaultObject
+      {
+          T result = null;
+          result = manager.Select<T>("@rid=" + object_.id, dbName).FirstOrDefault();
+          return result;
+      }
+      public IEnumerable<T> GetOrientObjects<T>(string cond_=null)
+          where T : class, IOrientObjects.IorientDefaultObject
+      {
+          IEnumerable<T> result = null;
+          result = manager.Select<T>(cond_, dbName);
+          return result;
+      }
 
-            commentaryTochange_=manager.GenerateFromString<Note>(comment_);
+      public Note CreateCommentary(Person from,string newsId_,string comment_)
+      {
+          Authorship auth=new Authorship(){type="Printed"};
+          Comment commented=new Comment(){type="Printed"};
+          Note commentaryTochange_=null;
+          Note commentaryToAdd_=null;
+          Note newsToComment_=manager.SelectSingle<Note>("@rid="+newsId_,dbName);
 
-            Note prev=IsComment(newsId_);
-            //is comment to comment
-            if (prev != null)
-            {             
-                commentaryTochange_.commentDepth=(prev.commentDepth + 1);               
-            }
-            else
-            {
-                newsToComment_.hasComments=true;
-            }
-            //commentary Node created and relation from person created
-            commentaryToAdd_=CreateNews(from, comment_);
+          commentaryTochange_=manager.OrientStringToObject<Note>(comment_);
 
-            if (commentaryToAdd_!=null)
-            {               
-                if (newsToComment_!=null)
-                {
-                    //create relation from commment to news Nodes
-                    manager.CreateEdge<Comment>(commented,newsToComment_, commentaryToAdd_);
-                }
-                else
-                {
-                    //unsuccesfull news search
-                    //manager.Delete<Note>(commentary_);
-                    //check if has comments if no then hasComments=false;
-                }
-            }
+          Note prev=IsComment(newsId_);
+          //is comment to comment
+          if (prev!=null)
+          {             
+              commentaryTochange_.commentDepth=(prev.commentDepth + 1);               
+          }
+          else
+          {
+              newsToComment_.hasComments=true;
+          }
+          //commentary Node created and relation from person created
+          commentaryToAdd_=CreateNews(from,commentaryTochange_);
 
-            return commentaryToAdd_;
-        }
-        public Note CreateCommentary(Person from,Note newsId_,Note comment_)
-        {
-            Authorship auth = new Authorship() { type = "Printed" };
-            Comment commented = new Comment() { type = "Printed" };
+          if (commentaryToAdd_!=null)
+          {               
+              if (newsToComment_!=null)
+              {
+                  //create relation from commment to news Nodes
+                  manager.CreateEdge<Comment>(commented,newsToComment_, commentaryToAdd_);
+              }
+              else
+              {
+                  //unsuccesfull news search
+                  //manager.Delete<Note>(commentary_);
+                  //check if has comments if no then hasComments=false;
+              }
+          }
 
-            Note prev = IsComment(newsId_.id);
-            if(prev!=null)
-            {
-                comment_.commentDepth=prev.commentDepth;
-            }
+          return commentaryToAdd_;
+      }
+      public Note CreateCommentary(Person from,Note comment_,Note newsId_)
+      {
+          Authorship auth = new Authorship() { type = "Printed" };
+          Comment commented = new Comment() { type = "Printed" };
 
-            //commentary Node created and relation from person created
-            Note commentary_ = CreateNews(from, comment_);
+          Note prev = IsComment(newsId_.id);
+          if(prev!=null)
+          {
+              //comment to comment
+              comment_.commentDepth=prev.commentDepth+1;
+          }
+          else
+          {
+              //comment to news
+              comment_.commentDepth=comment_.commentDepth+1;
+          }
 
-            if (commentary_ != null)
-            {
-                Note newsToComment_ = manager.SelectSingle<Note>("@rid=" + newsId_.id, dbName);
-                if (newsToComment_ != null)
-                {
-                    //create relation from commment to news Nodes
-                    Comment commentedCr=manager.CreateEdge<Comment>(commented, newsToComment_,commentary_);
-                }
-                else
-                {
-                    //unsuccesfull news search
-                    //manager.Delete<Note>(commentary_);
-                }
-            }
+          //commentary Node created and relation from person created
+          Note commentary_ = CreateNews(from, comment_);
 
-            return commentary_;
-        }    
-        public Note CreateNews(Person from,string news_)
-        {
-            Note note_=manager.CreateVertex<Note>(news_, dbName);
-            Note created=CreateNews(from, note_);
-            return created;
-        }
-        public Note CreateNews(Person from,Note note_)
-        {
-            Authorship auth=new Authorship() {type = "Printed"};
-            Note nt_=manager.CreateVertex<Note>(note_, dbName);
-            Authorship newAuth=manager.CreateEdge<Authorship>(auth,from,nt_);
+          if (commentary_ != null)
+          {
+              Note newsToComment_ = manager.SelectSingle<Note>("@rid=" + newsId_.id, dbName);
+              if (newsToComment_ != null)
+              {
+                  //create relation from commment to news Nodes
+                  Comment commentedCr=manager.CreateEdge<Comment>(commented, newsToComment_,commentary_);
+              }
+              else
+              {
+                  //unsuccesfull news search
+                  //manager.Delete<Note>(commentary_);
+              }
+          }
 
-            //if unsucceced clean created objects
-            if(auth==null||note_==null)
-            {
-                manager.Delete<Note>(note_,null,dbName);
-                manager.Delete<Authorship>(auth,null,dbName);
-            }
-            return nt_;
-        }
+          return commentary_;
+      }    
+      public Note CreateNews(Person from,string news_)
+      {
+          Note note_=manager.CreateVertex<Note>(news_, dbName);
+          Note created=CreateNews(from, note_);
+          return created;
+      }
+      public Note CreateNews(Person from,Note note_)
+      {
+          Authorship auth=new Authorship() {type = "Printed"};
+          Note nt_=manager.CreateVertex<Note>(note_, dbName);
+          Authorship newAuth=manager.CreateEdge<Authorship>(auth,from,nt_);
 
-        public Note PublishNews(string newsId_)
-        {
-            Note nt = manager.SelectSingle<Note>("@rid=" + newsId_);
-            nt.published = DateTime.Now;
-            return nt;
-        }
-        public Note UnPublishNews(string newsId_)
-        {
-            Note nt = manager.SelectSingle<Note>("@rid=" + newsId_);
-            nt.published=null;
-            return nt;
-        }     
+          //if unsucceced clean created objects
+          if(auth==null||note_==null)
+          {
+              manager.Delete<Note>(note_,null,dbName);
+              manager.Delete<Authorship>(auth,null,dbName);
+          }
+          return nt_;
+      }
 
+      public Note UpdateNews(Note newsObj_)
+      {          
+          Note nt=manager.UpdateEntity<Note>(newsObj_, dbName);
+          return nt;
+      }
+      public Note UpdateNews(string newsStr_)
+      {
+          Note result = null;
+          Note nt = manager.OrientStringToObject<Note>(newsStr_);
+          result = UpdateNews(nt);
+          return result;
+      }
 
+      public Note PublishNews(string newsId_)
+      {
+          Note nt = manager.SelectSingle<Note>("@rid=" + newsId_);
+          nt.published = DateTime.Now;
+          return nt;
+      }
+      public Note UnPublishNews(string newsId_)
+      {
+          Note nt = manager.SelectSingle<Note>("@rid=" + newsId_);
+          nt.published=null;
+          return nt;
+      }
+      public Note PinNews(string newsId_)
+      {
+          Note nt = manager.SelectSingle<Note>("@rid=" + newsId_);
+          nt.pinned = DateTime.Now;
+          return nt;
+      }
+      public Note UnPinNews(string newsId_)
+      {
+          Note nt = manager.SelectSingle<Note>("@rid=" + newsId_);
+          nt.pinned = null;
+          return nt;
+      }
 
-        public string DeleteNews(Person from, string id_)
-        {
-            string result = string.Empty;
-            Note ntd = GetOrientObjectById<Note>(id_);
+      public IEnumerable<Note> GetNews(string accountName_)
+      {
+          return null;
+      }
 
-            if (ntd != null) {
-                string deleteN=manager.DeleteEdge<Authorship,Person,Note>(from,ntd,null,dbName).GetResult();
-                string deleteR=manager.Delete<Note>(ntd, null, dbName).GetResult();
-                if(deleteN=="Deleted"&&deleteR == "Deleted") { result = "Deleted"; }
-            }
-            return result;
-        }
+      public string DeleteNews(Person from, string id_)
+      {
+          string result = string.Empty;
+          Note ntd = GetOrientObjectById<Note>(id_);
 
-        public IEnumerable<Note> GetPersonNews(Person p_=null)
-        {
-            return manager.Select<Person,Authorship, Note>(p_);
-        }
+          if (ntd != null) {
+              string deleteN=manager.DeleteEdge<Authorship,Person,Note>(from,ntd,null,dbName).GetResult();
+              string deleteR=manager.Delete<Note>(ntd, null, dbName).GetResult();
+              if(deleteN=="Deleted"&&deleteR == "Deleted") { result = "Deleted"; }
+          }
+          return result;
+      }
 
-        /// <summary>
-        /// check inE types on Comment,Authorship. If has inE comment, then returns current Note.
-        /// </summary>
-        /// <param name="NewsId">Npte which type need to be checked</param>
-        /// <returns></returns>
-        public Note IsComment(string NewsId)
-        {
-            Note nt = manager.SelectSingle<Note>(@"rid="+ NewsId);
-            Note cm = manager.Select<Note,Comment>(nt, dbName).FirstOrDefault();
-            Note auth = manager.Select<Note, Authorship>(nt, dbName).FirstOrDefault();
-            Note ret_ = null;
+      public IEnumerable<Note> GetPersonNews(Person p_=null)
+      {
+          return manager.Select<Person,Authorship, Note>(p_);
+      }
 
-            //comment->
-            if (auth!=null&&cm!=null)
-            {
-                ret_ = cm;
-            }
-            //news->
-            if (auth!=null&&cm == null)
-            {
-                ret_ = null;
-            }
-            
-            return ret_;
-        }
+      /// <summary>
+      /// check inE types on Comment,Authorship. If has inE comment, then returns current Note.
+      /// </summary>
+      /// <param name="NewsId">Npte which type need to be checked</param>
+      /// <returns></returns>
+      public Note IsComment(string NewsId)
+      {
+          Note ret_=null;
+          Note nt=manager.SelectSingle<Note>("@rid="+NewsId);
+          if (nt!=null)
+          {
 
-        public string UserAcc()
-        {
-            return WebManagers.UserAuthenticationMultiple.UserAcc();
-        }
+              Note cm=manager.Select<Note,Comment>(nt,dbName).FirstOrDefault();
+              Note auth=manager.Select<Note,Authorship>(nt,dbName).FirstOrDefault();                
 
-    }
+              //comment
+              if (auth != null && cm != null)
+              {
+                  //take comment wich iscommented
+                  ret_=manager.SelectCommentToComment<Note,Comment,Note>(nt,dbName).FirstOrDefault();
+              }
+              //news
+              if (auth!=null&&cm==null)
+              {
+                  ret_=null;
+              }
+          }
+          return ret_;
+      }
+
+      public string UserAcc()
+      {
+          return WebManagers.UserAuthenticationMultiple.UserAcc();
+      }
+
+      public string NoteToString(Note item_)
+      {
+          string result=null;
+              result=manager.ObjectToString<Note>(item_);
+          return result;
+      }
+      public Note StringToNote(string item_)
+      {
+          Note result = null;
+          result = manager.StringToObject<Note>(item_);
+          return result;
+      }
+
+      public string ObjectToString<T>(T item_)
+          where T:class,IOrientObjects.IorientDefaultObject
+      {
+          string result = null;
+          result = manager.ObjectToString<T>(item_);
+          return result;
+      }
+      public T StringToObject<T>(string item_)
+          where T : class, IOrientObjects.IorientDefaultObject
+      {
+          T result = null;
+          result = manager.StringToObject<T>(item_);
+          return result;
+      }
+
+  }
 
 }

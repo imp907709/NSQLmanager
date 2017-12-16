@@ -26,4 +26,3 @@ G:\disk\Files\git\nsql\NSQLManager\bin\Debug\xunit.execution.desktop.xml
 G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLManager.csproj.App.config
 G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLmanager.exe
 G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLmanager.pdb
-G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLManager.csprojResolveAssemblyReference.cache

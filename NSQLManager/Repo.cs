@@ -15,12 +15,13 @@ using IJsonManagers;
 using IWebManagers;
 using IRepos;
 using OrientRealization;
+using POCO;
 
 namespace Repos
 {
 
     public class Repo : IRepo_v1
-    {
+  {
 
         IJsonManger jm;
         ITokenBuilder tb;
@@ -81,11 +82,11 @@ namespace Repos
 
             return resp;
        }
-        public string Add(IOrientVertex obj_)
+        public string Add(IorientDefaultObject obj_)
         {
 
             string content=jm.SerializeObject(obj_);
-            List<ITypeToken> commandTk=tb.Command(new OrientCreateToken(), tk.Get(obj_), tk.GetBase(obj_), new TextToken() {Text=content});
+            List<ITypeToken> commandTk=tb.Command(new OrientUUIDToken(), tk.Get(obj_), tk.GetBase(obj_), new TextToken() {Text=content});
 
             cb.BindTokens(commandTk);
             cb.BindFormat(new OrientCreateVertexCluaseFormat());
@@ -108,7 +109,7 @@ namespace Repos
           
             string context=jm.SerializeObject(obj_); 
             
-            List<ITypeToken> commandTk=tb.Command(new OrientCreateToken(), tk.Get(obj_), tk.GetBase(obj_)
+            List<ITypeToken> commandTk=tb.Command(new OrientUUIDToken(), tk.Get(obj_), tk.GetBase(obj_)
                 , new TextToken() {Text= from.id}, new TextToken() {Text=to.id}, new TextToken() {Text=context});
         
             cb.BindTokens(commandTk);
@@ -132,7 +133,7 @@ namespace Repos
             to.Text=to.Text.Replace(@"#", "");
 
             string content=jm.SerializeObject(obj_);
-            List<ITypeToken> commandTk=tb.Command(new OrientCreateToken(), tk.Get(obj_), tk.GetBase(obj_), from, to, new TextToken() {Text=content});
+            List<ITypeToken> commandTk=tb.Command(new OrientUUIDToken(), tk.Get(obj_), tk.GetBase(obj_), from, to, new TextToken() {Text=content});
 
             cb.BindTokens(commandTk);
             cb.BindFormat(new FormatFromListGenerator(new TokenMiniFactory()).FromatFromTokenArray(commandTk));
@@ -234,7 +235,7 @@ namespace Repos
             return resp;
 
        }
-        public string Delete(Type type_, IOrientObject from_, IOrientObject to_, ITypeToken condition_)
+        public string Delete(Type type_, IOrientEntity from_, IOrientEntity to_, ITypeToken condition_)
         {
             string deleteClause;
 
