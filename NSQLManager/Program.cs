@@ -38,8 +38,13 @@ namespace NSQLManager
           RepoCheck rc=new RepoCheck();
           RepoCheck.startcond sc=RepoCheck.startcond.MNL;
 
-          rc.ManagerCheck(false);rc.UOWRandomcheck(sc);
-          //rc.UOWstringobjectCheck();
+//DELETE and regenerate DB from scratch
+          //rc.ManagerCheck(false);
+//check structural or generated obj createion
+          rc.UOWRandomcheck(sc);
+//check manual object behaviour
+          rc.UOWstringobjectCheck();
+
         }
 
     }
@@ -222,7 +227,7 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",GUID="000"
             Type cmCl = manager.CreateClass<Comment, E>(dbName);
 
             Note ntCl=new Note();
-            Note ntCl0=new Note(){name = "test name", content = "test content"};
+            Note ntCl0=new Note(){name = "test name", content_ = "test content"};
             Object_SC obs = new Object_SC() { GUID = "1", changed = DateTime.Now, created = DateTime.Now, disabled = DateTime.Now };
             manager.CreateVertex<Note>(ntCl, dbName);
             manager.CreateVertex<Object_SC>(obs, dbName);
@@ -546,14 +551,14 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
             foreach(string noteCont in idioticNews)
             {
 
-                newsToAdd.Add(new Note(){name=noteCont,content="here goes text of really fucking interesting news"});               
+                newsToAdd.Add(new Note(){name=noteCont,content_="here goes text of really fucking interesting news"});               
             }
 
            
             List<Note> commentsToAdd=new List<Note>();
             foreach(string comment in bullshitComments)
             {             
-                commentsToAdd.Add(new Note(){name=comment,content="bullshit comment"});
+                commentsToAdd.Add(new Note(){name=comment,content_="bullshit comment"});
             }
 
             personsToAdd=newsUOW.GetOrientObjects<Person>(null).ToList();            
@@ -561,7 +566,7 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
             int newsCount=idioticNews.Count()-1;
             int commentsCount=bullshitComments.Count()-1;
 
-            Note newsNewToAdd=new Note(){ pic="", GUID = "ABC",name="name1",content="news cont"};
+            Note newsNewToAdd=new Note(){ pic="", GUID = "ABC",name="name1",content_="news cont"};
             Note newsNewAdded=newsUOW.CreateNews(personsToAdd[0],newsToAdd[0]);
             string newsAdd=newsUOW.NoteToString(newsNewAdded);
             string str
@@ -585,7 +590,7 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
                 //COMMENTS
                 //p1-[atrsh]->(commentary)<-[comment0]-news0
                 commentsCreated.Add(newsUOW.CreateCommentary(personsToAdd[1], 
-                    new Note(){name="Comment",content="bullshit comment"}, newsCreated[0]));
+                    new Note(){name="Comment",content_="bullshit comment"}, newsCreated[0]));
                 //p3-[atrsh]->(commentary)<-[comment1]-news0
                 commentsCreated.Add(newsUOW.CreateCommentary(personsToAdd[3], commentsToAdd[1],newsCreated[0]));
                 //p0-[atrsh]->(commentary)<-[comment2]-news2
@@ -607,9 +612,10 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
                 commentsCreated.Add(newsUOW.CreateCommentary(personsToAdd[3], commentsToAdd[8], commentsCreated[6]));
 
                 //UPDATE NEWS
-                //change news 0
-                newsCreated[0].description="Changed content";
-                Note nt=newsUOW.UpdateNews(newsCreated[0]);
+                //change news 0                  
+                Note addedNews=newsUOW.GetNewsByGUID("2eb7ec8c-ddcb-4149-994d-aa5517a0b078");
+                addedNews.content_="updated content 10";
+                Note updatedNews=newsUOW.UpdateNews(addedNews);
 
             }
 
@@ -669,12 +675,13 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
         {
             NewsUOWs.NewsUow nu = new NewsUOWs.NewsUow("test_db");
              string pStr1=
-            "{\"@type\":\"d\",\"@rid\":\"#75:0\",\"@version\":1,\"@class\":\"Person\",\"GUID\":\"GUID0\",\"Seed\":0,\"sAMAccountName\":\"Person0\",\"Name\":\"Person0\",\"created\":\"2017-12-16 16:26:32\",\"content_\":\"\",\"@fieldTypes\":\"created=t\"}";
+            "{\"Seed\":0,\"FirstName\":null,\"LastName\":null,\"MiddleName\":null,\"Birthday\":null,\"mail\":null,\"telephoneNumber\":null,\"userAccountControl\":null,\"objectGUID\":null,\"sAMAccountName\":\"acc1\",\"OneSHash\":null,\"Hash\":null,\"fieldTypes\":null,\"@class\":null,\"Name\":\"N10\",\"GUID\":\"g10\",\"Created\":\"2017-12-17 03:18:12\",\"Changed\":null,\"Disabled\":null}";
             Person p2=new Person() {GUID="g10",Name="N10",sAMAccountName="acc1",id="id1"};
             
+            //SERIALIZATIONs
             string pStr2 = JsonConvert.SerializeObject(p2);
 
-            Person pGen2 = JsonConvert.DeserializeObject<Person>(pStr2);                       
+            Person pGen2 = JsonConvert.DeserializeObject<Person>(pStr2);
             Person pGen1 =JsonConvert.DeserializeObject<Person>(pStr1);
 
             Person person1=nu.StringToObject<Person>(pStr1);
@@ -685,18 +692,22 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
 
             string v1Str = JsonConvert.SerializeObject(v1);
 
-            OrientDefaultObject v2 = JsonConvert.DeserializeObject<OrientDefaultObject>(v1Str);                       
+            OrientDefaultObject v2 = JsonConvert.DeserializeObject<OrientDefaultObject>(v1Str);
             OrientDefaultObject v3 =JsonConvert.DeserializeObject<OrientDefaultObject>(pStr1);
-
-
 
             TestPersonPOCO tp1 = new TestPersonPOCO() { Name="person1", Acc="acc1",rid="#54:7", version="v1"};
             string tpStr=JsonConvert.SerializeObject(tp1);
             TestPersonPOCO tp1Gen=JsonConvert.DeserializeObject<TestPersonPOCO>(tpStr);
             string tpStr2="{\"Name\":\"person1\",\"Acc\":\"acc1\",\"class\":null,\"type\":null,\"version\":\"v1\"}";
-            TestPersonPOCO tp2Gen=JsonConvert.DeserializeObject<TestPersonPOCO>(tpStr2);         
+            TestPersonPOCO tp2Gen=JsonConvert.DeserializeObject<TestPersonPOCO>(tpStr2);
+
+            //UPDATEs
+            Note addedNews=nu.GetNewsByGUID("4ce1efb0-552f-4f06-8b2c-c51f7bcd3208");
+            addedNews.content_="updated content";
+            Note updatedNews=nu.UpdateNews(addedNews);
 
         }
+
     }
 
 }

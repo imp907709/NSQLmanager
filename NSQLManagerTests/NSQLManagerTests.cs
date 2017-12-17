@@ -860,7 +860,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
             this.commandOne.Create().Class(V).Extends(VSC);
 
             string result=this.commandOne.GetCommand();
-            Assert.Equal("Create Class V Extends VSC", result);
+            Assert.Equal("create Class V Extends VSC", result);
         }
 
         //WHERE
@@ -2419,7 +2419,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         public void UOWCreateNewsCheck()
         {            
             JSONManager jm = new JSONManager();
-            Note nt = new Note() { content = "Very interesting new", Name="News" };            
+            Note nt = new Note() { content_="Very interesting new",Name="News" };            
             string news = jm.SerializeObject(nt);
             Person p = nu.GetByAccount("Neprintsevia");
             string result = nu.CreateNews(p, nt).id;

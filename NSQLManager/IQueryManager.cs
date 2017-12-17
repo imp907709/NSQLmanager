@@ -43,6 +43,7 @@ namespace IQueryManagers
         ITypeToken AlterToken();
         ITypeToken DefaultToken();
         ITypeToken UUIDToken();
+        ITypeToken DoubleQuotes();
 
         ITypeToken UpdateToken();
 

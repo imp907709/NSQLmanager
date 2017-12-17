@@ -1018,7 +1018,8 @@ namespace NewsUOWs
 
       public Note UpdateNews(Note newsObj_)
       {          
-          Note nt=manager.UpdateEntity<Note>(newsObj_, dbName);
+          manager.UpdateEntity<Note>(newsObj_, dbName);
+          Note nt=manager.SelectSingle<Note>("GUID='"+newsObj_.GUID+"'",dbName);
           return nt;
       }
       public Note UpdateNews(string newsStr_)

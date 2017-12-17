@@ -88,9 +88,6 @@ namespace POCO
         [JsonProperty("@version")]
         public override string @version {get; set;}         
 
-        [JsonProperty("content_", Order = 6)]
-        public string content_ { get; set; }=string.Empty;
-
         public bool ShouldSerializeid()
         {
           return false;
@@ -140,9 +137,7 @@ namespace POCO
     //Vertexes      
     public class Person : V
     {
-             
-   
-       
+                       
         public long? Seed { get; set; } = 0;      
         public string FirstName { get; set; }
         public string LastName { get; set; }
@@ -170,8 +165,7 @@ namespace POCO
 
         [JsonProperty("fieldTypes")]
         public string @fieldTypes { get; set; }
-      
-
+        
     }
     public class Unit : V
     {
@@ -233,7 +227,9 @@ namespace POCO
 
         public string pic { get; set; } = string.Empty;
         public string name { get; set; } = string.Empty;
-        new public string content { get; set; } = string.Empty;
+        
+        [JsonProperty("content_")]
+        public string content_ { get; set; }=string.Empty;
         public string description { get; set; } = string.Empty;
 
         public DateTime? pinned { get; set; } = null;
