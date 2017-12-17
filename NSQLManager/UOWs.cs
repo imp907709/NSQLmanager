@@ -891,7 +891,7 @@ namespace NewsUOWs
       {
           IEnumerable<Person> result=null;
           result=manager
-              .Select<Person>("Name like '%"+Name_+"%' or sAMAccountName like '%"+Name_+"%'or mail like '%"+Name_+"%'"
+              .SelectFromType<Person>("Name like '%"+Name_+"%' or sAMAccountName like '%"+Name_+"%'or mail like '%"+Name_+"%'"
               ,dbName);
           return result;
       }        
@@ -900,21 +900,21 @@ namespace NewsUOWs
           where T: class, IOrientObjects.IorientDefaultObject
       {
           T result = null;
-          result = manager.Select<T>("@rid=" + id_ , dbName).FirstOrDefault();
+          result = manager.SelectFromType<T>("@rid=" + id_ , dbName).FirstOrDefault();
           return result;
       }
       public T GetOrientObject<T>(T object_)
           where T : class, IOrientObjects.IorientDefaultObject
       {
           T result = null;
-          result = manager.Select<T>("@rid=" + object_.id, dbName).FirstOrDefault();
+          result = manager.SelectFromType<T>("@rid=" + object_.id, dbName).FirstOrDefault();
           return result;
       }
       public IEnumerable<T> GetOrientObjects<T>(string cond_=null)
           where T : class, IOrientObjects.IorientDefaultObject
       {
           IEnumerable<T> result = null;
-          result = manager.Select<T>(cond_, dbName);
+          result = manager.SelectFromType<T>(cond_, dbName);
           return result;
       }
 
@@ -1143,4 +1143,311 @@ namespace NewsUOWs
 
   }
 
+  public class NewsRealUow
+    {
+
+      Manager manager;
+      string dbName;
+
+      public NewsRealUow(string databaseName=null)
+      {
+
+          string login = ConfigurationManager.AppSettings["orient_login"];
+          string password = ConfigurationManager.AppSettings["orient_pswd"];
+          string dbHost = string.Format("{0}:{1}"
+              , ConfigurationManager.AppSettings["ParentHost"]
+              , ConfigurationManager.AppSettings["ParentPort"]);
+          if (databaseName == null)
+          {
+              dbName = ConfigurationManager.AppSettings["ParentDB"];
+          }
+          else { dbName = databaseName; }
+
+          TypeConverter typeConverter = new TypeConverter();
+          JsonManagers.JSONManager jsonMnager = new JSONManager();
+          TokenMiniFactory tokenFactory = new TokenMiniFactory();
+          UrlShemasExplicit UrlShema = new UrlShemasExplicit(
+              new CommandBuilder(tokenFactory, new FormatFactory())
+              , new FormatFromListGenerator(new TokenMiniFactory())
+              , tokenFactory, new OrientBodyFactory());
+
+          BodyShemas bodyShema = new BodyShemas(new CommandFactory(), new FormatFactory(), new TokenMiniFactory(),
+              new OrientBodyFactory());
+
+          UrlShema.AddHost(dbHost);
+          WebResponseReader webResponseReader = new WebResponseReader();
+          WebRequestManager webRequestManager = new WebRequestManager();
+          webRequestManager.SetCredentials(new NetworkCredential(login, password));
+          CommandFactory commandFactory = new CommandFactory();
+          FormatFactory formatFactory = new FormatFactory();
+          OrientQueryFactory orientQueryFactory = new OrientQueryFactory();
+          OrientCLRconverter orientCLRconverter = new OrientCLRconverter();
+
+          CommandShemasExplicit commandShema_ = new CommandShemasExplicit(commandFactory, formatFactory,
+          new TokenMiniFactory(), new OrientQueryFactory());
+
+          manager = new Manager(typeConverter, jsonMnager, tokenFactory, UrlShema, bodyShema, commandShema_
+          , webRequestManager, webResponseReader, commandFactory, formatFactory, orientQueryFactory, orientCLRconverter);
+
+      }
+
+      public Person GetByAccount(string accountName_)
+      {
+          Person result=null;
+          var a=from s in manager.Props<Person>().ToList() where s.Name=="sAMAccountName" select s;
+          result=manager.SelectSingle<Person>("sAMAccountName='" + accountName_+"'", dbName);
+          return result;
+      }
+      public Person GetByGUID(string GUID_)
+      {
+          Person result = null;            
+          result = manager.SelectSingle<Person>("GUID='" + GUID_ + "'", dbName);
+          return result;
+      }
+      public News GetNewsByGUID(string GUID_)
+      {
+          News result = null;
+          result = manager.SelectSingle<News>("GUID='" + GUID_ + "'", dbName);
+          return result;
+      }
+      public IEnumerable<Person> SearchByName(string Name_)
+      {
+          IEnumerable<Person> result=null;
+          result=manager
+              .SelectFromType<Person>("Name like '%"+Name_+"%' or sAMAccountName like '%"+Name_+"%'or mail like '%"+Name_+"%'"
+              ,dbName);
+          return result;
+      }        
+
+      public News GetNewsById(string id_)          
+      {
+          News result = null;
+          result = manager.SelectFromType<News>("@rid=" + id_ , dbName).FirstOrDefault();
+          return result;
+      }
+      public IEnumerable<T> GetOrientObjects<T>(string cond_=null)
+          where T : class, IOrientObjects.IorientDefaultObject
+      {
+          IEnumerable<T> result = null;
+          result = manager.SelectFromType<T>(cond_, dbName);
+          return result;
+      }
+      public Commentary CreateCommentary(Person from,string newsId_,string comment_)
+      {
+          Authorship auth=new Authorship(){};
+          Comment commented=new Comment(){};
+          Commentary commentaryTochange_=null;
+          Commentary commentaryToAdd_=null;
+          News newsToComment_=manager.SelectSingle<News>("@rid="+newsId_,dbName);
+
+          commentaryTochange_=manager.OrientStringToObject<Commentary>(comment_);
+
+          int? depth=IsCommentToComment(newsId_);
+          //is comment to comment
+          if (depth!=null)
+          {             
+              commentaryTochange_.commentDepth=depth;               
+          }
+          else
+          {
+              newsToComment_.hasComments=true;
+          }
+          //commentary Node created and relation from person created
+          commentaryToAdd_=CreateCommentary(from,commentaryTochange_);
+
+          if (commentaryToAdd_!=null)
+          {               
+              if (newsToComment_!=null)
+              {
+                  //create relation from commment to news Nodes
+                  manager.CreateEdge<Comment>(commented,newsToComment_, commentaryToAdd_);
+              }
+              else
+              {
+                  //unsuccesfull news search
+                  //manager.Delete<Note>(commentary_);
+                  //check if has comments if no then hasComments=false;
+              }
+          }
+
+          return commentaryToAdd_;
+      }
+      public Commentary CreateCommentary(Person from,Commentary comment_,Note newsId_)
+      {
+          Authorship auth = new Authorship() { };
+          Comment commented = new Comment() {  };
+
+          int? depth = IsCommentToComment(newsId_.id);
+          if(depth!=null)
+          {
+              //comment to comment
+              comment_.commentDepth=depth;
+          }
+          else
+          {
+              //comment to news
+              comment_.commentDepth=comment_.commentDepth+1;
+          }
+
+          //commentary Node created and relation from person created
+          Commentary commentary_ = CreateCommentary(from, comment_);
+
+          if (commentary_ != null)
+          {
+              Note newsToComment_ = manager.SelectByIDWithCondition<Note>(newsId_.id,null,dbName).FirstOrDefault();
+              if (newsToComment_ != null)
+              {
+                  //create relation from commment to news Nodes
+                  Comment commentedCr=manager.CreateEdge<Comment>(commented, newsToComment_,commentary_);
+              }
+              else
+              {
+                  //unsuccesfull news search
+                  //manager.Delete<Note>(commentary_);
+              }
+          }
+
+          return commentary_;
+      }    
+      public News CreateNews(Person from,string news_)
+      {
+          News note_=manager.CreateVertex<News>(news_, dbName);
+          News created=CreateNews(from, note_);
+          return created;
+      }
+      public News CreateNews(Person from,News note_)
+      {
+          Authorship auth=new Authorship();
+          News nt_=manager.CreateVertex<News>(note_, dbName);
+          Authorship newAuth=manager.CreateEdge<Authorship>(auth,from,nt_);
+
+          //if unsucceced clean created objects
+          if(auth==null||note_==null)
+          {
+              manager.Delete<News>(note_,null,dbName);
+              manager.Delete<Authorship>(auth,null,dbName);
+          }
+          return nt_;
+      }
+      public Commentary CreateCommentary(Person from,Commentary note_)
+      {
+          Authorship auth=new Authorship();
+          Commentary nt_=manager.CreateVertex<Commentary>(note_, dbName);
+          Authorship newAuth=manager.CreateEdge<Authorship>(auth,from,nt_);
+
+          //if unsucceced clean created objects
+          if(auth==null||note_==null)
+          {
+              manager.Delete<Commentary>(note_,null,dbName);
+              manager.Delete<Authorship>(auth,null,dbName);
+          }
+          return nt_;
+      }
+
+      public News UpdateNews(News newsObj_)
+      {          
+          manager.UpdateEntity<News>(newsObj_, dbName);
+          News nt=manager.SelectSingle<News>("GUID='"+newsObj_.GUID+"'",dbName);
+          return nt;
+      }
+      public News UpdateNews(string newsStr_)
+      {
+          News result = null;
+          News nt = manager.OrientStringToObject<News>(newsStr_);
+          result = UpdateNews(nt);
+          return result;
+      }
+
+      public News PublishNews(string newsId_)
+      {
+          News nt = manager.SelectSingle<News>("@rid=" + newsId_);
+          nt.published = DateTime.Now;
+          return nt;
+      }
+      public News UnPublishNews(string newsId_)
+      {
+          News nt = manager.SelectSingle<News>("@rid=" + newsId_);
+          nt.published=null;
+          return nt;
+      }
+      public News PinNews(string newsId_)
+      {
+          News nt = manager.SelectSingle<News>("@rid=" + newsId_);
+          nt.pinned = DateTime.Now;
+          return nt;
+      }
+      public News UnPinNews(string newsId_)
+      {
+          News nt = manager.SelectSingle<News>("@rid=" + newsId_);
+          nt.pinned = null;
+          return nt;
+      }
+
+      public IEnumerable<News> GetNews(string accountName_)
+      {
+          return null;
+      }
+
+      public string DeleteNews(Person from, string id_)
+      {
+          string result = string.Empty;
+          News ntd = GetNewsById(id_);
+
+          if (ntd != null) {
+              string deleteN=manager.DeleteEdge<Authorship,Person,News>(from,ntd,null,dbName).GetResult();
+              string deleteR=manager.Delete<News>(ntd, null, dbName).GetResult();
+              if(deleteN=="Deleted"&&deleteR == "Deleted") { result = "Deleted"; }
+          }
+          return result;
+      }
+
+      public IEnumerable<News> GetPersonNews(Person p_=null)
+      {
+          return manager.Select<Person,Authorship, News>(p_);
+      }
+
+      /// <summary>
+      /// check inE types on Comment,Authorship. If has inE comment, then returns current Note.
+      /// </summary>
+      /// <param name="NewsId">Npte which type need to be checked</param>
+      /// <returns></returns>
+      public int? IsCommentToComment(string NewsId)
+      {
+          int? depth=null;
+          Note nt=manager.SelectByIDWithCondition<Note>(NewsId,null,dbName).FirstOrDefault();
+          if (nt.class_=="Commentary")
+          {
+            depth=nt.commentDepth+1;
+          }else {depth=null;}
+          return depth;
+      }
+
+      public Note GetNoteByID(string NewsId)
+      {
+          Note ret_=null;
+            ret_=manager.SelectByIDWithCondition<Note>(NewsId,null,dbName).FirstOrDefault();         
+          return ret_;
+      }
+
+      public string UserAcc()
+      {
+          return WebManagers.UserAuthenticationMultiple.UserAcc();
+      }
+
+      public string UOWserialize<T>(T item_)
+          where T:class,IOrientObjects.IorientDefaultObject
+      {
+          string result = null;
+          result = manager.ObjectToString<T>(item_);
+          return result;
+      }
+      public T UOWdeserialize<T>(string item_)
+          where T : class, IOrientObjects.IorientDefaultObject
+      {
+          T result = null;
+          result = manager.StringToObject<T>(item_);
+          return result;
+      }
+
+  }
 }

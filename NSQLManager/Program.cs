@@ -39,12 +39,13 @@ namespace NSQLManager
           RepoCheck.startcond sc=RepoCheck.startcond.MNL;
 
 //DELETE and regenerate DB from scratch
-          //rc.ManagerCheck(false);
+          rc.ManagerCheck(false);
 //check structural or generated obj createion
-          rc.UOWRandomcheck(sc);
+          //rc.UOWRandomcheck(sc);
 //check manual object behaviour
-          rc.UOWstringobjectCheck();
-
+          //rc.UOWstringobjectCheck();
+//generate News, and commentaries
+          rc.UOWRealCheck(true);
         }
 
     }
@@ -219,18 +220,21 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",GUID="000"
             //create class
             Type oE=manager.CreateClass<OrientEdge,E>(dbName);
             Type maCl=manager.CreateClass<MainAssignment,E>(dbName);
-            Type obc = manager.CreateClass<Object_SC, V>(dbName);
-            Type tp = manager.CreateClass<Unit, V>(dbName);
+            Type obc=manager.CreateClass<Object_SC, V>(dbName);
+            Type tp=manager.CreateClass<Unit, V>(dbName);
             //Type tpp = manager.CreateClass<Note, V>("news_test5");
-            Type nt = manager.CreateClass<Note, V>(dbName);
-            Type auCl = manager.CreateClass<Authorship, E>(dbName);
-            Type cmCl = manager.CreateClass<Comment, E>(dbName);
+            Type nt=manager.CreateClass<Note, V>(dbName);
+            
+            Type cmt=manager.CreateClass<Commentary,V>(dbName);
+            Type nws=manager.CreateClass<News,V>(dbName);
+            Type auCl=manager.CreateClass<Authorship,E>(dbName);
+            Type cmCl=manager.CreateClass<Comment,E>(dbName);
 
             Note ntCl=new Note();
-            Note ntCl0=new Note(){name = "test name", content_ = "test content"};
+            Note ntCl0=new Note(){name = "test name",content_ = "test content"};
             Object_SC obs = new Object_SC() { GUID = "1", changed = DateTime.Now, created = DateTime.Now, disabled = DateTime.Now };
-            manager.CreateVertex<Note>(ntCl, dbName);
-            manager.CreateVertex<Object_SC>(obs, dbName);
+            News ns = new News() {name ="Real news"};
+            Commentary cm = new Commentary() {name ="Real comment"};         
 
             manager.CreateClass("Person","V",dbName);
             MainAssignment ma = new MainAssignment() { };
@@ -244,9 +248,17 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",GUID="000"
             manager.CreateProperty<Note>( new Note(), null);
             manager.CreateProperty<Authorship>( new Authorship(), null);
             manager.CreateProperty<Comment>( new Comment(), null);
+            manager.CreateProperty<Commentary>( new Commentary(), null);
+            manager.CreateProperty<News>( new News(), null);
             manager.CreateProperty<Person>(personOne, null);
             //create single property from names
             //manager.CreateProperty("Unit", "Name", typeof(string), false, false);
+
+            manager.CreateVertex<Note>(ntCl, dbName);
+            manager.CreateVertex<Object_SC>(obs, dbName);
+
+            manager.CreateVertex<News>(ns,dbName);
+            manager.CreateVertex<Commentary>(cm,dbName);
 
             //add node
             Person p0 = manager.CreateVertex<Person>(personTwo, dbName);        
@@ -264,7 +276,7 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",GUID="000"
             MainAssignment maA = manager.CreateEdge<MainAssignment>(mainAssignment,p0, u0, dbName);
             
             //select from relation
-            IEnumerable<MainAssignment> a = manager.Select<MainAssignment>("1=1", dbName);
+            IEnumerable<MainAssignment> a = manager.SelectFromType<MainAssignment>("1=1", dbName);
 
             Note ntCr=manager.CreateVertex<Note>(ntCl0, dbName);            
             Authorship aut=new Authorship();
@@ -707,7 +719,54 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
             Note updatedNews=nu.UpdateNews(addedNews);
 
         }
+        public void UOWRealCheck(bool newsGen=false)
+        {
+          NewsUOWs.NewsRealUow uow = new NewsUOWs.NewsRealUow("test_db");
+          
+          List<Person> personsAdded = new List<Person>();          
+          List<News> newsAdded = new List<News>();          
+          List<Commentary> commentaryAdded = new List<Commentary>();          
 
+          List<V> nodes = new List<V>();
+
+          Random rnd=new Random();
+          int persCnt=(int)rnd.Next(5,10);
+          int newsCnt=(int)rnd.Next(5,10);
+          int commentaryCnt=(int)rnd.Next(5,10);
+
+          personsAdded = uow.GetOrientObjects<Person>(null).ToList();
+          if(newsGen) {
+            //news add
+            for(int i=0;i<personsAdded.Count()-1;i++)
+            {
+              newsCnt=(int)rnd.Next(0,4);
+              for(int i2=0;i2<newsCnt;i2++)
+              {
+                newsAdded.Add(
+                  uow.CreateNews(personsAdded[i],new News(){Name="News"+i2,content_="fucking interesting news"})
+                );
+              }            
+            }
+          }        
+          
+          nodes.AddRange(
+            uow.GetOrientObjects<News>(null).ToList()
+          );
+
+          //rando, comments gen
+          for(int i=0;i<personsAdded.Count()-1;i++)
+          {
+            commentaryCnt=(int)rnd.Next(0,7);
+            for(int i2=0;i2<commentaryCnt;i2++){
+              int nodeToCommentId=(int)rnd.Next(0,nodes.Count()-1);
+              Note nodeToComment=uow.GetNoteByID(nodes[nodeToCommentId].id);
+              nodes.Add(
+                uow.CreateCommentary(personsAdded[i2],new Commentary(){Name="Commentary"+i2,content_="fucking bullshit comentary"},nodeToComment)
+              );
+            }
+          }          
+
+        }
     }
 
 }

@@ -3922,6 +3922,46 @@ namespace OrientRealization
             return ret_;
         }
 
+        public IEnumerable<T> SelectByIDWithCondition<T> (string ID_,string cond_=null,string dbName_=null)
+        where T:class,IorientDefaultObject
+        {
+          IEnumerable<T> result=null;
+          CheckDb(dbName_);
+          List<ITypeToken> tt=null;
+          ICommandBuilder where_=null;
+          ITypeToken id_=_miniFactory.NewToken(ID_);
+          if (cond_ != null)
+            {
+                tt=new List<ITypeToken>() { _miniFactory.NewToken(cond_) };
+
+                where_ =
+                    _commandFactory.CommandBuilder(_miniFactory, _formatFactory, tt, _miniFactory.EmptyString()).Build();
+            }
+
+            if (id_ != null)
+            {
+                //_commandFactory.CommandBuilder(_miniFactory, _formatFactory, prsTk, _miniFactory.NewToken("{0}"));  
+                
+
+                this.commandBody =
+                    NewChain().From(id_).Select().Where(where_).GetBuilder().Build();
+
+                BindBatchUrl();
+                BindBatchBody();
+                BindWebRequest();
+                ReadResponseStr("POST", _miniFactory.Created());
+
+                if (this.response_ != null && this.response_ != string.Empty)
+                {
+                    try
+                    {
+                        result = _jsonmanager.DeserializeFromParentNode<T>(this.response_, "result");
+                    }
+                    catch (Exception e) { }
+                }
+            }
+          return result;
+        }
         public IEnumerable<T> SelectAll<T>(IorientDefaultObject t_,string dbName_) where T:class,IorientDefaultObject
         {
             CheckDb(dbName_);
@@ -3951,7 +3991,7 @@ namespace OrientRealization
             }
             return ret_;
         }
-        public IEnumerable<T> Select<T>(string cond_=null,string dbName_=null) where T : class,IorientDefaultObject
+        public IEnumerable<T> SelectFromType<T>(string cond_=null,string dbName_=null) where T : class,IorientDefaultObject
         {
             CheckDb(dbName_);
             ITypeToken pTk=_typeConverter.Get(typeof(T));
@@ -4343,7 +4383,7 @@ NewChain().Select().OutE(outEtk).Dot().InV(inVtk).As(aliace).FromV(fromEtk)
     string ObjectToString<T>(T item_) where T : class, IorientDefaultObject;
     T OrientStringToObject<T>(string item_) where T : class, IorientDefaultObject;
     PropertyInfo[] Props<T>() where T :IOrientObject;
-    IEnumerable<T> Select<T>(string cond_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
+    IEnumerable<T> SelectFromType<T>(string cond_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
     IEnumerable<T> Select<T, InE>(T vertexFrom_ = default(T), string dbName_ = null)
       where T : class,IOrientVertex
       where InE :  class,IOrientEdge;

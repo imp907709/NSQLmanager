@@ -241,6 +241,9 @@ namespace POCO
         int likes { get; set; } = 0;
         bool liked { get; set; } = false;
     }
+    public class News:Note{}
+    public class Commentary:Note{}
+
     public class Comment : E
     {
         DateTime? When { get; set; }

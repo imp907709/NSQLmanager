@@ -251,9 +251,9 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
 
             MainAssignment maA = mng.CreateEdge<MainAssignment>(mainAssignment, crVrtstr, u0, dbName);
 
-            IEnumerable<Person> selectMt = mng.Select<Person>("1=1", dbName);
+            IEnumerable<Person> selectMt = mng.SelectFromType<Person>("1=1", dbName);
 
-            IEnumerable<MainAssignment> a = mng.Select<MainAssignment>("1=1", dbName);
+            IEnumerable<MainAssignment> a = mng.SelectFromType<MainAssignment>("1=1", dbName);
 
             //db delete
             string DeleteResult = mng.DeleteDb(dbName, dbHost).GetResult();
