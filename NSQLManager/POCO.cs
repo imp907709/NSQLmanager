@@ -238,8 +238,9 @@ namespace POCO
         public int? commentDepth { get; set; } = 0;
         public bool hasComments { get; set; } = false;
 
-        int likes { get; set; } = 0;
-        bool liked { get; set; } = false;
+        public int likes { get; set; } = 0;
+        public bool liked { get; set; } = false;
+        
     }
     public class News:Note{}
     public class Commentary:Note{}

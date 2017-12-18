@@ -1116,13 +1116,13 @@ namespace NewsUOWs
       public string NoteToString(Note item_)
       {
           string result=null;
-              result=manager.ObjectToString<Note>(item_);
+              result=manager.ObjectToContentString<Note>(item_);
           return result;
       }
       public Note StringToNote(string item_)
       {
           Note result = null;
-          result = manager.StringToObject<Note>(item_);
+          result = manager.ContentStringToObject<Note>(item_);
           return result;
       }
 
@@ -1130,20 +1130,20 @@ namespace NewsUOWs
           where T:class,IOrientObjects.IorientDefaultObject
       {
           string result = null;
-          result = manager.ObjectToString<T>(item_);
+          result = manager.ObjectToContentString<T>(item_);
           return result;
       }
       public T StringToObject<T>(string item_)
           where T : class, IOrientObjects.IorientDefaultObject
       {
           T result = null;
-          result = manager.StringToObject<T>(item_);
+          result = manager.ContentStringToObject<T>(item_);
           return result;
       }
 
   }
 
-  public class NewsRealUow
+    public class NewsRealUow
     {
 
       Manager manager;
@@ -1191,14 +1191,14 @@ namespace NewsUOWs
 
       }
 
-      public Person GetByAccount(string accountName_)
+      public Person GetPersonByAccount(string accountName_)
       {
           Person result=null;
           var a=from s in manager.Props<Person>().ToList() where s.Name=="sAMAccountName" select s;
           result=manager.SelectSingle<Person>("sAMAccountName='" + accountName_+"'", dbName);
           return result;
       }
-      public Person GetByGUID(string GUID_)
+      public Person GetPersonByGUID(string GUID_)
       {
           Person result = null;            
           result = manager.SelectSingle<Person>("GUID='" + GUID_ + "'", dbName);
@@ -1209,7 +1209,64 @@ namespace NewsUOWs
           News result = null;
           result = manager.SelectSingle<News>("GUID='" + GUID_ + "'", dbName);
           return result;
+      }     
+      public News GetNewsById(string id_)
+      {
+          News result = null;
+          result = manager.SelectFromType<News>("@rid=" + id_ , dbName).FirstOrDefault();
+          return result;
       }
+      
+      public IEnumerable<Note> GetByOffset(string guid_, int? offset_=3)
+      {
+        IEnumerable<Note> result_=null;
+        Note nt=manager.SelectSingle<Note>("GUID='"+guid_+"'",dbName);
+        int startDepth=nt.commentDepth == null ? 0 : (int)nt.commentDepth;
+        int endDepth=startDepth+(int)offset_;
+        if(nt!=null){
+          IEnumerable<Note> temRes = manager.TraverseFrom<Note, Comment, Commentary, Authorship, Comment>(nt.id, dbName);
+          if(temRes!=null){
+            result_ = temRes.Where(s => (s.class_ == "Commentary" || s.class_ == "News")&&(s.commentDepth>=startDepth&&s.commentDepth<=endDepth));
+          }
+        }
+        return result_;
+      }
+      
+      [Obsolete]
+      public IEnumerable<News> GetNewsByOffset(int? offset_=20)
+      {
+        IEnumerable<News> result=null;
+        int _offset=(int)offset_;
+          result=manager.SelectFromType<News>(null,dbName).OrderBy(s=>s.created).Take(_offset);
+        return result;
+      }
+      [Obsolete]
+      public IEnumerable<Note> GetCommentsWithCommentsByOffset(string guid_, int? offset_=3)
+      {
+        IEnumerable<Note> result=null;
+        Note nt = manager.SelectSingle<Note>("GUID='" + guid_ + "'", dbName);
+        if(nt!=null){
+          if(nt.class_=="Commentary"){
+            int depthfrom=nt.commentDepth==null?0:(int)nt.commentDepth;
+            int _offset=(int)offset_;
+            result=manager.SelectFromTraverseWithOffset<Note, Comment, Commentary, Authorship, Comment>(nt.id,"commentDepth",depthfrom,_offset, "test_db");
+          }
+        }
+        return result;
+      }
+      [Obsolete]
+      public IEnumerable<Note> GetNewsWithCommentsByOffset(string guid_, int? offset_=3)
+      {
+        IEnumerable<Note> result=null;
+        Note nt=manager.SelectSingle<Note>("GUID='" + guid_ + "'", dbName);
+        if(nt!=null){          
+          int depthfrom=nt.commentDepth==null?0:(int)nt.commentDepth;
+          int _offset=(int)offset_;
+          result=manager.SelectTraverseWithOffset<Note,Comment,Commentary,Authorship,Comment>(nt.id,"commentDepth",depthfrom,_offset, "test_db");          
+        }
+        return result;
+      }
+
       public IEnumerable<Person> SearchByName(string Name_)
       {
           IEnumerable<Person> result=null;
@@ -1219,19 +1276,14 @@ namespace NewsUOWs
           return result;
       }        
 
-      public News GetNewsById(string id_)          
-      {
-          News result = null;
-          result = manager.SelectFromType<News>("@rid=" + id_ , dbName).FirstOrDefault();
-          return result;
-      }
       public IEnumerable<T> GetOrientObjects<T>(string cond_=null)
-          where T : class, IOrientObjects.IorientDefaultObject
+        where T : class, IOrientObjects.IorientDefaultObject
       {
-          IEnumerable<T> result = null;
-          result = manager.SelectFromType<T>(cond_, dbName);
-          return result;
+        IEnumerable<T> result = null;
+        result = manager.SelectFromType<T>(cond_, dbName);
+        return result;
       }
+      
       public Commentary CreateCommentary(Person from,string newsId_,string comment_)
       {
           Authorship auth=new Authorship(){};
@@ -1383,9 +1435,25 @@ namespace NewsUOWs
           return nt;
       }
 
+      public IEnumerable<News> GetNews(int offset=20)
+      {
+        IEnumerable<News> result = null;
+          result = manager.SelectFromType<News>(null, dbName).OrderBy(s=>s.created).Take(offset);
+        return result;
+      }
       public IEnumerable<News> GetNews(string accountName_)
       {
           return null;
+      }
+      public IEnumerable<News> GetPersonNews(Person p_=null)
+      {
+          return manager.Select<Person,Authorship, News>(p_);
+      }
+      public Note GetNoteByID(string NewsId)
+      {
+          Note ret_=null;
+            ret_=manager.SelectByIDWithCondition<Note>(NewsId,null,dbName).FirstOrDefault();         
+          return ret_;
       }
 
       public string DeleteNews(Person from, string id_)
@@ -1400,12 +1468,7 @@ namespace NewsUOWs
           }
           return result;
       }
-
-      public IEnumerable<News> GetPersonNews(Person p_=null)
-      {
-          return manager.Select<Person,Authorship, News>(p_);
-      }
-
+      
       /// <summary>
       /// check inE types on Comment,Authorship. If has inE comment, then returns current Note.
       /// </summary>
@@ -1421,14 +1484,7 @@ namespace NewsUOWs
           }else {depth=null;}
           return depth;
       }
-
-      public Note GetNoteByID(string NewsId)
-      {
-          Note ret_=null;
-            ret_=manager.SelectByIDWithCondition<Note>(NewsId,null,dbName).FirstOrDefault();         
-          return ret_;
-      }
-
+    
       public string UserAcc()
       {
           return WebManagers.UserAuthenticationMultiple.UserAcc();
@@ -1438,16 +1494,25 @@ namespace NewsUOWs
           where T:class,IOrientObjects.IorientDefaultObject
       {
           string result = null;
-          result = manager.ObjectToString<T>(item_);
+          result = manager.ObjectToContentString<T>(item_);
+          return result;
+      }
+      
+      public string UOWserialize<T>(IEnumerable<T> item_)
+          where T:class,IOrientObjects.IorientDefaultObject
+      {
+          string result = null;
+          result = manager.ObjectToContentString<T>(item_);
           return result;
       }
       public T UOWdeserialize<T>(string item_)
           where T : class, IOrientObjects.IorientDefaultObject
       {
           T result = null;
-          result = manager.StringToObject<T>(item_);
+          result = manager.ContentStringToObject<T>(item_);
           return result;
       }
 
   }
+
 }

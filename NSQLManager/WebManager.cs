@@ -445,9 +445,8 @@ namespace WebManagers
 
                 return e.Response;
             }
-            catch (Exception e)
-            {
-                throw e;
+            catch (Exception e){
+                return null;
             }
         }
         public WebResponse GetResponse64(string url_, string method)

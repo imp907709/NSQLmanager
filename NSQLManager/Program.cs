@@ -25,6 +25,8 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Converters;
 using System.Reflection;
 
+using System.IO;
+
 namespace NSQLManager
 {
 
@@ -39,7 +41,7 @@ namespace NSQLManager
           RepoCheck.startcond sc=RepoCheck.startcond.MNL;
 
 //DELETE and regenerate DB from scratch
-          rc.ManagerCheck(false);
+          //rc.ManagerCheck(false);
 //check structural or generated obj createion
           //rc.UOWRandomcheck(sc);
 //check manual object behaviour
@@ -154,7 +156,7 @@ new MainAssignment() { GUID="0", changed=new DateTime(2017, 01, 01, 00, 00, 00),
         /// </summary>
         public void ManagerCheck(bool cleanUpAter = true)
         {
-
+            
             string login = ConfigurationManager.AppSettings["orient_login"];
             string password = ConfigurationManager.AppSettings["orient_pswd"];
             string dbHost = string.Format("{0}:{1}" 
@@ -193,7 +195,7 @@ new Person(){Seed=123,Name="0",GUID="000",changed=new DateTime(2017,01,01,00,00,
             Person personTwo=
 new Person(){Seed=456,Name="0",GUID="001",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)};
             MainAssignment mainAssignment=new MainAssignment();
-            string pone = manager.ObjectToString<Person>(personOne);
+            string pone = manager.ObjectToContentString<Person>(personOne);
             List<Person> personsToAdd = new List<Person>() {
 new Person(){
 Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",GUID="000"
@@ -208,7 +210,8 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",GUID="000"
                     );
             }
 
-          
+            manager.BindDbName("test_db");            
+
             //db delete
             manager.DeleteDb(dbName, dbHost);
 
@@ -225,8 +228,8 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",GUID="000"
             //Type tpp = manager.CreateClass<Note, V>("news_test5");
             Type nt=manager.CreateClass<Note, V>(dbName);
             
-            Type cmt=manager.CreateClass<Commentary,V>(dbName);
-            Type nws=manager.CreateClass<News,V>(dbName);
+            Type cmt=manager.CreateClass<Commentary,Note>(dbName);
+            Type nws=manager.CreateClass<News,Note>(dbName);
             Type auCl=manager.CreateClass<Authorship,E>(dbName);
             Type cmCl=manager.CreateClass<Comment,E>(dbName);
 
@@ -281,6 +284,8 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",GUID="000"
             Note ntCr=manager.CreateVertex<Note>(ntCl0, dbName);            
             Authorship aut=new Authorship();
             Authorship aCr=manager.CreateEdge<Authorship>(aut,p0,ntCr,dbName);         
+
+            IEnumerable<Note> notes=manager.SelectFromTraverseWithOffset<Note, Comment, Commentary, Authorship, Comment>("26:2","commentDepth",0,2, "test_db");
 
             if (cleanUpAter)
             {
@@ -699,7 +704,6 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
             Person person1=nu.StringToObject<Person>(pStr1);
             string strperson1=nu.ObjectToString<Person>(person1);
 
-
             OrientDefaultObject v1=new OrientDefaultObject() {GUID="g10",id="id1"};
 
             string v1Str = JsonConvert.SerializeObject(v1);
@@ -718,9 +722,12 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
             addedNews.content_="updated content";
             Note updatedNews=nu.UpdateNews(addedNews);
 
+            //GET
+
         }
         public void UOWRealCheck(bool newsGen=false)
         {
+
           NewsUOWs.NewsRealUow uow = new NewsUOWs.NewsRealUow("test_db");
           
           List<Person> personsAdded = new List<Person>();          
@@ -734,20 +741,28 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
           int newsCnt=(int)rnd.Next(5,10);
           int commentaryCnt=(int)rnd.Next(5,10);
 
-          personsAdded = uow.GetOrientObjects<Person>(null).ToList();
+          //get news with commentaries
+          //news + comments
+          //comment + coments
+          IEnumerable<Note> notes_=uow.GetByOffset("82f83601-d5cd-4108-b1b7-d27ac5a3933a",3);
+
+          IEnumerable<News> news_=uow.GetNews(10);
+
+          personsAdded=uow.GetOrientObjects<Person>(null).ToList();
+
           if(newsGen) {
             //news add
             for(int i=0;i<personsAdded.Count()-1;i++)
             {
-              newsCnt=(int)rnd.Next(0,4);
+              newsCnt=(int)rnd.Next(0,3);
               for(int i2=0;i2<newsCnt;i2++)
               {
                 newsAdded.Add(
                   uow.CreateNews(personsAdded[i],new News(){Name="News"+i2,content_="fucking interesting news"})
                 );
-              }            
+              }
             }
-          }        
+          }
           
           nodes.AddRange(
             uow.GetOrientObjects<News>(null).ToList()
@@ -756,16 +771,21 @@ NewsUOWs.NewsUow newsUOW = new NewsUOWs.NewsUow(ConfigurationManager.AppSettings
           //rando, comments gen
           for(int i=0;i<personsAdded.Count()-1;i++)
           {
-            commentaryCnt=(int)rnd.Next(0,7);
+            commentaryCnt=(int)rnd.Next(8,15);
             for(int i2=0;i2<commentaryCnt;i2++){
               int nodeToCommentId=(int)rnd.Next(0,nodes.Count()-1);
               Note nodeToComment=uow.GetNoteByID(nodes[nodeToCommentId].id);
               nodes.Add(
-                uow.CreateCommentary(personsAdded[i2],new Commentary(){Name="Commentary"+i2,content_="fucking bullshit comentary"},nodeToComment)
+                uow.CreateCommentary(personsAdded[i],new Commentary(){Name="Commentary"+i2,content_="fucking bullshit comentary"},nodeToComment)
               );
             }
-          }          
 
+          }
+
+        string location_ = Assembly.GetExecutingAssembly().Location;
+        string path_ = Directory.GetParent(location_).ToString() + "\\nodes.json";
+        File.WriteAllText(path_, JsonConvert.SerializeObject(nodes,Formatting.Indented));
+        
         }
     }
 
