@@ -15,7 +15,7 @@ using IOrientObjects;
 
 using POCO;
 using System.Reflection;
-using System.Linq.Expressions;
+using Newtonsoft.Json.Converters;
 
 /// <summary>
 /// Realization of IJsonMangers, IWebManagers, and IOrient specifically for orient db
@@ -3429,7 +3429,7 @@ namespace OrientRealization
     /// <summary>
     /// Manager for generating,sending, parsing commands to Orient db.
     /// </summary>
-    public class Manager:IManager
+    public class OrientRepo:IOrientRepo
     {
         ICommandBuilder commandBody = null;
         ITypeToken result_;
@@ -3454,8 +3454,8 @@ namespace OrientRealization
         ICommandFactory _commandFactory;
         IOrientQueryFactory _orientfactory;
 
-        public Manager
-        (ITypeTokenConverter typeConverter_, IJsonManagers.IJsonManger jsonmanager_, TokenMiniFactory miniFactory_,
+        public OrientRepo
+        (ITypeTokenConverter typeConverter_, IJsonManagers.IJsonManger jsonmanager_,TokenMiniFactory miniFactory_,
         UrlShemasExplicit urlShema_,
         BodyShemas bodyShema_,
         CommandShemasExplicit commandShema_,
@@ -3466,18 +3466,18 @@ namespace OrientRealization
         IOrientQueryFactory orientfactory_,
         IPropertyConverter propertyConverter_)
         {
-            this._typeConverter=typeConverter_;
-            this._jsonmanager=jsonmanager_;
-            this._miniFactory=miniFactory_;
-            this._urlShema=urlShema_;
-            this._bodyShema=bodyShema_;
-            this._commandShema=commandShema_;
-            this._webmanager=webmanager_;
-            this._webResponseReader=webResponseReader_;
-            this._commandFactory=commandFactory_;
-            this._formatFactory=formatFactory_;
-            this._orientfactory=orientfactory_;
-            this._propertyConverter=propertyConverter_;
+          this._typeConverter=typeConverter_;
+          this._jsonmanager=jsonmanager_;
+          this._miniFactory=miniFactory_;
+          this._urlShema=urlShema_;
+          this._bodyShema=bodyShema_;
+          this._commandShema=commandShema_;
+          this._webmanager=webmanager_;
+          this._webResponseReader=webResponseReader_;
+          this._commandFactory=commandFactory_;
+          this._formatFactory=formatFactory_;
+          this._orientfactory=orientfactory_;
+          this._propertyConverter=propertyConverter_;
         }
 
         void CheckDb(string dbName_)
@@ -3566,7 +3566,7 @@ namespace OrientRealization
             return this.result_.Text;
         }
 
-        public IManager CreateDb(string name, string host) {
+        public IOrientRepo CreateDb(string name, string host) {
             
             _webmanager.AddRequest(_urlShema.Database(_miniFactory.NewToken(name)).GetText());
             try
@@ -3582,7 +3582,7 @@ namespace OrientRealization
           
             return this;
         }
-        public IManager DeleteDb(string name, string host) {
+        public IOrientRepo DeleteDb(string name, string host) {
             _webmanager.AddRequest(_urlShema.Database(_miniFactory.NewToken(name)).GetText());
             try
             {
@@ -3598,9 +3598,7 @@ namespace OrientRealization
 
             return this;
         }
-             
-        
-        public IManager Delete<T>(T item=null,string condition_=null,string dbName_=null) 
+        public IOrientRepo Delete<T>(T item=null,string condition_=null,string dbName_=null) 
             where T:class, IorientDefaultObject
         {
                         
@@ -3648,7 +3646,7 @@ namespace OrientRealization
                          
             return this;
         }     
-        public IManager DeleteEdge<T>(string from,string to,string condition_=null,string dbName_=null) 
+        public IOrientRepo DeleteEdge<T>(string from,string to,string condition_=null,string dbName_=null) 
           where T :class, IOrientEdge
         {
            
@@ -3693,7 +3691,7 @@ namespace OrientRealization
         /// <param name="condition_">Condition to filter concrete Relations. If null all relations deleted.</param>
         /// <param name="dbName_">Database name</param>
         /// <returns></returns>
-        public IManager DeleteEdge<T,K,C>(K from,C to,string condition_=null,string dbName_=null)
+        public IOrientRepo DeleteEdge<T,K,C>(K from,C to,string condition_=null,string dbName_=null)
             where T:IOrientEdge where K:IOrientVertex where C:IOrientVertex
         {
                      
@@ -3745,7 +3743,7 @@ namespace OrientRealization
             return this;
         }
 
-        public IManager CreateClass(string class_,string extends_,string dbName_=null)
+        public IOrientRepo CreateClass(string class_,string extends_,string dbName_=null)
         {
             ITypeToken clTk= _miniFactory.NewToken(class_);
             ITypeToken extTk = _miniFactory.NewToken(extends_);
@@ -3798,7 +3796,7 @@ namespace OrientRealization
             return ret_;
         }
     
-        public IManager CreateProperty(string class_,string property_,Type type_,bool mandatory_,bool notnull_,string dbName_=null)
+        public IOrientRepo CreateProperty(string class_,string property_,Type type_,bool mandatory_,bool notnull_,string dbName_=null)
         {
             ITypeToken clTk = _miniFactory.NewToken(class_);
             ITypeToken propTk = _miniFactory.NewToken(property_);
@@ -3901,7 +3899,7 @@ namespace OrientRealization
            
             return ret_;
         }
-        public IManager CreateProperty(Type item,string dbName_=null)
+        public IOrientRepo CreateProperty(Type item,string dbName_=null)
         {
             CheckDb(dbName_);
 
@@ -3952,10 +3950,10 @@ namespace OrientRealization
             return this;
         }
 
-        public IManager CreateVertex(string vertex,string content_=null,string dbName_=null)
+        public IOrientRepo CreateVertex(string vertex,string content_=null,string dbName_=null)
         {
             ITypeToken clTk = _miniFactory.NewToken(vertex);
-            ITypeToken prsTk = _miniFactory.NewToken(content_);
+            ITypeToken prsTk = _miniFactory.NewToken(content_.Replace("\"", "\\\"");
 
             CheckDb(dbName_);
 
@@ -3980,7 +3978,7 @@ namespace OrientRealization
             T ret_ = null;
             T object_=_jsonmanager.DeserializeFromParentNodeStringObj<T>(content_);
             ITypeToken clTk=_typeConverter.Get(typeof(T));
-            ITypeToken prsTk=_miniFactory.NewToken(content_);
+            ITypeToken prsTk=_miniFactory.NewToken(content_.Replace("\"", "\\\""));
 
             CheckDb(dbName_);
 
@@ -4012,7 +4010,9 @@ namespace OrientRealization
           where T: class,IOrientVertex
         {
             ITypeToken clTk=_typeConverter.Get(typeof(T));
-            ITypeToken prsTk=_miniFactory.NewToken(_jsonmanager.SerializeObject(vertex).Replace("\"", "\\\""));
+            ITypeToken prsTk = _miniFactory.NewToken(_jsonmanager.SerializeObject(vertex)
+            .Replace("\"", "\\\""));
+
             T ret_=null;
 
             CheckDb(dbName_);
@@ -4098,7 +4098,7 @@ namespace OrientRealization
         }
 
         /// <summary>
-        /// Seraches with any type by Condition. Type not parsed to DB.
+        /// Searches with any type by Condition. Type not parsed to DB.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="ID_"></param>
@@ -4663,7 +4663,9 @@ NewChain().Select().OutE(outEtk).Dot().InV(inVtk).As(aliace).FromV(fromEtk)
         /// </summary>
         public void DbPredefinedParameters()
         {
-            string cmd="ALTER DATABASE DATETIMEFORMAT \\\"yyyy-MM-dd HH:mm:ss\\\"";            
+            string dateFormat = ConfigurationManager.AppSettings["OrientDateTime"];
+            string cmd="ALTER DATABASE DATETIMEFORMAT \\\""+dateFormat+"\\\"";
+
             List<ITypeToken> tk = new List<ITypeToken>()
             {
                 _miniFactory.NewToken(cmd)
@@ -4685,26 +4687,26 @@ NewChain().Select().OutE(outEtk).Dot().InV(inVtk).As(aliace).FromV(fromEtk)
 
     }
 
-    public interface IManager
+    public interface IOrientRepo
     {
     void AlterProperty(ITypeToken class_, ITypeToken prop_, ITypeToken func_);    
-    IManager CreateClass(string class_, string extends_, string dbName_ = null);
+    IOrientRepo CreateClass(string class_, string extends_, string dbName_ = null);
     Type CreateClass<T, K>(string dbName_ = null)
       where T : IOrientEntity
       where K : IOrientEntity;
-    IManager CreateDb(string name, string host);
+    IOrientRepo CreateDb(string name, string host);
     T CreateEdge<T>(IOrientEdge edge_, IOrientVertex vFrom, IOrientVertex vTo, string dbName_ = null) where T : class, IOrientEdge;
-    IManager CreateProperty(Type item, string dbName_ = null);
-    IManager CreateProperty(string class_, string property_, Type type_, bool mandatory_, bool notnull_, string dbName_ = null);
+    IOrientRepo CreateProperty(Type item, string dbName_ = null);
+    IOrientRepo CreateProperty(string class_, string property_, Type type_, bool mandatory_, bool notnull_, string dbName_ = null);
     T CreateProperty<T>(T item, string dbName_ = null) where T : class, IorientDefaultObject;
-    IManager CreateVertex(string vertex, string content_ = null, string dbName_ = null);
+    IOrientRepo CreateVertex(string vertex, string content_ = null, string dbName_ = null);
     T CreateVertex<T>(string content_, string dbName_ = null) where T : class, IOrientVertex;
     T CreateVertex<T>(IOrientVertex vertex, string dbName_ = null) where T : class, IOrientVertex;
     void DbPredefinedParameters();
-    IManager Delete<T>(T item = null, string condition_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
-    IManager DeleteDb(string name, string host);
-    IManager DeleteEdge<T>(string from, string to, string condition_ = null, string dbName_ = null) where T : class, IOrientEdge;
-    IManager DeleteEdge<T, K, C>(K from, C to, string condition_ = null, string dbName_ = null)
+    IOrientRepo Delete<T>(T item = null, string condition_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
+    IOrientRepo DeleteDb(string name, string host);
+    IOrientRepo DeleteEdge<T>(string from, string to, string condition_ = null, string dbName_ = null) where T : class, IOrientEdge;
+    IOrientRepo DeleteEdge<T, K, C>(K from, C to, string condition_ = null, string dbName_ = null)
       where T : IOrientEdge
       where K : IOrientVertex
       where C : IOrientVertex;
@@ -4728,12 +4730,12 @@ NewChain().Select().OutE(outEtk).Dot().InV(inVtk).As(aliace).FromV(fromEtk)
       where InV :  class,IOrientVertex;
 
 IEnumerable<T> SelectFromTraverseWithOffset<T,outE,inV,inE,inE2>(string ID_,string depthPropName_,int depthFrom_,int? depthOfset_=null,string dbName_=null)
-          where T:class,IorientDefaultObject;
+    where T:class,IorientDefaultObject;
 IEnumerable<T> SelectTraverseWithOffset<T,outE,inV,inE,inE2>(string ID_,string depthPropName_,int depthFrom_,int? depthOfset_=null,string dbName_=null)
-          where T:class,IorientDefaultObject;
+    where T:class,IorientDefaultObject;
 IEnumerable<T> TraverseFrom<T,outE,inV,inE,inE2>(string ID_,string dbName_=null)
-          where T:class,IorientDefaultObject;
-		  
+    where T:class,IorientDefaultObject;
+
     T SelectSingle<T>(string cond_, string dbName_ = null) where T : class, IorientDefaultObject;
     T ContentStringToObject<T>(string item_) where T : class, IorientDefaultObject;
     T UpdateEntity<T>(T item_, string dbName_ = null) where T : class,IorientDefaultObject;

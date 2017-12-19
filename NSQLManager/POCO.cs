@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
+using System.Configuration;
 
 using System;
 
@@ -46,7 +48,7 @@ namespace POCO
         [JsonProperty("@class")]
         public string class_ {get; set;} 
         
-        public bool ShouldSerializeclass()
+        public bool ShouldSerializeclass_()
         {
           return false;
         }
@@ -222,27 +224,54 @@ namespace POCO
     //Note
     public class Note : V
     {
-        string somethingNew { get; set; }
-        public string Name { get; set; }
+        public string PGUID { get; set; }=string.Empty;
 
-        public string pic { get; set; } = string.Empty;
-        public string name { get; set; } = string.Empty;
-        
+        public string authAcc { get; set; }=string.Empty;
+        public string authGUID { get; set; }=string.Empty;
+        public string authName { get; set; }=string.Empty;
+
+        public string pic {get;set;}=string.Empty;
+        public string name {get;set;}=string.Empty;               
+
         [JsonProperty("content_")]
-        public string content_ { get; set; }=string.Empty;
-        public string description { get; set; } = string.Empty;
+        public virtual string content { get; set; }=string.Empty;
+        public string description { get; set; }=string.Empty;
 
-        public DateTime? pinned { get; set; } = null;
-        public DateTime? published { get; set; } = null;
+        public DateTime? pinned { get; set; }=null;
+        public DateTime? published { get; set; }=null;
 
-        public int? commentDepth { get; set; } = 0;
-        public bool hasComments { get; set; } = false;
+        public int? commentDepth { get; set; }=0;
+        public bool hasComments { get; set; }=false;
 
-        public int likes { get; set; } = 0;
-        public bool liked { get; set; } = false;
+        public int likes { get; set; }=0;
+        public bool liked { get; set; }=false;
         
     }
-    public class News:Note{}
+    public class News:Note{
+
+      [JsonProperty("content_")]
+      public override string content { get; set; }
+
+      [JsonProperty("author_")]
+      public Person author_ { get; set; }
+
+      [JsonIgnore]
+      public string contentBase64 {
+        get { 
+            if(content!=null){ 
+              System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(content));
+            }
+            return null;
+          }
+      
+            set  {  content = 
+              System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(value))
+            ; 
+          }
+        }
+    
+    }
+
     public class Commentary:Note{}
 
     public class Comment : E
@@ -355,7 +384,7 @@ namespace POCO
     {
         public orientFuckedUpDatetime()
         {
-            DateTimeFormat = "yyyy-MM-dd hh:mm:ss";
+            DateTimeFormat = ConfigurationManager.AppSettings["OrientDateTime"];
         }
     }
     #endregion

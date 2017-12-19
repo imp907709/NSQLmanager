@@ -166,7 +166,7 @@ namespace NSQLManagerTests.Tests
 
     public class IntegrationMnagerFireTest
     {
-        Manager mng;
+        OrientRepo mng;
         Person p;
         Unit u;
         MainAssignment mainAssignment;
@@ -213,7 +213,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
             CommandShemasExplicit cs = new CommandShemasExplicit(cf, ff,
        new TokenMiniFactory(), new OrientQueryFactory());
 
-            mng = new Manager(tc, jm, tf, us, bs, cs, wm, wr, cf, ff, oqf, pc);
+            mng = new OrientRepo(tc, jm, tf, us, bs, cs, wm, wr, cf, ff, oqf, pc);
 
         }
 
@@ -879,7 +879,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         [Fact]
         public void ChainingWhereCheck()
         {
-            this.commandOne.Where();
+            this.commandOne.Where(miniFactory.EmptyString());
             string result=this.commandOne.GetCommand();
             Assert.Equal(" where", result);
         }
@@ -1497,7 +1497,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         [Fact]
         public void ShemaWhereCheck()
         {
-            string result = this.commandShemas.Where().GetText();
+            string result = this.commandShemas.Where(new TextToken() {Text=""}).GetText();
             Assert.Equal(" where", result);
         }
         [Fact]
@@ -2419,7 +2419,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         public void UOWCreateNewsCheck()
         {            
             JSONManager jm = new JSONManager();
-            Note nt = new Note() { content_="Very interesting new",Name="News" };            
+            Note nt = new Note() { content="Very interesting new",name="News" };            
             string news = jm.SerializeObject(nt);
             Person p = nu.GetByAccount("Neprintsevia");
             string result = nu.CreateNews(p, nt).id;
