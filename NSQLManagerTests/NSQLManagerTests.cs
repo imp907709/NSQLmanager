@@ -2389,10 +2389,10 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         Func<string, string> stringEmpty = delegate (string s) { if(s==string.Empty){ return null;}else{ return s; } };
         Func<int, string> intEmpty = delegate (int s) { if(s==0){ return null;}else{ return s.ToString(); } };        
 
-        NewsUOWs.NewsUow nu;
+        NewsUOWs.NewsRealUow nu;
         public NewsUOWCHeck()
         {
-            nu = new NewsUOWs.NewsUow();
+            nu = new NewsUOWs.NewsRealUow();
         }
 
         [Fact]
@@ -2407,10 +2407,10 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
           List<string> results = new List<string>();
           List<Person> pers = nu.GetOrientObjects<Person>(null).ToList();
 
-          results.Add(nu.GetByAccount("Neprintsevia").id);            
+          results.Add(nu.SearchByName("Neprintsevia").FirstOrDefault().id);            
           results.Add(intEmpty(nu.SearchByName("олов").Count()));
           results.Add(intEmpty(pers.Count()));
-          results.Add(nu.GetOrientObjectById<Person>(pers[0].id).id);
+          results.Add(nu.GetOrientObjects<Person>(pers[0].id).FirstOrDefault().id);
 
           Assert.Equal(4,results.Count());
         }
@@ -2421,14 +2421,14 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
           JSONManager jm = new JSONManager();
           Note nt = new Note() { content="Very interesting new",name="News" };            
           string news = jm.SerializeObject(nt);
-          Person p = nu.GetByAccount("Neprintsevia");
+          Person p = nu.SearchByName("Neprintsevia").FirstOrDefault();
           string result = nu.CreateNews(p, nt).id;
           Assert.NotNull(result);
         }
         [Fact]
         public void UOWDeleteRelation()
         {
-            Person p = nu.GetByAccount("Neprintsevia");
+            Person p = nu.SearchByName("Neprintsevia").FirstOrDefault();
             bool result = false;
             string res = nu.DeleteNews(p, "");
             if(res==null||res==string.Empty)
