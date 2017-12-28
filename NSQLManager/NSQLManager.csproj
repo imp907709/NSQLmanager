@@ -102,6 +102,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApiTester.cs" />
+    <Compile Include="ICommandsChain.cs" />
     <Compile Include="IJsonManager.cs" />
     <Compile Include="IorientObjects.cs" />
     <Compile Include="IUOWS.cs" />
@@ -120,7 +121,9 @@
     <Compile Include="WebManager.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

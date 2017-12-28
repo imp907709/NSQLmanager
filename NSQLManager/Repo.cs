@@ -25,7 +25,7 @@ namespace Repos
 
         IJsonManger jm;
         ITokenBuilder tb;
-        ITypeTokenConverter tk;
+        ITypeConverter tk;
         ICommandBuilder cb;
         IWebManager wm;
         IResponseReader ir;
@@ -35,7 +35,7 @@ namespace Repos
         string AuthUrl, CommandUrl, QueryUrl, DatabaseUrl;
 
         public Repo(
-            IJsonManger jsonManager_, ITokenBuilder tokenBuilder_, ITypeTokenConverter typeConverter_, ICommandBuilder commandBuilder_,
+            IJsonManger jsonManager_, ITokenBuilder tokenBuilder_, ITypeConverter typeConverter_, ICommandBuilder commandBuilder_,
             IWebManager webManger_, IResponseReader responseReader_)
         {
 
