@@ -2392,7 +2392,15 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         NewsUOWs.NewsRealUow nu;
         public NewsUOWCHeck()
         {
-            nu = new NewsUOWs.NewsRealUow();
+          nu = new NewsUOWs.NewsRealUow(RepoFactory.NewOrientRepo(
+            ConfigurationManager.AppSettings["OrientUnitTestDB"]
+            ,string.Format("{0:1}"
+            ,ConfigurationManager.AppSettings["OrientDevHost"]
+            ,ConfigurationManager.AppSettings["OrientPort"])
+            ,ConfigurationManager.AppSettings["orient_login"]
+            ,ConfigurationManager.AppSettings["orient_pswd"]));
+
+
         }
 
         [Fact]

@@ -102,7 +102,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApiTester.cs" />
-    <Compile Include="ICommandsChain.cs" />
     <Compile Include="IJsonManager.cs" />
     <Compile Include="IorientObjects.cs" />
     <Compile Include="IUOWS.cs" />

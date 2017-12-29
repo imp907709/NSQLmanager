@@ -251,68 +251,6 @@ namespace IQueryManagers
     }
 
     
-    public interface IOrientRepo
-    {
-      void AlterProperty(ITypeToken class_, ITypeToken prop_, ITypeToken func_);
-      void BindDbName(string dbName_);
-      void BindUrlName(string input_);
-      T ContentStringToObject<T>(string item_) where T : class, IorientDefaultObject;
-      IOrientRepo CreateClass(string class_, string extends_, string dbName_ = null);
-      Type CreateClass<T, K>(string dbName_ = null)
-        where T : IOrientEntity
-        where K : IOrientEntity;
-      IOrientRepo CreateDb(string dbName_ = null, string host = null);
-      T CreateEdge<T>(IOrientEdge edge_, IOrientVertex vFrom, IOrientVertex vTo, string dbName_ = null) where T : class, IOrientEdge;
-      IOrientRepo CreateProperty(string class_, string property_, Type type_, bool mandatory_, bool notnull_, string dbName_ = null);
-      T CreateProperty<T>(T item = null, string dbName_ = null) where T : class, IorientDefaultObject;
-      IOrientRepo CreateVertex(string vertex, string content_ = null, string dbName_ = null);
-      T CreateVertex<T>(IOrientVertex vertex, string dbName_ = null) where T : class, IOrientVertex;
-      T CreateVertex<T>(string content_, string dbName_ = null) where T : class, IOrientVertex;
-      void DbPredefinedParameters();
-      IOrientRepo Delete<T>(T item = null, string condition_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
-      IOrientRepo DeleteDb(string dbName_ = null, string host = null);
-      IOrientRepo DeleteEdge<T, K, C>(K from, C to, string condition_ = null, string dbName_ = null)
-        where T : IOrientEdge
-        where K : IOrientVertex
-        where C : IOrientVertex;
-      IOrientRepo DeleteEdge<T>(string from, string to, string condition_ = null, string dbName_ = null) where T : class, IOrientEdge;
-      string GetResult();
-      ICommandsChain NewChain();
-      string ObjectToContentString<T>(IEnumerable<T> item_) where T : class, IorientDefaultObject;
-      string ObjectToContentString<T>(T item_) where T : class, IorientDefaultObject;
-      T OrientStringToObject<T>(string item_) where T : class, IorientDefaultObject;
-      T PropertyTryReturnAttribute<T>(PropertyInfo p_) where T : Attribute;
-      PropertyInfo[] Props<T>() where T : IOrientObject;
-      IEnumerable<T> Select<T, InE>(T vertexFrom_ = null, string dbName_ = null)
-        where T : class, IOrientVertex
-        where InE : class, IOrientEdge;
-      IEnumerable<InV> Select<T, OutE, InV>(T vertexFrom_ = null, string dbName_ = null)
-        where T : class, IOrientVertex
-        where OutE : class, IOrientEdge
-        where InV : class, IOrientVertex;
-      IEnumerable<T> SelectAll<T>(IorientDefaultObject t_, string dbName_ = null) where T : class, IorientDefaultObject;
-      IEnumerable<T> SelectByGUIDfromType<T>(Type type_, string cond_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
-      IEnumerable<T> SelectByIDWithCondition<T>(string ID_, string cond_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
-      IEnumerable<InV> SelectCommentToComment<T, InE, InV>(T vertexFrom_ = null, string dbName_ = null)
-        where T : class, IOrientVertex
-        where InE : class, IOrientEdge
-        where InV : class, IOrientVertex;
-      IEnumerable<T> SelectFromTraverseWithOffset<T, outE, inV, inE, inE2>(string ID_, string depthPropName_, int depthFrom_, int? depthOfset_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
-      IEnumerable<T> SelectFromType<T>(string cond_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
-      IEnumerable<OutV> SelectInEOutV<T, InE, OutV>(T vertexFrom_ = null, string dbName_ = null)
-        where T : class, IorientDefaultObject
-        where InE : class, IOrientEdge
-        where OutV : class, IOrientVertex;
-      T SelectSingle<T>(string cond_, string dbName_ = null) where T : class, IorientDefaultObject;
-      IEnumerable<T> SelectTraverseWithOffset<T, outE, inV, inE, inE2>(string ID_, string depthPropName_, int depthFrom_, int? depthOfset_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
-      T TestDeserialize<T>(string item_) where T : class;
-      IEnumerable<T> TraverseFrom<T, outE, inV, inE, inE2>(string ID_, string dbName_ = null) where T : class, IorientDefaultObject;
-      IEnumerable<T> TraverseInID<T>(string fromId_, List<Type> types_, string cond_ = null, string dbName_ = null) where T : class, IOrientVertex;
-      T UpdateEntity<T>(string item_, string dbName_ = null) where T : class, IorientDefaultObject;
-      T UpdateEntity<T>(T item_, string dbName_ = null) where T : class, IorientDefaultObject;
-      T UpdateProperties<T>(T fromObject, T toObject) where T : class, IorientDefaultObject;
-    }
-
     //<<< obsolette
     public interface ITokenBuilder
     {
