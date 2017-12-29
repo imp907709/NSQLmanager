@@ -1,0 +1,1 @@
+G:\disk\Files\git\nsql\NSQLManager\bin\Release\NSQLmanager.exe.config

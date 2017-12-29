@@ -34,7 +34,7 @@ namespace IUOWs
     T UOWdeserialize<T>(string item_) where T : class, IorientDefaultObject;
     string UOWserialize<T>(IEnumerable<T> item_) where T : class, IorientDefaultObject;
     string UOWserialize<T>(T item_) where T : class, IorientDefaultObject;
-    string UserAcc();
+
   }
 
   public class UOW : IUOW
@@ -50,10 +50,6 @@ namespace IUOWs
       this._repo=repo_;
     }
 
-    public string UserAcc()
-    {
-      return WebManagers.UserAuthenticationMultiple.UserAcc();
-    }
 
     public string UOWserialize<T>(T item_)
         where T:class,IOrientObjects.IorientDefaultObject
@@ -1124,7 +1120,11 @@ namespace Managers
     
     string UserAcc()
     {
-      return WebManagers.UserAuthenticationMultiple.UserAcc();
+      #if DEBUG
+        return "Person1";
+      #endif
+      
+      return WebManagers.UserAuthenticationMultiple.UserAcc();      
     }
     
     public string GetNotes(string GUID_,int offset)
@@ -1153,7 +1153,7 @@ namespace Managers
         
         Person person_=_personUOW.GetPersonByAccount(acc);
       
-        if(person_==null){ throw new Exception("user not found for acc: " + acc); }
+        if(person_==null){throw new Exception("user not found for acc: " + acc);}
 
         News pn=_newsUOW.CreateNews(person_, note_);
         if(pn==null||pn.GUID==null){ throw new Exception("news not created for person " + person_.sAMAccountName); }
@@ -1167,7 +1167,7 @@ namespace Managers
     {
       string res_ = null;
 
-        string acc=_newsUOW.UserAcc();
+        string acc=UserAcc();
         Person person_=_personUOW.GetPersonByAccount(acc);
         if(person_==null){ throw new Exception("user not found for acc: " + acc); }
 
@@ -1185,7 +1185,7 @@ namespace Managers
     public string PutNote(POCO.Note note_)
     {
       string res_ = null;      
-      string acc=_newsUOW.UserAcc();
+      string acc=UserAcc();
 
       Person person_=_personUOW.GetPersonByAccount(acc);
       POCO.Note pn=_newsUOW.UpdateNotePersonal(person_,note_);

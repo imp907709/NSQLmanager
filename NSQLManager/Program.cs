@@ -39,9 +39,9 @@ namespace NSQLManager
       //mng.GenNewsComments();
           
       RepoCheck rc=new RepoCheck();
-      //rc.UOWFunctionalCheck();
+      rc.UOWFunctionalCheck();
           
-      rc.GenTestDB();
+      //rc.GenTestDB();
 
   //QUIZ CHECK
   //rc.QuizCheck();
@@ -599,7 +599,37 @@ NewsUOWs.NewsUowOld newsUOW = new NewsUOWs.NewsUowOld(ConfigurationManager.AppSe
         }        
 
     }
-                     
+    public void ManagerToCntrCheck()
+    {
+
+     //Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientUnitTestDB"],null);
+      Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientDevDB"],null);
+      NewsUOWs.NewsRealUow newsForMngUOW=mng.GetNewsUOW();
+      
+      string newsStr=mng.GetNews(2);
+
+      News new_=newsForMngUOW.GetNews(1).Where(s=>s.hasComments==true).Take(1).ToList().FirstOrDefault();
+      string newsComments=mng.GetNotes(new_.GUID,3);
+      
+      string newsPosted=mng.PostNews(new_);
+
+      Commentary cmnt=new Commentary() {content="comment"};
+      string commentPosted=mng.PostCommentary(new_.GUID,cmnt);
+
+      #if DEBUG
+        Commentary commentary_=newsForMngUOW.GetOrientObjects<Commentary>(null).Where(s=>s.author_!=null&&s.author_.sAMAccountName=="Person1").Take(1).FirstOrDefault();
+      #endif
+      
+      #if (!DEBUG)
+        Commentary commentary_=newsForMngUOW.GetOrientObjects<Commentary>(null).Where(s=>s.author_!=null&&s.author_.sAMAccountName!=null).Take(1).FirstOrDefault();
+      #endif
+
+      Person personCommenter=newsForMngUOW.GetOrientObjects<Person>("GUID='"+commentary_.author_.GUID+"'").Take(1).FirstOrDefault();
+      Commentary cmt=newsForMngUOW.CreateCommentary(personCommenter,commentary_,new_);
+      cmt.content="UpdatedContent";
+      string commentupdated=mng.PutNote(cmt);
+
+    }
         
     //DATABASE BOILERPLATE
     public void GenDevDB(bool cleanUpAter=false,bool newsGen=true)
@@ -625,10 +655,13 @@ mng.GenNewsComments(newsGen);
       
     //FUNCTIONAL TESTS
     public void UOWFunctionalCheck()
-    {
-           
+    {    
+      
       //Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientUnitTestDB"],null);
       Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientDevDB"],null);
+      NewsUOWs.NewsRealUow newsForMngUOW=mng.GetNewsUOW();
+          
+
       PersonUOWs.PersonUOW pu=mng.GetPersonUOW();
       NewsUOWs.NewsRealUow nu=mng.GetNewsUOW();
 
