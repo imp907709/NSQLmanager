@@ -2402,13 +2402,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
 
 
         }
-
-        [Fact]
-        public void UOWAccCheck()
-        {
-            string result = nu.UserAcc();
-            Assert.Equal("Neprintsevia", result);
-        }
+      
         [Fact]
         public void UOWsCheck()
         {        
