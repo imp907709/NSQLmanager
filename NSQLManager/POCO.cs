@@ -256,37 +256,28 @@ namespace POCO
 
     } 
 
-    //Note
+    //Note to front
     public class Note : V
     {
       [JsonProperty("author_")]
       public virtual Person author_ { get; set; }
 
-      public string PGUID { get; set; }
+      public virtual string PGUID { get; set; }
 
-      public string authAcc { get; set; }
-      public string authGUID { get; set; }
-      public string authName { get; set; }
+      public virtual string authAcc { get; set; }
+      public virtual string authGUID { get; set; }
+      public virtual string authName { get; set; }
 
       public string pic {get;set;}
       public string name {get;set;}
 
       [JsonProperty("content_")]
       public virtual string content { get; set; }
-      public string someAbstractFuckingField { get; set; }
-      public string description { get; set; }
-
-    /*
-    [JsonConverter(typeof(OrientDateTime))]
-    public DateTime? pinned { get; set; }
-    [JsonConverter(typeof(OrientDateTime))]
-    public DateTime? published { get; set; }
-    */
-
-      public ToggledProperty pinned { get; set; } = new ToggledProperty();
-      public ToggledProperty published  { get; set; } = new ToggledProperty();
-
-      public int? Likes {get;set;}
+           
+      public virtual ToggledProperty pinned { get; set; } = new ToggledProperty();
+      public virtual ToggledProperty published  { get; set; } = new ToggledProperty();
+    
+      public int? Likes {get;set;} 
       public Tag taggs {get;set;}
 
       [Updatable(true)]
@@ -319,22 +310,7 @@ namespace POCO
       //public new DateTime? published { get; set; }=DateTime.Now;
       [JsonProperty("author_"),Updatable(false)]
       public override Person author_ { get; set; }
-    }
-
-    [Obsolete]
-    public class NoteReturn: Note
-    {
-      [JsonProperty("author_"),Updatable(false)]
-      public override Person author_ { get; set; }
-
-      public int? Likes { get; set; } 
-      public int? Tagged { get; set; } 
-
-      public bool ShouldSerializeauthor_()
-      {
-        return false;
-      }
-    }
+    }  
 
     public class Comment : E
     {

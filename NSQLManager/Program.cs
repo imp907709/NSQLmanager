@@ -225,12 +225,16 @@ mng.GenNewsComments(newsGen);
       GETparameters gp = new GETparameters() {offest=5,published=true,pinned=true,asc=true,author=newsMaker };
       JSONManager jm = new JSONManager();
 
+      //Like Dislike check
       List<Note> notesCreated=(from s in nu.GetOrientObjects<Note>() where s.authGUID!=null select s).ToList();
       if(notesCreated.Count()>0)
       {
         Note noteToLike=notesCreated[0];
         Liked lk=nu.LikeNote(noteToLike,newsMaker);
+        Note likedNote=nu.GetLikes(noteToLike);
         IEnumerable<Note> notesLiked=nu.GetPersonNewsHCSelectCond(5, null, null,true, true, null);
+        Note disliked= nu.DislikeNote(noteToLike,newsMaker);
+        IEnumerable<Note> notesDisLiked=nu.GetPersonNewsHCSelectCond(5, null, null,true, true, null);
       }
 
       //PARAMS OBJ CHECK

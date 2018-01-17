@@ -562,7 +562,7 @@ return nt;
 
           if(result!=null)
           {
-            note_.Likes += 1;
+            note_.Likes=GetLikes(note_).Likes+1;
             note_=UpdateNote(note_);
             if(note_==null){
               _repo.Delete<Liked>(result);
@@ -575,9 +575,29 @@ return nt;
 
       return result;
     }
-    public void GetLikes()
+    public Note DislikeNote(Note note_,Person p_)
+    {            
+        if(note_==null){ throw new Exception("No Note object found in DB. Nothing to dislike."); }
+        if(p_==null){ throw new Exception("No Person found in DB. Noone can dislike."); }
+        
+        if(note_!=null || p_!=null)
+        {
+          try {
+            _repo.DeleteEdge<Liked,Person,Note>(p_,note_,null,null);        
+            int? likes=GetLikes(note_).Likes;
+            note_.Likes=(likes!=null || likes>0)?likes-1:0;
+            note_=UpdateNote(note_);
+          }
+          catch(Exception e) { System.Diagnostics.Trace.WriteLine(e.Message);}
+        }
+      return note_;
+    }
+    public Note GetLikes(Note note_)
     {
-      
+      Note result=null;
+      string select_="in('Liked').size() as Likes,GUID";
+        result = _repo.SelectHC<Note,Note>(note_,select_,null,null).FirstOrDefault();
+      return result;
     }
 
     //Postponned due to PUT realization
@@ -911,7 +931,7 @@ new Person(){
 Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
 ,changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)
 }
-//,new Person(){Seed =123,Name="YablokovAE",sAMAccountName="YablokovAE",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)}      
+,new Person(){Seed =123,Name="YablokovAE",sAMAccountName="YablokovAE",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)}      
 };
 
         Unit u = new Unit() { Name = "Unit1" };
