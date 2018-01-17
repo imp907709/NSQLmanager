@@ -8,11 +8,10 @@ using IWebManagers;
 using POCO;
 using OrientRealization;
 using QueryManagers;
-using IRepos;
+
 using JsonManagers;
 using IJsonManagers;
 using WebManagers;
-using Repos;
 
 using Newtonsoft.Json;
 using System.Configuration;
@@ -28,17 +27,28 @@ namespace IUOWs
 {
   using IOrientObjects;
 
+  public interface IPersonUOW
+  {
+      IEnumerable<Person> GetAll();
+      string GetByGUID(string GUID);
+      IEnumerable<Person> GetObjByGUID(string GUID);
+      string GetTrackedBirthday(string GUID);
+      string AddTrackBirthday(E edge_, string guidFrom, string guidTo);
+      string DeleteTrackedBirthday(E edge_, string guidFrom, string guidTo);
+  }
+
   public interface IUOW
   {
     void BindRepo(IOrientRepo repo_);
     T UOWdeserialize<T>(string item_) where T : class, IorientDefaultObject;
     string UOWserialize<T>(IEnumerable<T> item_) where T : class, IorientDefaultObject;
     string UOWserialize<T>(T item_) where T : class, IorientDefaultObject;
-
+   
   }
 
   public class UOW : IUOW
   {
+
     internal IOrientRepo _repo;
       
     public UOW(IOrientRepo repo_)
@@ -49,7 +59,36 @@ namespace IUOWs
     {
       this._repo=repo_;
     }
+  
 
+    public T CheckItem<T>(T item)
+      where T:class,IorientDefaultObject 
+    {
+      T result=null;
+        result=_repo.SelectSingle<T>("GUID='"+item.GUID+"'",null);
+      return result;
+    }
+    public T CreateVertex<T>(T item)
+      where T:class,IOrientVertex,IorientDefaultObject
+    {
+      T result=null;
+        result=_repo.CreateVertex<T>(item, null);
+      return result;
+    }
+    public T CreateEdge<T,C,K>(T rel,C from,K to)
+      where T:class,IOrientEdge,IorientDefaultObject
+      where C:class,IOrientVertex,IorientDefaultObject
+      where K:class,IOrientVertex,IorientDefaultObject
+    {
+      T result = null;
+        
+      C fromCheck=_repo.SelectFromType<C>("GUID='" + from.GUID + "'", null).FirstOrDefault();
+      K toCheck=_repo.SelectFromType<K>("GUID='" + from.GUID + "'", null).FirstOrDefault();
+        if (fromCheck != null && toCheck != null) {
+          result=_repo.CreateEdge<T>(rel, from, to);
+        }
+      return result;
+    }
 
     public string UOWserialize<T>(T item_)
         where T:class,IOrientObjects.IorientDefaultObject
@@ -88,124 +127,7 @@ namespace IUOWs
 }
 
 namespace PersonUOWs
-{
-  
-  public class PersonUOWold : IPersonUOW
-  {
-      IRepo_v1 _repo;
-      OreintNewsTokenBuilder ob=new OreintNewsTokenBuilder();
-      ITypeConverter _typeConverter;
-      ICommandBuilder _CommandBuilder;
-      IJsonManger _jsonManager;
-      ITokenBuilder _tokenAggregator;
-      IWebManager wm;
-      IResponseReader wr;
-
-      public PersonUOWold()
-      {
-          _jsonManager=new JSONManager();
-          _tokenAggregator=new OrientTokenBuilder();
-          _typeConverter=new TypeConverter();
-          _CommandBuilder=new OrientCommandBuilder(new TokenMiniFactory(), new FormatFactory());
-          wm=new OrientWebManager();
-          wr=new WebResponseReader();
-
-          _repo=new Repo(_jsonManager, _tokenAggregator, _typeConverter, _CommandBuilder, wm, wr);
-      }
-
-
-      public IEnumerable<Person> GetObjByGUID(string GUID)
-      {
-          IEnumerable<Person> result=null;
-          TextToken condition_=new TextToken() {Text="1=1 and GUID ='" + GUID + "'"};
-          try
-          {
-              result=_repo.Select<Person>(typeof(Person), condition_);
-          }
-          catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
-
-          return result;
-      }
-      public string GetByGUID(string GUID)
-      {
-          string result=string.Empty;
-          IEnumerable<Person> persons=null;
-          TextToken condition_=new TextToken() {Text="1=1 and GUID ='" + GUID + "'"};
-          try
-          {
-              persons=_repo.Select<Person>(typeof(Person), condition_);
-              result=_jsonManager.SerializeObject(persons);
-          }
-          catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
-
-          return result;
-      }
-      public IEnumerable<Person> GetAll()
-      {
-
-          IEnumerable<Person> result=null;
-          TextToken condition_=new TextToken() {Text="1=1"};
-          try
-          {
-              result=_repo.Select<Person>(typeof(Person), condition_);
-
-          }
-          catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
-
-          return result;
-      }
-
-      public string GetTrackedBirthday(string GUID)
-      {
-          string result=string.Empty;
-          IEnumerable<Person> persons=null;
-          TextToken condition_=new TextToken() {Text="1=1 and GUID ='" + GUID + "'"};
-          List<ITypeToken> tokens=ob.outEinVExp(new OrientSelectToken(),
-              _typeConverter.Get(typeof(Person)), _typeConverter.Get(typeof(TrackBirthdays)), condition_);
-
-          _CommandBuilder.AddTokens(tokens);
-          _CommandBuilder.AddFormat(new OrientOutEinVFormat() {});
-          string command=_CommandBuilder.Build().GetText();
-
-          persons=_repo.Select<Person>(command);
-          result=_jsonManager.SerializeObject(persons);
-          return result;
-      }
-
-      public string AddTrackBirthday(E edge_, string guidFrom, string guidTo)
-      {
-          string result=null;
-          Person from=GetObjByGUID(guidFrom).FirstOrDefault();
-          Person to=GetObjByGUID(guidTo).FirstOrDefault();
-
-          if (from != null && to != null)
-          {
-              result=_repo.Add(edge_, from, to);
-          }
-          return result;
-      }
-      public string DeleteTrackedBirthday(E edge_, string guidFrom, string guidTo)
-      {
-          string result=null;
-          Person from=GetObjByGUID(guidFrom).FirstOrDefault();
-          Person to=GetObjByGUID(guidTo).FirstOrDefault();
-
-          List<ITypeToken> condTokens_=ob.outVinVcnd(typeof(Person), new TextToken() {Text="GUID"},
-              new TextToken() {Text=from.GUID}, new TextToken() {Text=to.GUID});
-
-          _CommandBuilder.AddTokens(condTokens_);
-          _CommandBuilder.AddFormat(new OrientOutVinVFormat() {});
-          string command=_CommandBuilder.Build().GetText();
-      
-
-          if (from != null && to != null)
-          {
-              result=_repo.Delete(edge_.GetType(), new TextToken() {Text=command});
-          }
-          return result;
-      }
-
-  }
+{  
 
   public class PersonUOW : IUOWs.UOW
   {
@@ -235,6 +157,13 @@ namespace PersonUOWs
       return result;
     }
 
+    public Person CreatePerson(Person p_)
+    {
+      Person result = null;
+        result = _repo.CreateVertex<Person>(p_,null);
+      return result;
+    }
+
   }
 
 }
@@ -242,772 +171,523 @@ namespace PersonUOWs
 namespace NewsUOWs
 {
 
-    public class NewsUowOld
-    {
-
-      OrientRepo manager;
-      string dbName;
-
-      public NewsUowOld(string databaseName=null)
-      {
-
-          string login = ConfigurationManager.AppSettings["orient_login"];
-          string password = ConfigurationManager.AppSettings["orient_pswd"];
-          string dbHost = string.Format("{0}:{1}"
-              , ConfigurationManager.AppSettings["OrientDevHost"]
-              , ConfigurationManager.AppSettings["OrientPort"]);
-          if (databaseName == null)
-          {
-              dbName = ConfigurationManager.AppSettings["OrientUnitTestDB"];
-          }
-          else { dbName = databaseName; }
-
-          TypeConverter typeConverter = new TypeConverter();
-          JsonManagers.JSONManager jsonMnager = new JSONManager();
-          TokenMiniFactory tokenFactory = new TokenMiniFactory();
-          UrlShemasExplicit UrlShema = new UrlShemasExplicit(
-              new CommandBuilder(tokenFactory, new FormatFactory())
-              , new FormatFromListGenerator(new TokenMiniFactory())
-              , tokenFactory, new OrientBodyFactory());
-
-          BodyShemas bodyShema = new BodyShemas(new CommandFactory(), new FormatFactory(), new TokenMiniFactory(),
-              new OrientBodyFactory());
-
-          UrlShema.AddHost(dbHost);
-          WebResponseReader webResponseReader = new WebResponseReader();
-          WebRequestManager webRequestManager = new WebRequestManager();
-          webRequestManager.SetCredentials(new NetworkCredential(login, password));
-          CommandFactory commandFactory = new CommandFactory();
-          FormatFactory formatFactory = new FormatFactory();
-          OrientQueryFactory orientQueryFactory = new OrientQueryFactory();
-          OrientCLRconverter orientCLRconverter = new OrientCLRconverter();
-
-          CommandShemasExplicit commandShema_ = new CommandShemasExplicit(commandFactory, formatFactory,
-          new TokenMiniFactory(), new OrientQueryFactory());
-
-          manager = new OrientRepo(typeConverter, jsonMnager, tokenFactory, UrlShema, bodyShema, commandShema_
-          , webRequestManager, webResponseReader, commandFactory, formatFactory, orientQueryFactory, orientCLRconverter);
-
-      }
-
-      public Person GetByAccount(string accountName_)
-      {
-          Person result=null;
-          var a=from s in manager.Props<Person>().ToList() where s.Name=="sAMAccountName" select s;
-          result=manager.SelectSingle<Person>("sAMAccountName='" + accountName_+"'", dbName);
-          return result;
-      }
-      public Person GetByGUID(string GUID_)
-      {
-          Person result = null;            
-          result = manager.SelectSingle<Person>("GUID='" + GUID_ + "'", dbName);
-          return result;
-      }
-      public Note GetNewsByGUID(string GUID_)
-      {
-          Note result = null;
-          result = manager.SelectSingle<Note>("GUID='" + GUID_ + "'", dbName);
-          return result;
-      }
-      public IEnumerable<Person> SearchByName(string Name_)
-      {
-          IEnumerable<Person> result=null;
-          result=manager
-              .SelectFromType<Person>("Name like '%"+Name_+"%' or sAMAccountName like '%"+Name_+"%'or mail like '%"+Name_+"%'"
-              ,dbName);
-          return result;
-      }        
-
-      public T GetOrientObjectById<T>(string id_)
-          where T: class, IOrientObjects.IorientDefaultObject
-      {
-          T result = null;
-          result = manager.SelectFromType<T>("@rid=" + id_ , dbName).FirstOrDefault();
-          return result;
-      }
-      public T GetOrientObject<T>(T object_)
-          where T : class, IOrientObjects.IorientDefaultObject
-      {
-          T result = null;
-          result = manager.SelectFromType<T>("@rid=" + object_.id, dbName).FirstOrDefault();
-          return result;
-      }
-      public IEnumerable<T> GetOrientObjects<T>(string cond_=null)
-          where T : class, IOrientObjects.IorientDefaultObject
-      {
-          IEnumerable<T> result = null;
-          result = manager.SelectFromType<T>(cond_, dbName);
-          return result;
-      }
-
-      public Note CreateCommentary(Person from,string newsId_,string comment_)
-      {
-          Authorship auth=new Authorship(){};
-          Comment commented=new Comment(){};
-          Note commentaryTochange_=null;
-          Note commentaryToAdd_=null;
-          Note newsToComment_=manager.SelectSingle<Note>("@rid="+newsId_,dbName);
-
-          commentaryTochange_=manager.OrientStringToObject<Note>(comment_);
-
-          Note prev=IsComment(newsId_);
-          //is comment to comment
-          if (prev!=null)
-          {
-            commentaryTochange_.commentDepth=(prev.commentDepth + 1);
-          }
-          else
-          {
-            newsToComment_.hasComments=true;
-          }
-          //commentary Node created and relation from person created
-          commentaryToAdd_=CreateNews(from,commentaryTochange_);
-
-          if (commentaryToAdd_!=null)
-          {
-            if (newsToComment_!=null)
-            {
-              //create relation from commment to news Nodes
-              manager.CreateEdge<Comment>(commented,newsToComment_, commentaryToAdd_);
-            }
-            else
-              {
-                  //unsuccesfull news search
-                  //manager.Delete<Note>(commentary_);
-                  //check if has comments if no then hasComments=false;
-              }
-          }
-
-          return commentaryToAdd_;
-      }
-      public Note CreateCommentary(Person from,Note comment_,Note newsId_)
-      {
-          Authorship auth = new Authorship() { };
-          Comment commented = new Comment() {  };
-
-          Note prev = IsComment(newsId_.id);
-          if(prev!=null)
-          {
-              //comment to comment
-              comment_.commentDepth=prev.commentDepth+1;
-          }
-          else
-          {
-              //comment to news
-              comment_.commentDepth=comment_.commentDepth+1;
-          }
-          
-          comment_.PGUID = from.GUID;
-
-          //commentary Node created and relation from person created
-          Note commentary_ = CreateNews(from, comment_);
-
-          if (commentary_ != null)
-          {
-              Note newsToComment_ = manager.SelectSingle<Note>("@rid=" + newsId_.id, dbName);
-              if (newsToComment_ != null)
-              {
-                  //create relation from commment to news Nodes
-                  Comment commentedCr=manager.CreateEdge<Comment>(commented, newsToComment_,commentary_);
-              }
-              else
-              {
-                  //unsuccesfull news search
-                  //manager.Delete<Note>(commentary_);
-              }
-          }
-
-          return commentary_;
-      }    
-      public Note CreateNews(Person from,string news_)
-      {
-          Note note_=manager.CreateVertex<Note>(news_, dbName);
-          Note created=CreateNews(from, note_);
-          return created;
-      }
-      public Note CreateNews(Person from,Note note_)
-      {
-          Authorship auth=new Authorship();
-          note_.PGUID = from.GUID;
-          Note nt_=manager.CreateVertex<Note>(note_, dbName);
-          Authorship newAuth=manager.CreateEdge<Authorship>(auth,from,nt_);
-
-          //if unsucceced clean created objects
-          if(auth==null||note_==null)
-          {
-              manager.Delete<Note>(note_,null,dbName);
-              manager.Delete<Authorship>(auth,null,dbName);
-          }
-          return nt_;
-      }
-
-      public Note UpdateNews(Note newsObj_)
-      {          
-          manager.UpdateEntity<Note>(newsObj_, dbName);
-          Note nt=manager.SelectSingle<Note>("GUID='"+newsObj_.GUID+"'",dbName);
-          return nt;
-      }
-      public Note UpdateNews(string newsStr_)
-      {
-          Note result = null;
-          Note nt = manager.OrientStringToObject<Note>(newsStr_);
-          result = UpdateNews(nt);
-          return result;
-      }
-
-      public Note PublishNews(string newsId_)
-      {
-          Note nt = manager.SelectSingle<Note>("@rid=" + newsId_);
-          nt.published = DateTime.Now;
-          return nt;
-      }
-      public Note UnPublishNews(string newsId_)
-      {
-          Note nt = manager.SelectSingle<Note>("@rid=" + newsId_);
-          nt.published=null;
-          return nt;
-      }
-      public Note PinNews(string newsId_)
-      {
-          Note nt = manager.SelectSingle<Note>("@rid=" + newsId_);
-          nt.pinned = DateTime.Now;
-          return nt;
-      }
-      public Note UnPinNews(string newsId_)
-      {
-          Note nt = manager.SelectSingle<Note>("@rid=" + newsId_);
-          nt.pinned = null;
-          return nt;
-      }
-
-      public IEnumerable<Note> GetNews(string accountName_)
-      {
-          return null;
-      }
-
-      public string DeleteNews(Person from, string id_)
-      {
-          string result = string.Empty;
-          Note ntd = GetOrientObjectById<Note>(id_);
-
-          if (ntd != null) {
-              string deleteN=manager.DeleteEdge<Authorship,Person,Note>(from,ntd,null,dbName).GetResult();
-              string deleteR=manager.Delete<Note>(ntd, null, dbName).GetResult();
-              if(deleteN=="Deleted"&&deleteR == "Deleted") { result = "Deleted"; }
-          }
-          return result;
-      }
-
-      public IEnumerable<Note> GetPersonNews(Person p_=null)
-      {
-          return manager.Select<Person,Authorship, Note>(p_);
-      }
-
-      /// <summary>
-      /// check inE types on Comment,Authorship. If has inE comment, then returns current Note.
-      /// </summary>
-      /// <param name="NewsId">Npte which type need to be checked</param>
-      /// <returns></returns>
-      public Note IsComment(string NewsId)
-      {
-          Note ret_=null;
-          Note nt=manager.SelectSingle<Note>("@rid="+NewsId);
-          if (nt!=null)
-          {
-
-              Note cm=manager.Select<Note,Comment>(nt,dbName).FirstOrDefault();
-              Note auth=manager.Select<Note,Authorship>(nt,dbName).FirstOrDefault();                
-
-              //comment
-              if (auth != null && cm != null)
-              {
-                  //take comment wich iscommented
-                  ret_=manager.SelectCommentToComment<Note,Comment,Note>(nt,dbName).FirstOrDefault();
-              }
-              //news
-              if (auth!=null&&cm==null)
-              {
-                  ret_=null;
-              }
-          }
-          return ret_;
-      }
-
-      public string UserAcc()
-      {
-          return WebManagers.UserAuthenticationMultiple.UserAcc();
-      }
-
-      public string NoteToString(Note item_)
-      {
-          string result=null;
-              result=manager.ObjectToContentString<Note>(item_);
-          return result;
-      }
-      public Note StringToNote(string item_)
-      {
-          Note result = null;
-          result = manager.ContentStringToObject<Note>(item_);
-          return result;
-      }
-
-      public string ObjectToString<T>(T item_)
-          where T:class,IOrientObjects.IorientDefaultObject
-      {
-          string result = null;
-          result = manager.ObjectToContentString<T>(item_);
-          return result;
-      }
-      public T StringToObject<T>(string item_)
-          where T : class, IOrientObjects.IorientDefaultObject
-      {
-          T result = null;
-          result = manager.ContentStringToObject<T>(item_);
-          return result;
-      }
-
-  }
-
-    public class NewsRealUow:IUOWs.UOW
-    {
+  public class NewsRealUow:IUOWs.UOW
+  {
         
-      public NewsRealUow(IOrientRepo repo_)
-        :base(repo_)
-      {
-      }
+    public NewsRealUow(IOrientRepo repo_)
+      :base(repo_)
+    {
+    }
      
-      public Note GetNoteByGUID(string GUID_)
-      {
-        Note result = null;
-        result = _repo.SelectSingle<Note>("GUID='" + GUID_ + "'", null);
-        return result;
-      }     
+    public Note GetNoteByGUID(string GUID_)
+    {
+      Note result = null;
+      result = _repo.SelectSingle<Note>("GUID='" + GUID_ + "'", null);
+      return result;
+    }     
 
-      public News GetNewsByGUID(string GUID_)
-      {      
-        News result = null;
-        result = _repo.SelectSingle<News>("GUID='" + GUID_ + "'", null);
-        return result;
-      }     
-      public News GetNewsById(string id_)
-      {
-        News result = null;
-        result = _repo.SelectFromType<News>("@rid=" + id_ , null).FirstOrDefault();
-        return result;
-      }
+    public News GetNewsByGUID(string GUID_)
+    {      
+      News result = null;
+      result = _repo.SelectSingle<News>("GUID='" + GUID_ + "'", null);
+      return result;
+    }     
+    public News GetNewsById(string id_)
+    {
+      News result = null;
+      result = _repo.SelectFromType<News>("@rid=" + id_ , null).FirstOrDefault();
+      return result;
+    }
       
-      public IEnumerable<Note> GetByOffset(string guid_, int? offset_=3)
-      {
-        IEnumerable<Note> result_=null;
-        Note nt=_repo.SelectSingle<Note>("GUID='"+guid_+"'",null);
-        if(nt!=null) {
-          int startDepth=nt.commentDepth==null?0:(int)nt.commentDepth;
-          int endDepth=offset_==null?startDepth:startDepth+(int)offset_;
-          IEnumerable<Note> temRes=_repo.TraverseInID<Note>(nt.id, new List<Type>(){typeof(Comment)},null,null);
-          if(temRes!=null){
-            result_ = temRes.Where(s => (s.class_ == "Commentary" || s.class_ == "News")&&(s.commentDepth>=startDepth&&s.commentDepth<=endDepth))
-            .OrderByDescending(c=>c.created);
-          }
+    public IEnumerable<Note> GetByOffset(string guid_, int? offset_=3)
+    {
+      IEnumerable<Note> result_=null;
+      Note nt=_repo.SelectSingle<Note>("GUID='"+guid_+"'",null);
+      if(nt!=null) {
+        int startDepth=nt.commentDepth==null?0:(int)nt.commentDepth;
+        int endDepth=offset_==null?startDepth:startDepth+(int)offset_;
+        IEnumerable<Note> temRes=_repo.TraverseInID<Note>(nt.id, new List<Type>(){typeof(Comment)},null,null);
+        if(temRes!=null){
+          result_ = temRes.Where(s => (s.class_ == "Commentary" || s.class_ == "News")&&(s.commentDepth>=startDepth&&s.commentDepth<=endDepth))
+          .OrderByDescending(c=>c.created);
         }
-        return result_;
       }
-      public IEnumerable<TestNews> GetByOffsetTest(string guid_, int? offset_=3)
-      {
-        IEnumerable<TestNews> result_=null;
-        TestNews nt=_repo.SelectByGUIDfromType<TestNews>(typeof(News),"GUID='"+guid_+"'",null).FirstOrDefault();
-        if(nt!=null) {
-          int startDepth=nt.commentDepth == null ? 0 : (int)nt.commentDepth;
-          int endDepth=offset_==null?startDepth:startDepth+(int)offset_;        
-          IEnumerable<TestNews> temRes = _repo.TraverseFrom<TestNews, Comment, Commentary, Authorship, Comment>(nt.id, null);
-          if(temRes!=null){
-            result_ = temRes.Where(s => (s.class_ == "Commentary" || s.class_ == "News")&&(s.commentDepth>=startDepth&&s.commentDepth<=endDepth));
-          }
+      return result_;
+    }
+    public IEnumerable<TestNews> GetByOffsetTest(string guid_, int? offset_=3)
+    {
+      IEnumerable<TestNews> result_=null;
+      TestNews nt=_repo.SelectByCondFromType<TestNews>(typeof(News),"GUID='"+guid_+"'",null).FirstOrDefault();
+      if(nt!=null) {
+        int startDepth=nt.commentDepth == null ? 0 : (int)nt.commentDepth;
+        int endDepth=offset_==null?startDepth:startDepth+(int)offset_;        
+        IEnumerable<TestNews> temRes = _repo.TraverseFrom<TestNews, Comment, Commentary, Authorship, Comment>(nt.id, null);
+        if(temRes!=null){
+          result_ = temRes.Where(s => (s.class_ == "Commentary" || s.class_ == "News")&&(s.commentDepth>=startDepth&&s.commentDepth<=endDepth));
         }
-        return result_;
       }
+      return result_;
+    }
 
-      [Obsolete]
-      public IEnumerable<News> GetNewsByOffset(int? offset_=20)
-      {
-        IEnumerable<News> result=null;
-        int _offset=(int)offset_;
-          result=_repo.SelectFromType<News>(null,null).OrderBy(s=>s.created).Take(_offset);
-        return result;
-      }
-      [Obsolete]
-      public IEnumerable<Note> GetCommentsWithCommentsByOffset(string guid_,int? offset_=3)
-      {
-        IEnumerable<Note> result=null;
-        Note nt = _repo.SelectSingle<Note>("GUID='" + guid_ + "'", null);
-        if(nt!=null){
-          if(nt.class_=="Commentary"){
-            int depthfrom=nt.commentDepth==null?0:(int)nt.commentDepth;
-            int _offset=(int)offset_;
-            result=_repo.SelectFromTraverseWithOffset<Note, Comment, Commentary, Authorship, Comment>(nt.id,"commentDepth",depthfrom,_offset, "test_db");
-          }
-        }
-        return result;
-      }
-      [Obsolete]
-      public IEnumerable<Note> GetNewsWithCommentsByOffset(string guid_,int? offset_=3)
-      {
-        IEnumerable<Note> result=null;
-        Note nt=_repo.SelectSingle<Note>("GUID='" + guid_ + "'", null);
-        if(nt!=null){          
+    [Obsolete]
+    public IEnumerable<News> GetNewsByOffset(int? offset_=20)
+    {
+      IEnumerable<News> result=null;
+      int _offset=(int)offset_;
+        result=_repo.SelectFromType<News>(null,null).OrderBy(s=>s.created).Take(_offset);
+      return result;
+    }
+    [Obsolete]
+    public IEnumerable<Note> GetCommentsWithCommentsByOffset(string guid_,int? offset_=3)
+    {
+      IEnumerable<Note> result=null;
+      Note nt = _repo.SelectSingle<Note>("GUID='" + guid_ + "'", null);
+      if(nt!=null){
+        if(nt.class_=="Commentary"){
           int depthfrom=nt.commentDepth==null?0:(int)nt.commentDepth;
           int _offset=(int)offset_;
-          result=_repo.SelectTraverseWithOffset<Note,Comment,Commentary,Authorship,Comment>(nt.id,"commentDepth",depthfrom,_offset, "test_db");          
+          result=_repo.SelectFromTraverseWithOffset<Note, Comment, Commentary, Authorship, Comment>(nt.id,"commentDepth",depthfrom,_offset, "test_db");
         }
-        return result;
       }
-
-      public IEnumerable<Person> SearchByName(string Name_)
-      {
-        IEnumerable<Person> result=null;
-        Name_ = Name_.ToLower();
-        result=_repo
-            .SelectFromType<Person>("Name.toLowerCase() like '%"+Name_+"%' or sAMAccountName.toLowerCase() like '%"+Name_+"%'or mail.toLowerCase() like '%"+Name_+"%'"
-            ,null);
-        return result;
-      }        
-
-      public IEnumerable<T> GetOrientObjects<T>(string cond_=null)
-        where T : class, IOrientObjects.IorientDefaultObject
-      {
-        IEnumerable<T> result = null;
-        result = _repo.SelectFromType<T>(cond_, null);
-        return result;
+      return result;
+    }
+    [Obsolete]
+    public IEnumerable<Note> GetNewsWithCommentsByOffset(string guid_,int? offset_=3)
+    {
+      IEnumerable<Note> result=null;
+      Note nt=_repo.SelectSingle<Note>("GUID='" + guid_ + "'", null);
+      if(nt!=null){          
+        int depthfrom=nt.commentDepth==null?0:(int)nt.commentDepth;
+        int _offset=(int)offset_;
+        result=_repo.SelectTraverseWithOffset<Note,Comment,Commentary,Authorship,Comment>(nt.id,"commentDepth",depthfrom,_offset, "test_db");          
       }
+      return result;
+    }
+
+    public IEnumerable<Person> SearchByName(string Name_)
+    {
+      IEnumerable<Person> result=null;
+      Name_ = Name_.ToLower();
+      result=_repo
+          .SelectFromType<Person>("Name.toLowerCase() like '%"+Name_+"%' or sAMAccountName.toLowerCase() like '%"+Name_+"%'or mail.toLowerCase() like '%"+Name_+"%'"
+          ,null);
+      return result;
+    }        
+
+    public IEnumerable<T> GetOrientObjects<T>(string cond_=null)
+      where T : class, IOrientObjects.IorientDefaultObject
+    {
+      IEnumerable<T> result = null;
+      result = _repo.SelectFromType<T>(cond_, null);
+      return result;
+    }
       
-      public Person CheckPerson (Person person_)
+    public Person CheckAndCreatePerson (Person person_)
+    {
+      Person result = null;
+      result = base.CheckItem<Person>(person_);
+        //result=_repo.SelectSingle<Person>("GUID='"+person_.GUID+"'",null);
+        if(result==null)
+        {
+          //string personContent = _repo.ObjectToContentString<Person>(person_);
+          result=_repo.CreateVertex<Person>(person_, null);
+        }
+      return result;
+    }
+    public IEnumerable<Person> GetPersonsWithNews(Note news_= null)
+    {
+      IEnumerable<Person> result=null;
+        result = _repo.SelectInEOutV<Note, Authorship, Person>(news_,null);       
+      return result;
+    }
+
+    //<<<create commentary from string.
+    [Obsolete]
+    public Commentary CreateCommentary(Person from,string newsId_,string comment_)
+    {
+      Authorship auth=new Authorship(){};
+      Comment commented=new Comment(){};
+      Commentary commentaryTochange_=null;
+      Commentary commentaryToAdd_=null;
+      News newsToComment=_repo.SelectSingle<News>("@rid="+newsId_,null);
+      from=CheckAndCreatePerson(from);
+
+      commentaryTochange_=_repo.OrientStringToObject<Commentary>(comment_);
+
+      int? depth=IsCommentToComment(newsId_);
+      //is comment to comment
+      if (depth==null)
+      {            
+        commentaryTochange_.commentDepth=1;               
+      }
+      else
       {
-        Person result = null;
-          result=_repo.SelectSingle<Person>("GUID='"+person_.GUID+"'",null);
-          if(result==null)
+        commentaryTochange_.commentDepth=(depth+1);
+      }
+      //commentary Node created and relation from person created
+      commentaryToAdd_=CreateCommentary(from,commentaryTochange_);
+
+      if (commentaryToAdd_!=null)
+      {               
+          if (newsToComment!=null)
           {
-            string personContent = _repo.ObjectToContentString<Person>(person_);
-            result=_repo.CreateVertex<Person>(personContent, null);
-          }
-        return result;
-      }
-      public IEnumerable<Person> GetPersonsWithNews(Note news_= null)
-      {
-        IEnumerable<Person> result=null;
-          result = _repo.SelectInEOutV<Note, Authorship, Person>(news_,null);       
-        return result;
-      }
-
-      public Commentary CreateCommentary(Person from,string newsId_,string comment_)
-      {
-        Authorship auth=new Authorship(){};
-        Comment commented=new Comment(){};
-        Commentary commentaryTochange_=null;
-        Commentary commentaryToAdd_=null;
-        News newsToComment_=_repo.SelectSingle<News>("@rid="+newsId_,null);
-        from=CheckPerson(from);
-
-        commentaryTochange_=_repo.OrientStringToObject<Commentary>(comment_);
-
-        int? depth=IsCommentToComment(newsId_);
-        //is comment to comment
-        if (depth==null)
-        {            
-          commentaryTochange_.commentDepth=1;               
-        }
-        else
-        {
-          commentaryTochange_.commentDepth=(depth+1);
-        }
-        //commentary Node created and relation from person created
-        commentaryToAdd_=CreateCommentary(from,commentaryTochange_);
-
-        if (commentaryToAdd_!=null)
-        {               
-            if (newsToComment_!=null)
-            {
-                newsToComment_.hasComments=true;
-                //create relation from commment to news Nodes
-                _repo.CreateEdge<Comment>(commented,newsToComment_, commentaryToAdd_);
-            }
-            else
-            {
-                //unsuccesfull news search
-                //manager.Delete<Note>(commentary_);
-                //check if has comments if no then hasComments=false;
-            }
-        }
-
-        return commentaryToAdd_;
-      }
-      public Commentary CreateCommentary(Person from,Commentary comment_,Note newsId_)
-      {
-        Authorship auth = new Authorship(){};
-        Comment commented = new Comment(){};
-        Commentary commentary_ = null;
-
-        from=CheckPerson(from);        
-
-        int? depth = IsCommentToComment(newsId_.id);
-        if(depth==null)
-        {
-          //comment to news
-          comment_.commentDepth=1;          
-        }
-        else
-        {
-          //comment to comment
-          comment_.commentDepth=(depth+1);
-        }
-
-        if(from!=null){
-
-        Note newsToComment_=_repo.SelectByIDWithCondition<Note>(newsId_.id,null,null).FirstOrDefault();
-          
-        if(newsToComment_!=null){
-          
-          comment_.PGUID=newsToComment_.GUID;
-          //commentary Node created and relation from person created
-          commentary_=CreateCommentary(from, comment_);
-        
-          //UpdateNews(from,commentary_);
-          if (commentary_!=null)
-          {          
-            if (newsToComment_!=null)
-            {
+              newsToComment.hasComments=true;
               //create relation from commment to news Nodes
-              Comment commentedCr=_repo.CreateEdge<Comment>(commented,newsToComment_,commentary_);
-              newsToComment_.hasComments=true;
-
-              UpdateNote(newsToComment_);
-            }
-            else
-            {
+              _repo.CreateEdge<Comment>(commented,newsToComment, commentaryToAdd_);
+          }
+          else
+          {
               //unsuccesfull news search
               //manager.Delete<Note>(commentary_);
-            }
-          
-          }}}
-
-      return commentary_;
+              //check if has comments if no then hasComments=false;
+          }
       }
-      public Commentary CreateCommentary(Person from,Commentary note_)
+
+      return commentaryToAdd_;
+    }
+    //create commentary from to objects. If no from object exists than it created.
+    public Commentary CreateCommentary(Person from,Commentary comment_,Note newsId_)
+    {
+      Authorship auth=new Authorship(){};
+      Comment commented=new Comment(){};
+      Commentary commentary_=null;
+
+      from=CheckAndCreatePerson(from);
+
+      int? depth = IsCommentToComment(newsId_.id);
+      if(depth==null)
       {
-        Authorship auth=new Authorship();
-        Commentary nt_ = null;
-        Authorship newAuth = null;
+        //comment to news
+        comment_.commentDepth=1;          
+      }
+      else
+      {
+        //comment to comment
+        comment_.commentDepth=(depth+1);
+      }
 
-        if(from!=null){
-              
-          note_.authAcc=from.sAMAccountName;
-          note_.authGUID=from.GUID;
-          note_.authName=from.Name;
-          note_.author_=from;
+      if(from!=null){
 
-          nt_=_repo.CreateVertex<Commentary>(note_,null);
-          newAuth=_repo.CreateEdge<Authorship>(auth,from,nt_);
-          from=CheckPerson(from);
-
-          //if unsucceced clean created objects
-          if(newAuth==null||nt_==null)
+      Note newsToComment=_repo.SelectByIDWithCondition<Note>(newsId_.id,null,null).FirstOrDefault();
+          
+      if(newsToComment!=null){
+          
+        comment_.PGUID=newsToComment.GUID;
+        //commentary Node created and relation from person created
+        commentary_=CreateCommentary(from, comment_);
+        
+        //UpdateNews(from,commentary_);
+        if (commentary_!=null)
+        {          
+          if (newsToComment!=null)
           {
-            _repo.Delete<Commentary>(note_,null,null);
+            //create relation from commment to news Nodes
+            Comment commentedCr=_repo.CreateEdge<Comment>(commented,newsToComment,commentary_);
+            newsToComment.hasComments=true;
+
+            UpdateNote(newsToComment);
+          }
+          else
+          {
+            //unsuccesfull news search
+            //manager.Delete<Note>(commentary_);
+          }
+          
+        }}}
+
+    return commentary_;
+    }
+    public Commentary CreateCommentary(Person from,Commentary note_)
+    {
+      Authorship auth=new Authorship();
+      Commentary _nt = null;
+      Authorship newAuth = null;
+
+      if(from!=null){
+              
+        note_.authAcc=from.sAMAccountName;
+        note_.authGUID=from.GUID;
+        note_.authName=from.Name;
+        note_.author_=from;
+
+        _nt=_repo.CreateVertex<Commentary>(note_,null);
+        newAuth=_repo.CreateEdge<Authorship>(auth,from,_nt);
+        from=CheckAndCreatePerson(from);
+
+        //if unsucceced clean created objects
+        if(newAuth==null||_nt==null)
+        {
+          _repo.Delete<Commentary>(note_,null,null);
+          _repo.Delete<Authorship>(auth,null,null);
+        }
+      }
+      return _nt;
+    }
+
+    public News CreateNews(Person from,string news_)
+    {
+      from=CheckAndCreatePerson(from);
+      News note_=_repo.CreateVertex<News>(news_,null);
+      News created=CreateNews(from, note_);
+      return created;
+    }
+    public News CreateNews(Person from_,Note note_)
+    {
+      News nt_=null;
+      if(from_!=null ) {
+      Authorship auth=new Authorship();
+
+      note_.PGUID=from_.GUID;
+      note_.authAcc=from_.sAMAccountName;
+      note_.authGUID=from_.GUID;
+      note_.authName=from_.Name;
+
+        Person personfrom_=CheckAndCreatePerson(from_);
+        if(personfrom_!=null){
+          nt_=_repo.CreateVertex<News>(note_,null);
+          Authorship newAuth=_repo.CreateEdge<Authorship>(auth,personfrom_,nt_);
+          nt_.author_=personfrom_;
+          nt_.commentDepth = 0;
+          UpdateNote(nt_);
+          //if unsucceced clean created objects
+          if(auth==null||note_==null)
+          {         
+            _repo.Delete<Note>(note_,null,null);
             _repo.Delete<Authorship>(auth,null,null);
           }
         }
-        return nt_;
       }
 
-      public News CreateNews(Person from,string news_)
-      {
-          from=CheckPerson(from);
-          News note_=_repo.CreateVertex<News>(news_,null);
-          News created=CreateNews(from, note_);
-          return created;
-      }
-      public News CreateNews(Person from_,Note note_)
-      {
-        News nt_=null;
-        if(from_!=null ) {
-        Authorship auth=new Authorship();
+      return nt_;
+    }     
 
-        note_.PGUID=from_.GUID;
-        note_.authAcc=from_.sAMAccountName;
-        note_.authGUID=from_.GUID;
-        note_.authName=from_.Name;
-
-          Person personfrom_=CheckPerson(from_);
-          if(personfrom_!=null){
-            nt_=_repo.CreateVertex<News>(note_,null);
-            Authorship newAuth=_repo.CreateEdge<Authorship>(auth,personfrom_,nt_);
-            nt_.author_=personfrom_;
-            nt_.commentDepth = 0;
-            UpdateNote(nt_);
-            //if unsucceced clean created objects
-            if(auth==null||note_==null)
-            {         
-              _repo.Delete<Note>(note_,null,null);
-              _repo.Delete<Authorship>(auth,null,null);
-            }
-          }
-        }
-
-        return nt_;
-      }     
-
-      public News UpdateNews(Person from_,News noteFrom)
-      {
-    noteFrom.changed=DateTime.Now;
-    News noteTo = _repo.SelectSingle<News>("GUID='" + noteFrom.GUID + "'");
-    News noteToAdd=_repo.UpdateProperties<News>(noteFrom, noteTo);
-    _repo.UpdateEntity<Note>(noteToAdd,null);
-    News nt=_repo.SelectSingle<News>("GUID='"+noteFrom.GUID+"'",null);
-    return nt;
-      }
-      public Commentary UpdateCommentary(Person from_,Commentary noteFrom)
-      {
-    noteFrom.changed=DateTime.Now;
-    Commentary noteTo = _repo.SelectSingle<Commentary>("GUID='" + noteFrom.GUID + "'");
-    Commentary noteToAdd=_repo.UpdateProperties<Commentary>(noteFrom, noteTo);
-    _repo.UpdateEntity<Note>(noteToAdd,null);
-    Commentary nt=_repo.SelectSingle<Commentary>("GUID='"+noteFrom.GUID+"'",null);
-    return nt;
-      }     
-      
-      /// <summary>
-      /// Checks type and account. If commentary validates user by sAMAccountName. 
-      /// </summary>
-      /// <param name="from_">Person validate</param>
-      /// <param name="noteFrom"></param>
-      /// <returns></returns>
-      public Note UpdateNotePersonal(Person from_,Note noteFrom)
-      {
-        Note result = null;
-        bool update = true;
-        if(noteFrom.GetType()==typeof(Commentary)){
-          if(from_.sAMAccountName!=noteFrom.author_.sAMAccountName){
-            update = false;
-          }}
-        if(update){
-          result=UpdateNote(from_, noteFrom);
-        }
-        return result;
-      }
-
-      /// <summary>
-      /// Updates property by property object to object from. Custom Updatable system attribute true false checked.
-      /// </summary>
-      /// <param name="from_">Object from</param>
-      /// <param name="noteFrom">Object to</param>
-      /// <returns></returns>
-      public Note UpdateNote(Person from_,Note noteFrom)
-      {
+    public News UpdateNews(Person from_,News noteFrom)
+    {
   noteFrom.changed=DateTime.Now;
-  Note noteTo = _repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'");
-  Person oldAuthor = GetPersonsWithNews(noteTo).FirstOrDefault();  
-
-  noteTo=_repo.UpdateProperties<Note>(noteFrom,noteTo);
-
-  _repo.DeleteEdge<Authorship, Person, Note>(oldAuthor,noteFrom,null,null);
-
-  noteTo.author_=from_;
-  
-  Authorship authNew=_repo.CreateEdge<Authorship>(new Authorship(),from_,noteTo,null);
-
-  noteTo.authName = from_.Name;
-  noteTo.authAcc = from_.sAMAccountName;
-  noteTo.authGUID = from_.GUID;
-
-  Note updatedEntity=_repo.UpdateEntity<Note>(noteTo,null);
-  Note nt=_repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'",null);
+  News noteTo = _repo.SelectSingle<News>("GUID='" + noteFrom.GUID + "'");
+  News noteToAdd=_repo.UpdateProperties<News>(noteFrom, noteTo);
+  _repo.UpdateEntity<Note>(noteToAdd,null);
+  News nt=_repo.SelectSingle<News>("GUID='"+noteFrom.GUID+"'",null);
   return nt;
-      }
-      public Note UpdateNote(Note noteFrom)
-      {
-  Note updatedEntity=_repo.UpdateEntity<Note>(noteFrom,null);
-  Note nt=_repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'",null);
-  return nt;
-      }
-
-      public News PublishNews(string newsGUID_)
-      {
-          News nt = _repo.SelectSingle<News>("GUID='"+newsGUID_+"'");
-          nt.published = DateTime.Now;
-          return nt;
-      }
-      public News UnPublishNews(string newsGUID_)
-      {
-          News nt = _repo.SelectSingle<News>("GUID='"+newsGUID_+"'");
-          nt.published=null;
-          return nt;
-      }
-      public News PinNews(string newsGUID_)
-      {
-          News nt = _repo.SelectSingle<News>("GUID='"+newsGUID_+"'");
-          nt.pinned = DateTime.Now;
-          return nt;
-      }
-      public News UnPinNews(string newsGUID_)
-      {
-          News nt = _repo.SelectSingle<News>("GUID='"+newsGUID_+"'");
-          nt.pinned = null;
-          return nt;
-      }
-
-      public IEnumerable<News> GetNews(int? offset)
-      {
-        IEnumerable<News> result = null;
-        int endDepth=offset==null?20:(int)offset;
-          result = _repo.SelectByGUIDfromType<News>(typeof(News),null,null);
-          if(result!=null){
-            DateTime? mindate = (from s in result select s.created).Min();
-            DateTime? maxdate = (from s in result select s.created).Max();
-            result = result.OrderByDescending(s => s.created);
-            result = result.Take(endDepth);
-          }
-        return result;
-      }   
-      public IEnumerable<News> GetPersonNews(Person p_=null)
-      {
-          return _repo.Select<Person,Authorship, News>(p_);
-      }
-      public Note GetNoteByID(string NewsId)
-      {
-          Note ret_=null;
-            ret_=_repo.SelectByIDWithCondition<Note>(NewsId,null,null).FirstOrDefault();         
-          return ret_;
-      }
-
-      public string DeleteNews(Person from, string id_)
-      {
-          string result = string.Empty;
-          from=CheckPerson(from);
-          News ntd = GetNewsById(id_);
-
-          if (ntd != null) {
-            string deleteN=_repo.DeleteEdge<Authorship,Person,News>(from,ntd,null,null).GetResult();
-            string deleteR=_repo.Delete<News>(ntd,null,null).GetResult();
-            if(deleteN=="Deleted"&&deleteR == "Deleted") { result = "Deleted"; }
-          }
-          return result;
-      }
-      
-      /// <summary>
-      /// Check inE types on Comment,Authorship. If has inE comment, then returns current Note.
-      /// </summary>
-      /// <param name="NewsId">Npte which type need to be checked</param>
-      /// <returns></returns>
-      public int? IsCommentToComment(string NewsId)
-      {
-        int? depth=null;
-        Note nt=_repo.SelectByIDWithCondition<Note>(NewsId,null,null).FirstOrDefault();
-        if (nt.class_=="Commentary")
-        {
-          depth=nt.commentDepth;
-        }else {depth=null;}
-        return depth;
-      }   
-   
     }
+    public Commentary UpdateCommentary(Person from_,Commentary noteFrom)
+    {
+  noteFrom.changed=DateTime.Now;
+  Commentary noteTo = _repo.SelectSingle<Commentary>("GUID='" + noteFrom.GUID + "'");
+  Commentary noteToAdd=_repo.UpdateProperties<Commentary>(noteFrom, noteTo);
+  _repo.UpdateEntity<Note>(noteToAdd,null);
+  Commentary nt=_repo.SelectSingle<Commentary>("GUID='"+noteFrom.GUID+"'",null);
+  return nt;
+    }     
+      
+    /// <summary>
+    /// Checks type and account. If commentary validates user by sAMAccountName. 
+    /// </summary>
+    /// <param name="from_">Person validate</param>
+    /// <param name="noteFrom"></param>
+    /// <returns></returns>
+    public Note UpdateNotePersonal(Person from_,Note noteFrom)
+    {
+      Note result = null;
+      bool update = true;
+      if(noteFrom.GetType()==typeof(Commentary)){
+        if(from_.sAMAccountName!=noteFrom.author_.sAMAccountName){
+          update = false;
+        }}
+      if(update){
+        result=UpdateNote(from_, noteFrom);
+      }
+      return result;
+    }
+
+    /// <summary>
+    /// Updates property by property object to object from. Custom Updatable system attribute true false checked.
+    /// </summary>
+    /// <param name="from_">Object from</param>
+    /// <param name="noteFrom">Object to</param>
+    /// <returns></returns>
+    public Note UpdateNote(Person from_,Note noteFrom)
+    {
+Note nt = null;
+noteFrom.changed=DateTime.Now;
+Note noteTo = _repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'");
+if(noteTo!=null){
+Person oldAuthor = GetPersonsWithNews(noteTo).FirstOrDefault();  
+
+noteTo=_repo.UpdateProperties<Note>(noteFrom,noteTo);
+
+//pinned status recheck for datechange
+if(noteFrom.pinned!=null){
+  noteTo.pinned.isTrue = noteFrom.pinned.isTrue;
+  noteTo.pinned.dateChanged = noteFrom.changed;
+}
+//published status recheck for datechange
+if(noteFrom.published!=null){
+  noteTo.published.isTrue = noteFrom.published.isTrue;
+  noteTo.published.dateChanged = noteFrom.changed;
+}
+_repo.DeleteEdge<Authorship, Person, Note>(oldAuthor,noteFrom,null,null);
+
+noteTo.author_=from_;
+  
+Authorship authNew=_repo.CreateEdge<Authorship>(new Authorship(),from_,noteTo,null);
+
+noteTo.authName = from_.Name;
+noteTo.authAcc = from_.sAMAccountName;
+noteTo.authGUID = from_.GUID;
+
+Note updatedEntity=_repo.UpdateEntity<Note>(noteTo,null);
+nt=_repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'",null);
+}
+return nt;
+    }
+    public Note UpdateNote(Note noteFrom)
+    {
+Note updatedEntity=_repo.UpdateEntity<Note>(noteFrom,null);
+Note nt=_repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'",null);
+return nt;
+    }
+
+    public Liked LikeNote(Note note_,Person p_)
+    {
+      Liked result =null;     
+      if(note_==null){ throw new Exception("No Note object found in DB. Nothing to like."); }
+      if(p_==null){ throw new Exception("No Person found in DB. Noone can like."); }
+
+      if(note_!=null || p_!=null)
+      {
+        result=new Liked();
+        try{
+          result=_repo.CreateEdge<Liked>(result,p_,note_);        
+
+          if(result!=null)
+          {
+            note_.Likes += 1;
+            note_=UpdateNote(note_);
+            if(note_==null){
+              _repo.Delete<Liked>(result);
+              throw new Exception("Ups... Note failed to update. Like deleted.");
+            }
+          }else{throw new Exception("Ups... No Like created.");}
+
+        }catch(Exception e){ System.Diagnostics.Trace.WriteLine(e.Message); }
+      }
+
+      return result;
+    }
+    public void GetLikes()
+    {
+      
+    }
+
+    //Postponned due to PUT realization
+    public News NewsTogglePublish(string newsGUID_,bool published_)
+    {
+        News nt = _repo.SelectSingle<News>("GUID='"+newsGUID_+"'");
+        nt.published.isTrue = true;
+        nt.published.dateChanged = DateTime.Now;
+        nt.changed = nt.published.dateChanged;
+        return nt;
+    }
+    public News NewsTogglePinn(string newsGUID_,bool pinned_)
+    {
+        News nt = _repo.SelectSingle<News>("GUID='"+newsGUID_+"'");
+        nt.pinned.isTrue = true;
+        nt.pinned.dateChanged = DateTime.Now;
+        nt.changed = nt.published.dateChanged;
+        return nt;
+    } 
+
+
+    public IEnumerable<News> GetNews(int? offset,bool? published_,bool? pinned_)
+    {
+      IEnumerable<News> result = null;
+      int endDepth=offset==null?20:(int)offset;
+        result = _repo.SelectByCondFromType<News>(typeof(News),null,null);
+        
+        if(published_!=null)
+        {
+          result = from s in result where s.published.isTrue==published_ select s;
+        }
+        if(pinned_!=null)
+        {
+          result = from s in result where s.pinned.isTrue==pinned_ select s;
+        }
+        if(result!=null){
+          DateTime? mindate = (from s in result select s.created).Min();
+          DateTime? maxdate = (from s in result select s.created).Max();
+          result = result.OrderByDescending(s=>s.created);
+          result = result.Take(endDepth);
+        }       
+
+      return result;
+    }   
+    //Get news by person
+    public IEnumerable<News> GetPersonNews(Person p_=null)
+    {
+        return _repo.Select<Person,Authorship, News>(p_);
+    }    
+    //Get News with parameters to hardcoded query string. hardcoded select    
+    public IEnumerable<Note> GetPersonNewsHCSelectCond(int? offset,bool? published_,bool? pinned_,bool? asc,bool? liked,Person p_)
+    {
+      string cond_=null;
+      IEnumerable<Note> result=null;
+      string select_ = null;// "in('Authorship').GUID[0] as AuthGUID,pinned.isTrue as pinned,published.isTrue as published,in('Liked').size() as Likes,in('Tagged').out('Tag').tagText[0] as Tagged,*";
+      if(published_!=null){ cond_ += " and published.isTrue=" + published_; }
+      if(pinned_!=null){ cond_ += " and pinned.isTrue=" + pinned_; }
+      if(liked!=null){ cond_ += " and in('Liked').size()>0"; }
+      if(p_!=null){ cond_ += " and in('Authorship')[0].GUID='"+ p_.GUID +"'"; }
+
+      if(asc==null || asc==true ){ cond_ += " order by Changed asc "; }else{cond_ += " order by Changed desc";}
+
+      int val = 0;
+      int.TryParse(offset.ToString(), out val);
+      if(val>0){
+        if(offset!=null){ cond_ += " limit " + val; }
+      }
+      result = _repo.SelectHC<Note,Note>(null, select_, cond_, null);
+      return result; 
+    }
+
+
+    public Note GetNoteByID(string NewsId)
+    {
+      Note ret_=null;
+        ret_=_repo.SelectByIDWithCondition<Note>(NewsId,null,null).FirstOrDefault();         
+      return ret_;
+    }
+
+    public string DeleteNews(Person from, string id_)
+    {
+      string result = string.Empty;
+      from=CheckAndCreatePerson(from);
+      News ntd = GetNewsById(id_);
+
+      if (ntd != null) {
+        string deleteN=_repo.DeleteEdge<Authorship,Person,News>(from,ntd,null,null).GetResult();
+        string deleteR=_repo.Delete<News>(ntd,null,null).GetResult();
+        if(deleteN=="Deleted"&&deleteR == "Deleted") { result = "Deleted"; }
+      }
+      return result;
+    }
+      
+    /// <summary>
+    /// Check inE types on Comment,Authorship. If has inE comment, then returns current Note.
+    /// </summary>
+    /// <param name="NewsId">Npte which type need to be checked</param>
+    /// <returns></returns>
+    public int? IsCommentToComment(string NewsId)
+    {
+      int? depth=null;
+      Note nt=_repo.SelectByIDWithCondition<Note>(NewsId,null,null).FirstOrDefault();
+      if (nt.class_=="Commentary")
+      {
+        depth=nt.commentDepth;
+      }else{depth=null;}
+      return depth;
+    }   
+    
+  }
 
 }
 
@@ -1118,13 +798,9 @@ namespace Managers
       _personUOW.BindRepo(_repo);  
     }
     
-    string UserAcc()
+    public string UserAcc()
     {
-      #if DEBUG
-        return "Person1";
-      #endif
-      
-      return WebManagers.UserAuthenticationMultiple.UserAcc();      
+      return WebManagers.UserAuthenticationMultiple.UserAcc();
     }
     
     public string GetNotes(string GUID_,int offset)
@@ -1139,21 +815,40 @@ namespace Managers
     {
       string res_ = null;
             
-      IEnumerable<POCO.News> pn=_newsUOW.GetNews(offset);            
+      IEnumerable<POCO.News> pn=_newsUOW.GetNews(offset,null,null);            
+      res_ = _newsUOW.UOWserialize<POCO.News>(pn);
+
+      return res_;
+    }
+    public string GetNewsHC(GETparameters gp)
+    {
+      string _res = null;
+            
+      IEnumerable<POCO.Note> pn=_newsUOW.GetPersonNewsHCSelectCond(gp.offest,gp.published,gp.pinned,gp.asc,gp.liked,gp.author);
+      _res=_newsUOW.UOWserialize<POCO.Note>(pn);
+
+      return _res;
+    }
+
+    public string GetNews(int? offset,bool? published_,bool? pinned_)
+    {
+      string res_ = null;
+            
+      IEnumerable<POCO.News> pn=_newsUOW.GetNews(offset,published_,pinned_);            
       res_ = _newsUOW.UOWserialize<POCO.News>(pn);
 
       return res_;
     }
 
-    public string PostNews(POCO.News note_)
+    public string PostNews(POCO.News note_,string acc_=null)
     {
       string res_ = null;
         
-        string acc = UserAcc();
+        string acc =acc_==null?UserAcc():acc_;
         
         Person person_=_personUOW.GetPersonByAccount(acc);
       
-        if(person_==null){throw new Exception("user not found for acc: " + acc);}
+        if(person_==null){ throw new Exception("user not found for acc: " + acc); }
 
         News pn=_newsUOW.CreateNews(person_, note_);
         if(pn==null||pn.GUID==null){ throw new Exception("news not created for person " + person_.sAMAccountName); }
@@ -1167,7 +862,7 @@ namespace Managers
     {
       string res_ = null;
 
-        string acc=UserAcc();
+        string acc=this.UserAcc();
         Person person_=_personUOW.GetPersonByAccount(acc);
         if(person_==null){ throw new Exception("user not found for acc: " + acc); }
 
@@ -1185,13 +880,18 @@ namespace Managers
     public string PutNote(POCO.Note note_)
     {
       string res_ = null;      
-      string acc=UserAcc();
+      string acc=this.UserAcc();
 
       Person person_=_personUOW.GetPersonByAccount(acc);
       POCO.Note pn=_newsUOW.UpdateNotePersonal(person_,note_);
       res_=_newsUOW.UOWserialize<POCO.Note>(pn);
 
       return res_;
+    }
+
+    public string Like(Note note_)
+    {
+      return null;
     }
 
     //DATABASE BOILERPLATE
@@ -1220,7 +920,7 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
         {
           personsToAdd.Add(
             new Person(){sAMAccountName="Person"+i,Name="Person"+i,GUID="GUID"+i}
-            );
+          );
         }                 
 
         //db delete
@@ -1244,6 +944,10 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
         Type auCl=_repo.CreateClass<Authorship,E>();
         Type cmCl=_repo.CreateClass<Comment,E>();
 
+        Type lkCl=_repo.CreateClass<Liked,E>();
+        Type tgCl=_repo.CreateClass<Tag,V>();
+        Type tggCl=_repo.CreateClass<Tagged,E>();
+
         Note ntCl=new Note();
         Note ntCl0=new Note(){name="test name",content="test content"};
         Object_SC obs = new Object_SC() { GUID="1", changed=DateTime.Now, created=DateTime.Now, disabled=DateTime.Now };
@@ -1265,6 +969,11 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
         _repo.CreateProperty<Commentary>( new Commentary(), null);
         _repo.CreateProperty<News>( new News(), null);
         _repo.CreateProperty<Person>(personOne, null);
+        
+        _repo.CreateProperty<Liked>(new Liked(), null);
+        _repo.CreateProperty<Tag>(new Tag(), null);
+        _repo.CreateProperty<Tagged>(new Tagged(), null);
+
         //create single property from names
         //manager.CreateProperty("Unit", "Name", typeof(string), false, false);
 
@@ -1284,7 +993,6 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
         {
           Person p = _repo.CreateVertex<Person>(prs, null);                
         }
-
 
         //add relation
         MainAssignment maA=_repo.CreateEdge<MainAssignment>(mainAssignment,p0, u0,null );
@@ -1357,7 +1065,7 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
       //comment + coments
       //IEnumerable<Note> notes_=uow.GetByOffset("82f83601-d5cd-4108-b1b7-d27ac5a3933a",3);
 
-      IEnumerable<News> news_=_newsUOW.GetNews(10);
+      IEnumerable<News> news_=_newsUOW.GetNews(10,null,null);
           
       if(newsGen) {
         //news add
@@ -1367,28 +1075,34 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
           newsCnt=(int)rnd.Next(0,3);
           for(int i2=0;i2<newsCnt;i2++)
           {
-            newsAdded.Add(
-              _newsUOW.CreateNews(personsAdded[i],new News(){name="News"+i2,content="fucking interesting news",pic=string.Empty})
-            );
+            News ns=
+            _newsUOW.CreateNews(personsAdded[i], new News() { name = "News" + i2, content = "fucking interesting news", pic = string.Empty });
+
+            if(ns!=null){
+              newsAdded.Add(ns);
+            }
           }
         }
       }          
 
+      if(newsAdded.Count()>1){
       //commentaries gen
       nodes.AddRange(
         _newsUOW.GetOrientObjects<News>(null).ToList()
       );
 
-      //rand, comments gen
-      for(int i=0;i<personsAdded.Count()-1;i++)
-      {
-        commentaryCnt=(int)rnd.Next(8,15);
-        for(int i2=0;i2<commentaryCnt;i2++){
-          int nodeToCommentId=(int)rnd.Next(0,nodes.Count()-1);
-          Note nodeToComment=_newsUOW.GetNoteByID(nodes[nodeToCommentId].id);
-          nodes.Add(
-            _newsUOW.CreateCommentary(personsAdded[i],new Commentary(){name="Commentary"+i2,content="fucking bullshit comentary"},nodeToComment)
-          );
+        //rand, comments gen
+        for(int i=0;i<personsAdded.Count()-1;i++)
+        {
+          commentaryCnt=(int)rnd.Next(8,15);
+          for(int i2=0;i2<commentaryCnt;i2++){
+            int nodeToCommentId=(int)rnd.Next(0,nodes.Count()-1);
+            Note nodeToComment=_newsUOW.GetNoteByID(nodes[nodeToCommentId].id);
+            nodes.Add(
+              _newsUOW.CreateCommentary(personsAdded[i],new Commentary(){name="Commentary"+i2,content="fucking bullshit comentary"},nodeToComment)
+            );
+          }
+
         }
 
       }
@@ -1402,10 +1116,10 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
       Person yab=_sourceUOW.GetPersonByAccount("YablokovAE");
             List<News> crazyNews = new List<News>();
       for(int i=0;i<30;i++){
-        nodes.Add(
-          _newsUOW.CreateNews(yab, new News() { name = "News" + i, content = crazyComment })
-        );
- 
+      News ns = _newsUOW.CreateNews(yab, new News() { name = "News" + i, content = crazyComment });  
+        if(ns!=null){
+          nodes.Add(ns);
+        } 
       }
 
       //rand, comments gen
@@ -1423,7 +1137,7 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
       }
 
       string location_ = Assembly.GetExecutingAssembly().Location;
-      string path_ = Directory.GetParent(location_).ToString() + "\\nodes.json";
+      string path_ = Directory.GetParent(location_).ToString()+ "\\" + _repo.getDbName() + "_nodes.json";
       File.WriteAllText(path_, JsonConvert.SerializeObject(nodes,Formatting.Indented));
         
     }
@@ -1472,29 +1186,29 @@ namespace AdinTce
             IWebManagers.IResponseReader responseReader_,
             IJsonManagers.IJsonManger jsonManager_)
         {
-            this._CommandBuilder=CommandBuilder_;
-            this._webManager=webManager_;
-            this._responseReader=responseReader_;
-            this._jsonManager=jsonManager_;
+          this._CommandBuilder=CommandBuilder_;
+          this._webManager=webManager_;
+          this._responseReader=responseReader_;
+          this._jsonManager=jsonManager_;
 
-            GUIDtoken=new AdinTceGUIDToken();
-            tokenBuilder=new AdinTceExplicitTokenBuilder();
+          GUIDtoken=new AdinTceGUIDToken();
+          tokenBuilder=new AdinTceExplicitTokenBuilder();
        }
 
         public AdinTceRepo()
         {
 
-            this._CommandBuilder=new AdinTceCommandBuilder(new TokenMiniFactory(), new FormatFactory());
-            this._webManager=new AdinTceWebManager();
-            this._responseReader=new AdinTceResponseReader();
-            this._jsonManager=new AdinTceJsonManager();
+          this._CommandBuilder=new AdinTceCommandBuilder(new TokenMiniFactory(), new FormatFactory());
+          this._webManager=new AdinTceWebManager();
+          this._responseReader=new AdinTceResponseReader();
+          this._jsonManager=new AdinTceJsonManager();
 
-            _webManager.SetCredentials(new System.Net.NetworkCredential(
-               ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
+          _webManager.SetCredentials(new System.Net.NetworkCredential(
+              ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
 
-            GUIDtoken=new AdinTceGUIDToken();
-            tokenBuilder=new AdinTceExplicitTokenBuilder();
-       }
+          GUIDtoken=new AdinTceGUIDToken();
+          tokenBuilder=new AdinTceExplicitTokenBuilder();
+        }
         public string HoliVation(string GUID)
         {
 
@@ -1516,7 +1230,7 @@ namespace AdinTce
             result=_jsonManager.SerializeObject(adp);
 
             return result;
-       }
+        }
 
         void AdpCheck()
         {

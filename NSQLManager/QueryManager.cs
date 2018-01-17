@@ -37,8 +37,8 @@ namespace QueryManagers
     /// </summary>
     public class TextToken : ITypeToken
     {
-        public string Text {get; set;}
-   }
+      public string Text {get; set;}
+    }
 
     /// <summary>
     /// Token factory for OrientDb command builders.
@@ -652,26 +652,26 @@ namespace QueryManagers
 
         public ITypeToken FromatFromTokenArray(List<ITypeToken> tokens_, ITypeToken delimeter_=null)
         {
-            ITypeToken res=_factory.NewToken();
-            delimeterCheck(delimeter_);
-            if (tokens_!=null)
-            {
+          ITypeToken res=_factory.NewToken();
+          delimeterCheck(delimeter_);
+          if (tokens_!=null)
+          {
                
-                int cnt=tokens_.Where(s => s!=null && s.Text != null).Count();
-                this.elements_=new List<int>(cnt) {};
-                int i2=0;
-                for (int i =0;i<tokens_.Count;i++)
-                {
-                    if(tokens_[i]!=null && tokens_[i].Text!=null)
-                    {
-                        this.elements_.Add( i2);
-                        i2 += 1;
-                    }
-                }
+            int cnt=tokens_.Where(s => s!=null && s.Text != null).Count();
+            this.elements_=new List<int>(cnt) {};
+            int i2=0;
+            for (int i =0;i<tokens_.Count;i++)
+            {
+              if(tokens_[i]!=null && tokens_[i].Text!=null)
+              {
+                this.elements_.Add( i2);
+                i2 += 1;
+              }
             }
+          }
                        
-            res.Text=formatFromArray();
-            return res;
+          res.Text=formatFromArray();
+          return res;
         }
         public ITypeToken FromatFromTokenArray(List<ICommandBuilder> builders_, ITypeToken delimeter_=null)
         {

@@ -178,8 +178,8 @@ namespace NSQLManagerTests.Tests
             login = ConfigurationManager.AppSettings["orient_login"];
             password = ConfigurationManager.AppSettings["orient_pswd"];
             dbHost = string.Format("{0}:{1}"
-                , ConfigurationManager.AppSettings["ParentHost"]
-                , ConfigurationManager.AppSettings["ParentPort"]);
+                , ConfigurationManager.AppSettings["HttpDevHost"]
+                , ConfigurationManager.AppSettings["OrientPort"]);
             dbName = "test_db_gen";
 
             p =
@@ -356,11 +356,11 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
             {
                 Text =
                 string.Format("{0}:{1}"
-                , ConfigurationManager.AppSettings["ParentHost"]
-                , ConfigurationManager.AppSettings["ParentPort"])
+                , ConfigurationManager.AppSettings["HttpDevHost"]
+                , ConfigurationManager.AppSettings["OrientPort"])
             };
 
-            databaseName=ConfigurationManager.AppSettings["TestDBname"];
+            databaseName=ConfigurationManager.AppSettings["OrientUnitTestDB"];
 
             V=_miniFactory.NewToken("V");
         }
@@ -516,7 +516,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         public void IntegrationCombatDatabaseCreateDeleteCombat()
         {
 
-          ITypeToken dbName=new TextToken() {Text=ConfigurationManager.AppSettings["TestDBname"]};
+          ITypeToken dbName=new TextToken() {Text=ConfigurationManager.AppSettings["OrientUnitTestDB"]};
 
           //binding host from dbname to shema builder
           _urlShemas.AddHost(hostToken.Text);
@@ -572,28 +572,28 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
             orietWebManager=new OrientWebManager();
 
             authUrl=string.Format(@"{0}:{1}/{2}/{3}"
-                , ConfigurationManager.AppSettings["ParentHost"]
-                , ConfigurationManager.AppSettings["ParentPort"]
+                , ConfigurationManager.AppSettings["HttpDevHost"]
+                , ConfigurationManager.AppSettings["OrientPort"]
                 , ConfigurationManager.AppSettings["AuthURL"]
-                , ConfigurationManager.AppSettings["TestDBname"]);
+                , ConfigurationManager.AppSettings["OrientUnitTestDB"]);
 
             funcUrl=string.Format(@"{0}:{1}/{2}/{3}"
-                , ConfigurationManager.AppSettings["ParentHost"]
-                , ConfigurationManager.AppSettings["ParentPort"]
+                , ConfigurationManager.AppSettings["HttpDevHost"]
+                , ConfigurationManager.AppSettings["OrientPort"]
                 , ConfigurationManager.AppSettings["FunctionURL"]
-                , ConfigurationManager.AppSettings["TestDBname"]);
+                , ConfigurationManager.AppSettings["OrientUnitTestDB"]);
 
             batchUrl=string.Format(@"{0}:{1}/{2}/{3}"
-                , ConfigurationManager.AppSettings["ParentHost"]
-                , ConfigurationManager.AppSettings["ParentPort"]
+                , ConfigurationManager.AppSettings["HttpDevHost"]
+                , ConfigurationManager.AppSettings["OrientPort"]
                 , ConfigurationManager.AppSettings["BatchURL"]
-                , ConfigurationManager.AppSettings["TestDBname"]);
+                , ConfigurationManager.AppSettings["OrientUnitTestDB"]);
 
             commandUrl=string.Format(@"{0}:{1}/{2}/{3}"
-                , ConfigurationManager.AppSettings["ParentHost"]
-                , ConfigurationManager.AppSettings["ParentPort"]
+                , ConfigurationManager.AppSettings["HttpDevHost"]
+                , ConfigurationManager.AppSettings["OrientPort"]
                 , ConfigurationManager.AppSettings["CommandURL"]
-                , ConfigurationManager.AppSettings["TestDBname"]);
+                , ConfigurationManager.AppSettings["OrientUnitTestDB"]);
 
             root=ConfigurationManager.AppSettings["orient_login"];
             password=ConfigurationManager.AppSettings["orient_pswd"];
@@ -1220,15 +1220,15 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
             IOrientBodyFactory qbf=new OrientBodyFactory();
 
             Urlshema=new UrlShemasExplicit(cb, fg, tf, qbf);
-            Urlshema.AddHost(ConfigurationManager.AppSettings["ParentHost"]);
-            testDBname=ConfigurationManager.AppSettings["TestDBname"];
-            parentHost=ConfigurationManager.AppSettings["ParentHost"];
+            Urlshema.AddHost(ConfigurationManager.AppSettings["HttpDevHost"]);
+            testDBname=ConfigurationManager.AppSettings["OrientUnitTestDB"];
+            parentHost=ConfigurationManager.AppSettings["HttpDevHost"];
        }
 
         [Fact]
         public void UrlShemasGetHostCheck()
         {
-            Assert.Equal(ConfigurationManager.AppSettings["ParentHost"], Urlshema.GetHost().Text);           
+            Assert.Equal(ConfigurationManager.AppSettings["HttpDevHost"], Urlshema.GetHost().Text);           
        }
         [Fact]
         public void UrlShemasCreateCheck()
@@ -1306,8 +1306,8 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
            }, new TextToken() {Text="{0}"});
 
             Bodyshema=new BodyShemas(commandFactory, formatFactory,tokenFactory,queryFactory);
-            Bodyshema.AddHost(ConfigurationManager.AppSettings["ParentHost"]);
-            testDBname=ConfigurationManager.AppSettings["TestDbname"];
+            Bodyshema.AddHost(ConfigurationManager.AppSettings["HttpDevHost"]);
+            testDBname=ConfigurationManager.AppSettings["OrientUnitTestDB"];
        }
         [Fact]
         public void BodyCommandShemaCheck()
@@ -1830,9 +1830,9 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
             CommURL.AddFormat(commURLformat);
             CommURL.Build();
 
-            hostExpected=ConfigurationManager.AppSettings["ParentHost"];
+            hostExpected=ConfigurationManager.AppSettings["OrientDevHost"];
             portExpected="2480";
-            dbExpected=ConfigurationManager.AppSettings["ParentDBname"];
+            dbExpected=ConfigurationManager.AppSettings["OrientUnitTestDB"];
             commandExpected="connect";
             commandTokenExpected="command";
             patternAuthExpected="{0}:{1}/{2}/{3}";
@@ -1845,11 +1845,11 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
 
             createPersonURLExpected=string.Format(
                 "{0}:2480/command/{1}/sql/create Vertex Person content {2}"
-               , ConfigurationManager.AppSettings["ParentHost"], dbExpected, "{\"Name\":\"0\",\"GUID\":\"0\"}");
+               , ConfigurationManager.AppSettings["OrientDevHost"], dbExpected, "{\"Name\":\"0\",\"GUID\":\"0\"}");
             selectPersonURLExpected=string.Format(@"{0}:2480/command/{1}/sql/{2}"
-                 ,ConfigurationManager.AppSettings["ParentHost"], dbExpected, "Select from Person where Name=0");
+                 ,ConfigurationManager.AppSettings["OrientDevHost"], dbExpected, "Select from Person where Name=0");
             deletePersonURLExpected=string.Format(@"{0}:2480/command/{1}/sql/{2}"
-                , ConfigurationManager.AppSettings["ParentHost"], dbExpected, "Delete Vertex from Person where Name=0");
+                , ConfigurationManager.AppSettings["OrientDevHost"], dbExpected, "Delete Vertex from Person where Name=0");
 
        }
 
@@ -1888,7 +1888,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         public void OrientAuthenticationUrlBuilderTestReturnsvalidConnectURL()
         {
             Assert.Equal(authUrlExpected, AuthURL.Text.Text);
-       }
+        }
         [Fact]
         public void OrientCommandURLFormatTestReturnsValidCommandUrl()
         {
@@ -2203,7 +2203,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
             //_webManager.SetTimeout(11000);
             adinTceRepo=new AdinTceRepo(_CommandBuilder, _webManager, _responseReader, _jsonManager);
 
-       }
+        }
 
         public void AddActualUrls()
         {
@@ -2409,8 +2409,8 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
           List<string> results = new List<string>();
           List<Person> pers = nu.GetOrientObjects<Person>(null).ToList();
 
-          results.Add(nu.SearchByName("Neprintsevia").FirstOrDefault().id);            
-          results.Add(intEmpty(nu.SearchByName("олов").Count()));
+          results.Add(nu.SearchByName(pers[0].Name).FirstOrDefault().id);            
+          results.Add(intEmpty(nu.SearchByName(pers[0].Name).Count()));
           results.Add(intEmpty(pers.Count()));
           results.Add(nu.GetOrientObjects<Person>(pers[0].id).FirstOrDefault().id);
 
