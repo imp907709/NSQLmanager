@@ -43,7 +43,34 @@ namespace IUOWs
     T UOWdeserialize<T>(string item_) where T : class, IorientDefaultObject;
     string UOWserialize<T>(IEnumerable<T> item_) where T : class, IorientDefaultObject;
     string UOWserialize<T>(T item_) where T : class, IorientDefaultObject;
-   
+
+    T ValidateItem<T>(T item_) where T : class, IorientDefaultObject;
+
+
+    IEnumerable<T> GetItems<T>()
+      where T : class, IorientDefaultObject;
+    IEnumerable<T> GetItems<T>(string cond_ = null)
+      where T : class, IOrientObjects.IorientDefaultObject;
+
+    void DeleteItems<T>(IEnumerable<T> items_)
+      where T : class, IorientDefaultObject;
+
+    T GetItemByGUID<T>(T item)
+      where T : class, IorientDefaultObject;
+    T CreateVertex<T>(T item)
+      where T : class, IOrientVertex, IorientDefaultObject;
+    T CreateEdge<T, C, K>(T rel, C from, K to)
+      where T : class, IOrientEdge, IorientDefaultObject
+      where C : class, IOrientVertex, IorientDefaultObject
+      where K : class, IOrientVertex, IorientDefaultObject;
+    void DeleteEdge<T, C, K>(C from, K to)
+      where T : class, IOrientEdge, IorientDefaultObject
+      where C : class, IOrientVertex, IorientDefaultObject
+      where K : class, IOrientVertex, IorientDefaultObject;
+
+    IEnumerable<C> GetInEOutV<T, K, C>(T vertex)
+      where T : class, IOrientVertex, IorientDefaultObject where K : class, IOrientEdge where C : class, IOrientVertex;
+
   }
 
   public class UOW : IUOW
@@ -58,16 +85,36 @@ namespace IUOWs
     public void BindRepo(IOrientRepo repo_)
     {
       this._repo=repo_;
-    }
-  
+    }  
 
-    public T CheckItem<T>(T item)
+    public IEnumerable<T> GetItems<T>()
+      where T:class,IorientDefaultObject
+    {
+      return _repo.SelectFromType<T>(null, null);
+    }
+    public void DeleteItems<T>(IEnumerable<T> items_)
+      where T : class, IorientDefaultObject
+    {
+      foreach(T item in items_)
+      {
+        _repo.Delete<T>(item, null, null);
+      }
+    }
+    public T GetItemByGUID<T>(T item)
       where T:class,IorientDefaultObject 
     {
       T result=null;
         result=_repo.SelectSingle<T>("GUID='"+item.GUID+"'",null);
       return result;
     }
+    public IEnumerable<T> GetItems<T>(string cond_=null)
+    where T : class, IOrientObjects.IorientDefaultObject
+  {
+    IEnumerable<T> result = null;
+    result = _repo.SelectFromType<T>(cond_, null);
+    return result;
+  }
+      
     public T CreateVertex<T>(T item)
       where T:class,IOrientVertex,IorientDefaultObject
     {
@@ -83,11 +130,35 @@ namespace IUOWs
       T result = null;
         
       C fromCheck=_repo.SelectFromType<C>("GUID='" + from.GUID + "'", null).FirstOrDefault();
-      K toCheck=_repo.SelectFromType<K>("GUID='" + from.GUID + "'", null).FirstOrDefault();
+      K toCheck=_repo.SelectFromType<K>("GUID='" + to.GUID + "'", null).FirstOrDefault();
         if (fromCheck != null && toCheck != null) {
           result=_repo.CreateEdge<T>(rel, from, to);
         }
       return result;
+    }
+    public void DeleteEdge<T,C,K>(C from,K to)
+      where T:class,IOrientEdge,IorientDefaultObject
+      where C:class,IOrientVertex,IorientDefaultObject
+      where K:class,IOrientVertex,IorientDefaultObject
+    {
+      _repo.DeleteEdge<T,C,K>(from,to,null,null); 
+    }
+
+    public T ValidateItem<T>(T item_) where T:class,IorientDefaultObject
+    {
+      T result = null;
+        try{
+          if(item_==null){ throw new Exception("Null object passed " + item_.ToString()); }
+          result=GetItemByGUID<T>(item_);
+          if(result==null){ throw new Exception("No object in DB " + item_.ToString()); }
+        }catch (Exception e){ System.Diagnostics.Trace.WriteLine(e.Message); }
+      return result;
+    }
+
+    public IEnumerable<C> GetInEOutV<T,K,C>(T vertex)
+      where T:class,IOrientVertex, IorientDefaultObject where K : class,IOrientEdge where C : class,IOrientVertex
+    {
+      return _repo.SelectInEOutV<T, K, C>(vertex, null);
     }
 
     public string UOWserialize<T>(T item_)
@@ -185,6 +256,12 @@ namespace NewsUOWs
       result = _repo.SelectSingle<Note>("GUID='" + GUID_ + "'", null);
       return result;
     }     
+    public Note GetNoteByID(string NewsId)
+    {
+      Note ret_=null;
+        ret_=_repo.SelectByIDWithCondition<Note>(NewsId,null,null).FirstOrDefault();         
+      return ret_;
+    }
 
     public News GetNewsByGUID(string GUID_)
     {      
@@ -198,7 +275,21 @@ namespace NewsUOWs
       result = _repo.SelectFromType<News>("@rid=" + id_ , null).FirstOrDefault();
       return result;
     }
-      
+    
+    public string DeleteNews(Person from, string id_)
+    {
+      string result = string.Empty;
+      from=CheckAndCreatePerson(from);
+      News ntd = GetNewsById(id_);
+
+      if (ntd != null) {
+        string deleteN=_repo.DeleteEdge<Authorship,Person,News>(from,ntd,null,null).GetResult();
+        string deleteR=_repo.Delete<News>(ntd,null,null).GetResult();
+        if(deleteN=="Deleted"&&deleteR == "Deleted") { result = "Deleted"; }
+      }
+      return result;
+    }
+
     public IEnumerable<Note> GetByOffset(string guid_, int? offset_=3)
     {
       IEnumerable<Note> result_=null;
@@ -228,6 +319,7 @@ namespace NewsUOWs
       }
       return result_;
     }
+
 
     [Obsolete]
     public IEnumerable<News> GetNewsByOffset(int? offset_=20)
@@ -264,28 +356,74 @@ namespace NewsUOWs
       return result;
     }
 
+
+    public IEnumerable<News> GetNews(int? offset,bool? published_,bool? pinned_)
+    {
+      IEnumerable<News> result = null;
+      int endDepth=offset==null?20:(int)offset;
+        result = _repo.SelectByCondFromType<News>(typeof(News),null,null);
+        
+        if(published_!=null)
+        {
+          result = from s in result where s.published.isTrue==published_ select s;
+        }
+        if(pinned_!=null)
+        {
+          result = from s in result where s.pinned.isTrue==pinned_ select s;
+        }
+        if(result!=null){
+          DateTime? mindate = (from s in result select s.created).Min();
+          DateTime? maxdate = (from s in result select s.created).Max();
+          result = result.OrderByDescending(s=>s.created);
+          result = result.Take(endDepth);
+        }       
+
+      return result;
+    }   
+    //Get news by person
+    public IEnumerable<News> GetPersonNews(Person p_=null)
+    {
+        return _repo.SelectOutEInV<Person,Authorship, News>(p_);
+    }    
+    //Get News with parameters to hardcoded query string. hardcoded select    
+    public IEnumerable<Note> GetPersonNewsHCSelectCond(int? offset,bool? published_,bool? pinned_,bool? asc,bool? liked,Tag tag_,Person p_)
+    {
+      string cond_=null;
+      IEnumerable<Note> result=null;
+      string select_ = null;// "in('Authorship').GUID[0] as AuthGUID,pinned.isTrue as pinned,published.isTrue as published,in('Liked').size() as Likes,in('Tagged').out('Tag').tagText[0] as Tagged,*";
+      if(published_!=null){ cond_ += " and published.isTrue=" + published_; }
+      if(pinned_!=null){ cond_ += " and pinned.isTrue=" + pinned_; }
+      if(liked!=null){ cond_ += " and in('Liked').size()>0"; }
+      if(p_!=null){ cond_ += " and in('Authorship')[0].GUID='"+ p_.GUID +"'"; }
+      if(tag_!=null){ cond_ += " and inE('Tagged').outV('Tag').tagText in['"+ tag_.tagText +"']"; }
+
+      if(asc==true ){ cond_ += " order by changed asc "; }else{cond_ += " order by changed desc";}
+
+      int val = 0;
+      int.TryParse(offset.ToString(), out val);
+      if(val>0){
+        if(offset!=null){ cond_ += " limit " + val; }
+      }
+      result = _repo.SelectHC<Note,Note>(null, select_, cond_, null);
+      return result; 
+    }
+
+
     public IEnumerable<Person> SearchByName(string Name_)
     {
       IEnumerable<Person> result=null;
       Name_ = Name_.ToLower();
       result=_repo
-          .SelectFromType<Person>("Name.toLowerCase() like '%"+Name_+"%' or sAMAccountName.toLowerCase() like '%"+Name_+"%'or mail.toLowerCase() like '%"+Name_+"%'"
-          ,null);
+        .SelectFromType<Person>("Name.toLowerCase() like '%"+Name_+"%' or sAMAccountName.toLowerCase() like '%"+Name_+"%'or mail.toLowerCase() like '%"+Name_+"%'"
+        ,null);
       return result;
     }        
 
-    public IEnumerable<T> GetOrientObjects<T>(string cond_=null)
-      where T : class, IOrientObjects.IorientDefaultObject
-    {
-      IEnumerable<T> result = null;
-      result = _repo.SelectFromType<T>(cond_, null);
-      return result;
-    }
-      
+   
     public Person CheckAndCreatePerson (Person person_)
     {
       Person result = null;
-      result = base.CheckItem<Person>(person_);
+      result = ValidateItem<Person>(person_);
         //result=_repo.SelectSingle<Person>("GUID='"+person_.GUID+"'",null);
         if(result==null)
         {
@@ -297,9 +435,10 @@ namespace NewsUOWs
     public IEnumerable<Person> GetPersonsWithNews(Note news_= null)
     {
       IEnumerable<Person> result=null;
-        result = _repo.SelectInEOutV<Note, Authorship, Person>(news_,null);       
+        result=_repo.SelectInEOutV<Note, Authorship, Person>(news_,null);
       return result;
     }
+
 
     //<<<create commentary from string.
     [Obsolete]
@@ -479,7 +618,7 @@ namespace NewsUOWs
   Commentary nt=_repo.SelectSingle<Commentary>("GUID='"+noteFrom.GUID+"'",null);
   return nt;
     }     
-      
+
     /// <summary>
     /// Checks type and account. If commentary validates user by sAMAccountName. 
     /// </summary>
@@ -508,189 +647,202 @@ namespace NewsUOWs
     /// <returns></returns>
     public Note UpdateNote(Person from_,Note noteFrom)
     {
-Note nt = null;
-noteFrom.changed=DateTime.Now;
-Note noteTo = _repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'");
-if(noteTo!=null){
-Person oldAuthor = GetPersonsWithNews(noteTo).FirstOrDefault();  
+    Note nt = null;
+    noteFrom.changed=DateTime.Now;
+    Note noteTo = _repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'");
+    if(noteTo!=null){
+      Person oldAuthor = GetPersonsWithNews(noteTo).FirstOrDefault();  
 
-noteTo=_repo.UpdateProperties<Note>(noteFrom,noteTo);
+      noteTo=_repo.UpdateProperties<Note>(noteFrom,noteTo);
 
-//pinned status recheck for datechange
-if(noteFrom.pinned!=null){
-  noteTo.pinned.isTrue = noteFrom.pinned.isTrue;
-  noteTo.pinned.dateChanged = noteFrom.changed;
-}
-//published status recheck for datechange
-if(noteFrom.published!=null){
-  noteTo.published.isTrue = noteFrom.published.isTrue;
-  noteTo.published.dateChanged = noteFrom.changed;
-}
-_repo.DeleteEdge<Authorship, Person, Note>(oldAuthor,noteFrom,null,null);
+      //pinned status recheck for datechange
+      if(noteFrom.pinned!=null){
+        noteTo.pinned.isTrue = noteFrom.pinned.isTrue;
+        noteTo.pinned.dateChanged = noteFrom.changed;
+      }
+      //published status recheck for datechange
+      if(noteFrom.published!=null){
+        noteTo.published.isTrue = noteFrom.published.isTrue;
+        noteTo.published.dateChanged = noteFrom.changed;
+      }
+      _repo.DeleteEdge<Authorship, Person, Note>(oldAuthor,noteFrom,null,null);
 
-noteTo.author_=from_;
+      noteTo.author_=from_;
   
-Authorship authNew=_repo.CreateEdge<Authorship>(new Authorship(),from_,noteTo,null);
+      Authorship authNew=_repo.CreateEdge<Authorship>(new Authorship(),from_,noteTo,null);
 
-noteTo.authName = from_.Name;
-noteTo.authAcc = from_.sAMAccountName;
-noteTo.authGUID = from_.GUID;
+      noteTo.authName = from_.Name;
+      noteTo.authAcc = from_.sAMAccountName;
+      noteTo.authGUID = from_.GUID;
 
-Note updatedEntity=_repo.UpdateEntity<Note>(noteTo,null);
-nt=_repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'",null);
-}
-return nt;
+      Note updatedEntity=_repo.UpdateEntity<Note>(noteTo,null);
+      nt=_repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'",null);
+      }
+    return nt;
     }
     public Note UpdateNote(Note noteFrom)
     {
-Note updatedEntity=_repo.UpdateEntity<Note>(noteFrom,null);
-Note nt=_repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'",null);
-return nt;
+    Note updatedEntity=_repo.UpdateEntity<Note>(noteFrom,null);
+    Note nt=_repo.SelectSingle<Note>("GUID='"+noteFrom.GUID+"'",null);
+    return nt;
     }
 
+
+    //Like block
     public Liked LikeNote(Note note_,Person p_)
     {
-      Liked result =null;     
+      Liked result =null;
+      note_=ValidateItem<Note>(note_);
+      p_=ValidateItem<Person>(p_);
       if(note_==null){ throw new Exception("No Note object found in DB. Nothing to like."); }
       if(p_==null){ throw new Exception("No Person found in DB. Noone can like."); }
+      if(CheckLike(note_,p_)==null){
 
-      if(note_!=null || p_!=null)
-      {
-        result=new Liked();
-        try{
-          result=_repo.CreateEdge<Liked>(result,p_,note_);        
+        if(note_!=null || p_!=null)
+        {
+          result=new Liked();
+          try{
+            result=_repo.CreateEdge<Liked>(result,p_,note_);        
 
-          if(result!=null)
-          {
-            note_.Likes=GetLikes(note_).Likes+1;
-            note_=UpdateNote(note_);
-            if(note_==null){
-              _repo.Delete<Liked>(result);
-              throw new Exception("Ups... Note failed to update. Like deleted.");
-            }
-          }else{throw new Exception("Ups... No Like created.");}
+            if(result!=null)
+            {
+              note_.Likes=GetLikesCountHC(note_).Likes;
+              note_=UpdateNote(note_);
+              if(note_==null){
+                _repo.Delete<Liked>(result);
+                throw new Exception("Ups... Note failed to update. Like deleted.");
+              }
+            }else{throw new Exception("Ups... No Like created.");}
 
-        }catch(Exception e){ System.Diagnostics.Trace.WriteLine(e.Message); }
+          }catch(Exception e){ System.Diagnostics.Trace.WriteLine(e.Message); }
+        }
       }
-
       return result;
     }
     public Note DislikeNote(Note note_,Person p_)
-    {            
-        if(note_==null){ throw new Exception("No Note object found in DB. Nothing to dislike."); }
-        if(p_==null){ throw new Exception("No Person found in DB. Noone can dislike."); }
-        
+    {
+      note_=ValidateItem<Note>(note_);
+      p_=ValidateItem<Person>(p_);
         if(note_!=null || p_!=null)
         {
           try {
-            _repo.DeleteEdge<Liked,Person,Note>(p_,note_,null,null);        
-            int? likes=GetLikes(note_).Likes;
-            note_.Likes=(likes!=null || likes>0)?likes-1:0;
-            note_=UpdateNote(note_);
+          if (CheckLike(note_, p_) != null) {
+              int? likesBefore=GetLikesCountHC(note_).Likes;
+              _repo.DeleteEdge<Liked,Person,Note>(p_,note_,null,null);        
+              int? likesAfter=GetLikesCountHC(note_).Likes;
+              if(likesBefore<=likesAfter && likesBefore >0)
+              {
+                throw new Exception("No likes deleted situation");
+              }
+              note_.Likes=likesAfter;
+              note_=UpdateNote(note_);
+            }
           }
           catch(Exception e) { System.Diagnostics.Trace.WriteLine(e.Message);}
-        }
+        }      
       return note_;
     }
-    public Note GetLikes(Note note_)
-    {
+    //>>move hardcode to node model GIT size. bind to type
+    public Note GetLikesCountHC(Note note_)
+    { 
       Note result=null;
-      string select_="in('Liked').size() as Likes,GUID";
-        result = _repo.SelectHC<Note,Note>(note_,select_,null,null).FirstOrDefault();
+      note_=ValidateItem<Note>(note_);
+      if(note_!=null){
+       
+        string select_="in('Liked').size() as Likes,GUID";
+          result = _repo.SelectHC<Note,Note>(note_,select_,null,null).FirstOrDefault();
+      }
       return result;
     }
-
-    //Postponned due to PUT realization
-    public News NewsTogglePublish(string newsGUID_,bool published_)
+    public Person CheckLike(Note note_,Person p_)
     {
-        News nt = _repo.SelectSingle<News>("GUID='"+newsGUID_+"'");
-        nt.published.isTrue = true;
-        nt.published.dateChanged = DateTime.Now;
-        nt.changed = nt.published.dateChanged;
-        return nt;
-    }
-    public News NewsTogglePinn(string newsGUID_,bool pinned_)
-    {
-        News nt = _repo.SelectSingle<News>("GUID='"+newsGUID_+"'");
-        nt.pinned.isTrue = true;
-        nt.pinned.dateChanged = DateTime.Now;
-        nt.changed = nt.published.dateChanged;
-        return nt;
-    } 
+      Person result = null;
+      note_=ValidateItem<Note>(note_);
+      p_=ValidateItem<Person>(p_);
 
-
-    public IEnumerable<News> GetNews(int? offset,bool? published_,bool? pinned_)
-    {
-      IEnumerable<News> result = null;
-      int endDepth=offset==null?20:(int)offset;
-        result = _repo.SelectByCondFromType<News>(typeof(News),null,null);
+      try{        
+        IEnumerable<Person> tr=from s in GetInEOutV<Note,Liked,Person>(note_) where s.Equals(p_) select s;
         
-        if(published_!=null)
-        {
-          result = from s in result where s.published.isTrue==published_ select s;
-        }
-        if(pinned_!=null)
-        {
-          result = from s in result where s.pinned.isTrue==pinned_ select s;
-        }
-        if(result!=null){
-          DateTime? mindate = (from s in result select s.created).Min();
-          DateTime? maxdate = (from s in result select s.created).Max();
-          result = result.OrderByDescending(s=>s.created);
-          result = result.Take(endDepth);
-        }       
+        if(tr.Count()>1)
+        {throw new Exception("Person doubled in DB");}
+
+        result = tr.FirstOrDefault();
+
+      }
+      catch (Exception e){ System.Diagnostics.Trace.WriteLine(e.Message); }
 
       return result;
     }   
-    //Get news by person
-    public IEnumerable<News> GetPersonNews(Person p_=null)
-    {
-        return _repo.Select<Person,Authorship, News>(p_);
-    }    
-    //Get News with parameters to hardcoded query string. hardcoded select    
-    public IEnumerable<Note> GetPersonNewsHCSelectCond(int? offset,bool? published_,bool? pinned_,bool? asc,bool? liked,Person p_)
-    {
-      string cond_=null;
-      IEnumerable<Note> result=null;
-      string select_ = null;// "in('Authorship').GUID[0] as AuthGUID,pinned.isTrue as pinned,published.isTrue as published,in('Liked').size() as Likes,in('Tagged').out('Tag').tagText[0] as Tagged,*";
-      if(published_!=null){ cond_ += " and published.isTrue=" + published_; }
-      if(pinned_!=null){ cond_ += " and pinned.isTrue=" + pinned_; }
-      if(liked!=null){ cond_ += " and in('Liked').size()>0"; }
-      if(p_!=null){ cond_ += " and in('Authorship')[0].GUID='"+ p_.GUID +"'"; }
 
-      if(asc==null || asc==true ){ cond_ += " order by Changed asc "; }else{cond_ += " order by Changed desc";}
 
-      int val = 0;
-      int.TryParse(offset.ToString(), out val);
-      if(val>0){
-        if(offset!=null){ cond_ += " limit " + val; }
+    //Tags block
+    public Tag AddTag(Tag tag_)
+    {
+      Tag result=null;
+      if(getTag(tag_)==null){
+        result=_repo.CreateVertex<Tag>(tag_,null);
       }
-      result = _repo.SelectHC<Note,Note>(null, select_, cond_, null);
-      return result; 
-    }
-
-
-    public Note GetNoteByID(string NewsId)
+      return result;
+    }  
+    public Tag getTag(Tag tag_)
     {
-      Note ret_=null;
-        ret_=_repo.SelectByIDWithCondition<Note>(NewsId,null,null).FirstOrDefault();         
-      return ret_;
+      return _repo.SelectFromType<Tag>("tagText='"+tag_.tagText+"'", null).FirstOrDefault();
     }
-
-    public string DeleteNews(Person from, string id_)
+    public string DeleteTag(Tag tag_)
     {
-      string result = string.Empty;
-      from=CheckAndCreatePerson(from);
-      News ntd = GetNewsById(id_);
-
-      if (ntd != null) {
-        string deleteN=_repo.DeleteEdge<Authorship,Person,News>(from,ntd,null,null).GetResult();
-        string deleteR=_repo.Delete<News>(ntd,null,null).GetResult();
-        if(deleteN=="Deleted"&&deleteR == "Deleted") { result = "Deleted"; }
+      tag_=getTag(tag_);
+      if(tag_!=null){
+        IEnumerable<Tagged> taggeds=_repo.SelectFromType<Tagged>("in.rid="+tag_.id, null);
+        foreach(Tagged ref_ in taggeds){
+          _repo.Delete<Tagged>(ref_);
+          _repo.Delete<Tag>(tag_);
+          return "DELETED";
+        }
+      }
+     return "Not deleted";
+    }
+    public Tagged ToTag(News note_, Tag tag_)
+    {
+      Tagged result = null;
+      if(note_!=null&&tag_!=null){
+        note_=ValidateItem<News>(note_);
+        tag_=getTag(tag_);
+        IEnumerable<Tag> tags_=null;
+        if(note_!=null&&tag_ != null){
+          tags_=newsTags(note_, tag_);
+          if(tags_!=null && tags_.Count()==0 ){      
+            result=new Tagged();
+            result=CreateEdge<Tagged, Tag, News>(result, tag_, note_);        
+          }
+        }
       }
       return result;
     }
-      
+    public string UnTag(News note_, Tag tag_)
+    {
+      note_=GetNewsByGUID(note_.GUID);
+      tag_=getTag(tag_);
+      if(newsTags(note_,tag_).Count()>=0)
+      {
+        DeleteEdge<Tagged, Tag, News>(tag_, note_);
+        return "DELETED";
+      }
+      return "Not deleted";
+    }
+    
+    public IEnumerable<Tag> newsTags(News note_,Tag tag_)
+    {     
+      return (from s in GetInEOutV<News, Tagged, Tag>(note_) where s.GUID == tag_.GUID select s);
+    }
+    public IEnumerable<News> newsByTag(Tag tag_)
+    {
+      IEnumerable<News> result = null;
+        result=_repo.SelectWhereInEOutV<News,Tagged,Tag>(tag_,null, null, null);
+      return result;
+    }
+
+  
+
     /// <summary>
     /// Check inE types on Comment,Authorship. If has inE comment, then returns current Note.
     /// </summary>
@@ -842,9 +994,11 @@ namespace Managers
     }
     public string GetNewsHC(GETparameters gp)
     {
-      string _res = null;
-            
-      IEnumerable<POCO.Note> pn=_newsUOW.GetPersonNewsHCSelectCond(gp.offest,gp.published,gp.pinned,gp.asc,gp.liked,gp.author);
+      string _res=null;
+      
+      IEnumerable<POCO.Note> pn=
+      _newsUOW.GetPersonNewsHCSelectCond(gp.offest,gp.published,gp.pinned,gp.asc,gp.liked,gp.tagg,gp.author);
+           
       _res=_newsUOW.UOWserialize<POCO.Note>(pn);
 
       return _res;
@@ -911,7 +1065,91 @@ namespace Managers
 
     public string Like(Note note_)
     {
-      return null;
+      string res_ = null;      
+      string acc=this.UserAcc();
+
+      Person person_=_personUOW.GetPersonByAccount(acc);
+      note_=_newsUOW.GetNoteByGUID(note_.GUID);   
+      if(note_!=null)
+      {
+           POCO.Liked pn=_newsUOW.LikeNote(note_,person_);
+        res_ = _newsUOW.UOWserialize<POCO.Note>(note_);
+      }else{ res_ = "Not liked."; }
+      return res_;
+    }
+    public string Dislike(Note note_)
+    {
+      string res_ = null;      
+      string acc=this.UserAcc();
+
+      Person person_=_personUOW.GetPersonByAccount(acc);      
+      note_=_newsUOW.GetNoteByGUID(note_.GUID);
+      _newsUOW.DislikeNote(note_,person_);    
+      res_ = _newsUOW.UOWserialize<POCO.Note>(note_);
+     
+      return res_;
+    }
+
+    public string AddTagList(IEnumerable<Tag> tags_)
+    {
+      string res_ = null;      
+      string acc=this.UserAcc();
+      List<Tag> tagsAdded = new List<Tag>();
+      Person person_=_personUOW.GetPersonByAccount(acc);
+      foreach(Tag tag_ in tags_)
+      {
+        POCO.Tag tgadded_ = _newsUOW.AddTag(tag_);
+        if(tgadded_!=null){
+          tagsAdded.Add(tgadded_);
+        }
+      }
+           
+      res_=_newsUOW.UOWserialize<POCO.Tag>(tagsAdded);
+    
+      return res_;
+    }
+    public string AddTag(PostTags postTags)
+    {
+      string res_ = null;      
+      string acc=this.UserAcc();   
+      Person person_=_personUOW.GetPersonByAccount(acc);
+
+      foreach(Tag tag_ in postTags.tags_){
+        POCO.Tagged tgadded_=_newsUOW.ToTag(postTags.news_, tag_);
+        if(tgadded_!=null){
+          res_=_newsUOW.UOWserialize<POCO.Tagged>(tgadded_);
+        }else{res_ = "Not tagged";}
+      }
+
+      return res_;
+    }
+    public string UnTag(PostTags postTags)
+    {
+      string res_ = null;      
+      string acc=this.UserAcc();   
+      Person person_=_personUOW.GetPersonByAccount(acc);
+      foreach(Tag tag_ in postTags.tags_)
+      {
+        _newsUOW.UnTag(postTags.news_, tag_);
+        res_="Untagged";
+      }
+      return res_;
+    }
+    
+    [Obsolete]
+    public string GetNewsByTag(Tag tag_)
+    {
+      string res_ = null;      
+      string acc=this.UserAcc();   
+      Person person_=_personUOW.GetPersonByAccount(acc);
+
+      IEnumerable<News> news=_newsUOW.newsByTag( tag_);
+      if(news!=null)
+      {
+        res_ = _newsUOW.UOWserialize<POCO.News>(news);
+      }
+          
+      return res_;
     }
 
     //DATABASE BOILERPLATE
@@ -1042,13 +1280,12 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
         }
     }
     //GENERATE NEWS,COMMENTS
-    public void GenNewsComments(bool newsGen=false)
+    public void GenNewsComments(List<News> newsToAdd,List<Commentary> commentsToAdd)
     {
 
       List<Person> personsAdded = new List<Person>();
       List<News> newsAdded = new List<News>();
       List<Commentary> commentaryAdded = new List<Commentary>();
-
       List<V> nodes = new List<V>();
 
       string dtStr="{\"transaction\":true,\"operations\":[{\"type\":\"script\",\"language\":\"sql\",\"script\":[\" create Vertex Person content {\"Seed\":1005911,\"FirstName\":\"Илья\",\"LastName\":\"Непринцев\",\"MiddleName\":\"Александрович\",\"Birthday\":\"1987-03-09 00:00:00\",\"mail\":\"Neprintsevia@nspk.ru\",\"telephoneNumber\":1312,\"userAccountControl\":512,\"objectGUID\":\"7E3E2C99-E53B-4265-B959-95B26CA939C8\",\"sAMAccountName\":\"Neprintsevia\",\"OneSHash\":\"5de9dfe2c74b5eef8e13f4f43163f445\",\"Hash\":\"f202a15b6dac384aecbd2424dcca10a7\",\"@class\":\"Person\",\"Name\":\"Непринцев Илья Александрович\",\"GUID\":\"ba124b8e-9857-11e7-8119-005056813668\",\"Created\":\"2017-09-13 07:15:29\",\"Changed\":\"2017-12-05 10:07:19\"} \"]}]}";
@@ -1073,30 +1310,28 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
 
       Person pr=_repo.CreateVertex<Person>(str);
 
-      personsAdded=_newsUOW.GetOrientObjects<Person>(null).ToList();         
+      personsAdded=_newsUOW.GetItems<Person>(null).ToList();         
        
       Random rnd=new Random();
-      int persCnt=(int)rnd.Next(5,10);
-      int newsCnt=(int)rnd.Next(5,10);
-      int commentaryCnt=(int)rnd.Next(5,10);
+      int persCnt=personsAdded.Count();
+      int newsCnt=newsToAdd.Count();
+      int commentaryCnt=commentsToAdd.Count();
 
       //get news with commentaries
       //news + comments
       //comment + coments
-      //IEnumerable<Note> notes_=uow.GetByOffset("82f83601-d5cd-4108-b1b7-d27ac5a3933a",3);
-
-      IEnumerable<News> news_=_newsUOW.GetNews(10,null,null);
+      //IEnumerable<Note> notes_=uow.GetByOffset("82f83601-d5cd-4108-b1b7-d27ac5a3933a",3);     
           
-      if(newsGen) {
+      if(newsToAdd!= null && newsToAdd.Count()>0) {
         //news add
         for(int i=0;i<personsAdded.Count()-1;i++)
-        {
-              
-          newsCnt=(int)rnd.Next(0,3);
-          for(int i2=0;i2<newsCnt;i2++)
+        {              
+          int newsToAddCnt=(int)rnd.Next(0,5);
+          int randNewsCnt=(int)rnd.Next(0,newsCnt-1);
+          for(int i2=0;i2<newsToAddCnt;i2++)
           {
             News ns=
-            _newsUOW.CreateNews(personsAdded[i], new News() { name = "News" + i2, content = "fucking interesting news", pic = string.Empty });
+            _newsUOW.CreateNews(personsAdded[i],newsToAdd[randNewsCnt]);
 
             if(ns!=null){
               newsAdded.Add(ns);
@@ -1105,24 +1340,25 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
         }
       }          
 
-      if(newsAdded.Count()>1){
-      //commentaries gen
-      nodes.AddRange(
-        _newsUOW.GetOrientObjects<News>(null).ToList()
-      );
+      if(newsAdded.Count()>1&&commentaryCnt>0)
+      {
+        //commentaries gen
+        nodes.AddRange(
+          _newsUOW.GetItems<News>(null).ToList()
+        );
 
         //rand, comments gen
         for(int i=0;i<personsAdded.Count()-1;i++)
         {
-          commentaryCnt=(int)rnd.Next(8,15);
-          for(int i2=0;i2<commentaryCnt;i2++){
+          int commentaryToAddCnt=(int)rnd.Next(8,15);
+          int randCommentaryCnt=(int)rnd.Next(0,commentaryCnt);
+          for(int i2=0;i2<commentaryToAddCnt;i2++){
             int nodeToCommentId=(int)rnd.Next(0,nodes.Count()-1);
             Note nodeToComment=_newsUOW.GetNoteByID(nodes[nodeToCommentId].id);
             nodes.Add(
-              _newsUOW.CreateCommentary(personsAdded[i],new Commentary(){name="Commentary"+i2,content="fucking bullshit comentary"},nodeToComment)
+              _newsUOW.CreateCommentary(personsAdded[i],commentsToAdd[randCommentaryCnt],nodeToComment)
             );
           }
-
         }
 
       }
@@ -1145,12 +1381,13 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
       //rand, comments gen
       for(int i2=0;i2<personsAdded.Count()-1;i2++)
       {
-        commentaryCnt=(int)rnd.Next(8,15);
+        int commentaryToAddCnt=(int)rnd.Next(3,8);
+        int randCommentaryCnt=(int)rnd.Next(0,commentaryCnt);
         for(int i3=0;i3<commentaryCnt;i3++){
           int nodeToCommentId=(int)rnd.Next(0,nodes.Count()-1);
           Note nodeToComment=_newsUOW.GetNoteByID(nodes[nodeToCommentId].id);
           nodes.Add(
-            _newsUOW.CreateCommentary(personsAdded[i2],new Commentary(){name="Commentary"+i3,content="fucking bullshit comentary"},nodeToComment)
+            _newsUOW.CreateCommentary(personsAdded[i2],commentsToAdd[randCommentaryCnt],nodeToComment)
           );
         }
 
@@ -1160,6 +1397,37 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
       string path_ = Directory.GetParent(location_).ToString()+ "\\" + _repo.getDbName() + "_nodes.json";
       File.WriteAllText(path_, JsonConvert.SerializeObject(nodes,Formatting.Indented));
         
+    }
+    public void GenNewsComments(bool genNews,bool genComments)
+    {
+      List<News> news_ = null;
+      List<Commentary> comments_ = null;
+      if(genNews){ news_ = GenNews(); }
+      if(genComments){ comments_ = GenCommentaries(); }
+      GenNewsComments(news_,comments_);
+    }
+
+    List<News> GenNews()
+    {
+      List<News> list_ = new List<News>()
+      { 
+      new News() {name="International Moose Count Underway", content="News text" }
+      ,new News(){name="Granny wins World Wrestling Championship",content="News text"}
+      ,new News(){name="Author eats his own book",content="News text"}
+      ,new News(){name="News 0",content="News text"}
+      ,new News(){name="News 1",content="News text"}
+      };
+      return list_;
+    }
+    List<Commentary> GenCommentaries()
+    {
+      List<Commentary> list_ = new List<Commentary>(){
+        new Commentary(){name="Commentary 0",content="Comment text"}
+        ,new Commentary(){name="Commentary 1",content="Comment text"}
+        ,new Commentary(){name="Commentary 2",content="Comment text"}
+      };
+
+      return list_;
     }
 
     public void DeleteDB()

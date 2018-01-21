@@ -2407,12 +2407,12 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         public void UOWsCheck()
         {        
           List<string> results = new List<string>();
-          List<Person> pers = nu.GetOrientObjects<Person>(null).ToList();
+          List<Person> pers = nu.GetItems<Person>(null).ToList();
 
           results.Add(nu.SearchByName(pers[0].Name).FirstOrDefault().id);            
           results.Add(intEmpty(nu.SearchByName(pers[0].Name).Count()));
           results.Add(intEmpty(pers.Count()));
-          results.Add(nu.GetOrientObjects<Person>(pers[0].id).FirstOrDefault().id);
+          results.Add(nu.GetItems<Person>(pers[0].id).FirstOrDefault().id);
 
           Assert.Equal(4,results.Count());
         }

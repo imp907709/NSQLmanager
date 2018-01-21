@@ -7,6 +7,8 @@ using System;
 
 using IOrientObjects;
 
+using System.Collections.Generic;
+
 namespace POCO
 {
 
@@ -66,7 +68,7 @@ namespace POCO
       [JsonProperty("Created", Order = 3),JsonConverter(typeof(OrientDateTime))]
       public virtual DateTime? created { get; set; } = DateTime.Now;
       [JsonProperty("Changed", Order = 4),JsonConverter(typeof(OrientDateTime))]
-      public virtual DateTime? changed { get; set; }
+      public virtual DateTime? changed { get; set; } = DateTime.Now;
       [JsonProperty("Disabled", Order = 5),JsonConverter(typeof(OrientDateTime))]
       public DateTime? disabled { get; set; }
       
@@ -142,7 +144,7 @@ namespace POCO
     /// </summary>
 
     //Vertexes      
-    public class Person : V
+    public class Person : V, IEquatable<Person>
     {
       [JsonProperty("Seed")]
       public long? Seed { get; set; }      
@@ -158,8 +160,9 @@ namespace POCO
       public string sAMAccountName { get; set; }
       [JsonProperty("Name", Order = 1)]
       public string Name { get; set; }
+      [IsComparable(false)]
       public string OneSHash { get; set; }
-      [JsonProperty("Hash")]
+      [JsonProperty("Hash"),IsComparable(false)]
       public string Hash { get; set; }
 
       [JsonConverter(typeof(OrientDateTime))]
@@ -174,11 +177,12 @@ namespace POCO
         
       public List<string> in_MainAssignment {get; set;}
       public List<string> out_MainAssignment {get; set;}
-      */
+      
 
       [JsonProperty("fieldTypes")]
       public string @fieldTypes { get; set; }
-        
+      */
+
       //Excluding fields from serializing to string
       public bool ShouldSerializeSeed()
       {
@@ -209,6 +213,62 @@ namespace POCO
         return false;
       }
 
+      public override bool Equals(object obj)
+      {
+        if(obj is Person){
+        return Equals((Person)obj);
+        }else{return false;}
+      }    
+      public bool Equals(Person p_)
+      {
+        return withGUIDcomparer(p_);
+      }
+      public bool NoGUIDcomparer(Person p_)
+      {
+        
+        if(     
+          this.Name==p_.Name
+          &&this.mail==p_.mail
+          &&this.Birthday==p_.Birthday
+          &&this.FirstName==p_.FirstName
+          &&this.LastName==p_.LastName
+          &&this.MiddleName==p_.MiddleName
+          &&this.mail==p_.mail
+          &&this.sAMAccountName==p_.sAMAccountName
+          &&this.telephoneNumber==p_.telephoneNumber     
+        ){ return true; }
+        return false;
+      }
+      public bool withGUIDcomparer(Person p_)
+      {
+        
+        if(     
+          NoGUIDcomparer(p_)==true
+          &&this.GUID==p_.GUID      
+        ){ return true; }
+        return false;
+      }
+      public bool FullComparer(Person p_)
+      {
+        
+        if(     
+          withGUIDcomparer(p_)==true
+          &&this.id==p_.id      
+        ){ return true; }
+        return false;
+      }
+
+      //default hash. Custom not returned.
+      public override int GetHashCode()
+      {        
+        //accidental small prime number. just for fun
+        int hashCode = 17;
+        //"overflow is fine" they said
+        unchecked{
+          hashCode = (hashCode * 397) ^ DateTime.Now.ToString("yyyyMMddHHmmssf").GetHashCode();
+        }
+        return base.GetHashCode();
+      }
     }
     public class Unit : V
     {
@@ -227,7 +287,7 @@ namespace POCO
     {
       public bool? showBirthday { get; set; }
     }
-
+    
     //Edges
     public class MainAssignment : E
     {
@@ -327,11 +387,11 @@ namespace POCO
     }
     public class Tagged : E
     {
-      string tagText { get; set; }
+      
     }
     public class Tag : V
     {
-      string tagText { get; set; }
+      public string tagText { get; set; }
     }
 
     public class ToggledProperty
@@ -339,17 +399,9 @@ namespace POCO
       public bool isTrue { get; set; } = false;
       [JsonConverter(typeof(OrientDateTime)), Updatable(false)]
       public DateTime? dateChanged { get; set; } = null;
-    }   
-
-    public class GETparameters
-    {
-      public int? offest {get;set;}
-      public bool? published {get;set;}
-      public bool? pinned {get;set;}
-      public bool? asc {get;set;}
-      public bool? liked {get;set;}
-      public Person author {get;set;}
     }
+
+  
 
     //for spagetty check
     public class MigrateCollection
@@ -361,7 +413,35 @@ namespace POCO
    
     #endregion
 
+    #region ControllerParams
+    public class GETparameters
+    {
+      public int? offest {get;set;}
+      public bool? published {get;set;}
+      public bool? pinned {get;set;}
+      public bool? asc {get;set;}
+      public bool? liked {get;set;}
+      public Tag tagg {get;set;}
+      public Person author {get;set;}
+    }
+    public class PostTags
+    {
+      public News news_ {get;set;}
+      public List<Tag> tags_ {get;set;}
+    }
+    #endregion
+
     #region Attributes
+
+    [System.AttributeUsage(System.AttributeTargets.Property)]
+    public class ToggleAttribute:System.Attribute
+    {
+      public bool toggledValue=true;
+      public ToggleAttribute(bool val_)
+      {
+        this.toggledValue = val_;        
+      }
+    }    
 
     //Custom attributes
     [System.AttributeUsage(System.AttributeTargets.Property)]
@@ -382,7 +462,11 @@ namespace POCO
         this.isMandatory = item_;
       }
     }
-
+    [System.AttributeUsage(System.AttributeTargets.Property)]
+    public class IsComparable:ToggleAttribute
+    {
+      public IsComparable(bool val_) : base(val_){}
+    }
     #endregion
 
     #region BreweryPOCOs

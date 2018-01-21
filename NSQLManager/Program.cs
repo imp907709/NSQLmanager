@@ -86,14 +86,14 @@ namespace NSQLManager
           , ConfigurationManager.AppSettings["OrientPort"]);
       if (databaseName == null)
       {
-          dbName = ConfigurationManager.AppSettings["OrientUnitTestDB"];
+        dbName = ConfigurationManager.AppSettings["OrientUnitTestDB"];
       }
       else { dbName = databaseName; }
       if (hostPort_ == null)
       {
-          dbHost = string.Format("{0}:{1}"
-          , ConfigurationManager.AppSettings["OrientDevHost"]
-          , ConfigurationManager.AppSettings["OrientPort"]);
+        dbHost = string.Format("{0}:{1}"
+        , ConfigurationManager.AppSettings["OrientDevHost"]
+        , ConfigurationManager.AppSettings["OrientPort"]);
       }
       else { dbName = hostPort_; }
 
@@ -132,44 +132,44 @@ namespace NSQLManager
         
     public static void JsonManagerCheck()
     {
-        string hs ="{ \"GUID\": \"542ceb48-8454-11e4-acb0-00c2c66d13b0\", \"Holidays\": [{ \"Position\": \"Главный специалист\", \"Holidays\": [{ \"LeaveType\": \"Основной\", \"Days\": 13 }] }, { \"Position\": \"Ведущий специалист\", \"Holidays\": [{ \"LeaveType\": \"Основной\", \"Days\": 13 }] }] } ";
-        hs =
+      string hs ="{ \"GUID\": \"542ceb48-8454-11e4-acb0-00c2c66d13b0\", \"Holidays\": [{ \"Position\": \"Главный специалист\", \"Holidays\": [{ \"LeaveType\": \"Основной\", \"Days\": 13 }] }, { \"Position\": \"Ведущий специалист\", \"Holidays\": [{ \"LeaveType\": \"Основной\", \"Days\": 13 }] }] } ";
+      hs =
 "[ { \"GUID\": \"542ceb48-8454-11e4-acb0-00c2c66d13b0\", \"Position\": \"Главный специалист\", \"Holidays\": [ { \"LeaveType\": \"Основной\", \"Days\": 13 } ] }, { \"GUID\": \"542ceb48-8454-11e4-acb0-00c2c66d13b0\", \"Position\": \"Ведущий специалист\", \"Holidays\": [ { \"LeaveType\": \"Основной\", \"Days\": 0 } ] } ] ";
-        JSONManager jm = new JSONManager();
+      JSONManager jm = new JSONManager();
 
-        IEnumerable<List<AdinTce.Holiday>> a = jm.DeserializeFromParentChildren<List<AdinTce.Holiday>>(hs, "Holidays");
+      IEnumerable<List<AdinTce.Holiday>> a = jm.DeserializeFromParentChildren<List<AdinTce.Holiday>>(hs, "Holidays");
     }
     public static void QuizCheck()
     {
-        Quizes.QuizRepo qr=new Quizes.QuizRepo();
-        qr.Quiz();
+      Quizes.QuizRepo qr=new Quizes.QuizRepo();
+      qr.Quiz();
     }
     public static void BatchBodyContentCheck()
     {
 
-        WebRequest request=WebRequest.Create("http://localhost:2480/batch/test_db");
+      WebRequest request=WebRequest.Create("http://localhost:2480/batch/test_db");
 
-        request.Headers.Add(HttpRequestHeader.Authorization, "Basic " + System.Convert.ToBase64String(
-          Encoding.ASCII.GetBytes("root:root")
-          ));
+      request.Headers.Add(HttpRequestHeader.Authorization, "Basic " + System.Convert.ToBase64String(
+        Encoding.ASCII.GetBytes("root:root")
+        ));
 
-        string stringData="{\"transaction\":true,\"operations\":[   {\"type\":\"script\",\"language\":\"sql\",\"script\":[   \"Create Vertex Person content {\"Name\":\"0\",\"GUID\":\"1\",\"Created\":\"2017-01-01 00:00:00\",\"Changed\":\"2017-01-01 00:00:00\"}\"   ]}]}"; //place body here
-        var data=Encoding.ASCII.GetBytes(stringData); // or UTF8
+      string stringData="{\"transaction\":true,\"operations\":[   {\"type\":\"script\",\"language\":\"sql\",\"script\":[   \"Create Vertex Person content {\"Name\":\"0\",\"GUID\":\"1\",\"Created\":\"2017-01-01 00:00:00\",\"Changed\":\"2017-01-01 00:00:00\"}\"   ]}]}"; //place body here
+      var data=Encoding.ASCII.GetBytes(stringData); // or UTF8
 
-        request.Method="POST";
-        request.ContentType=""; //place MIME type here
-        request.ContentLength=data.Length;
+      request.Method="POST";
+      request.ContentType=""; //place MIME type here
+      request.ContentLength=data.Length;
 
-        var newStream=request.GetRequestStream();
-        newStream.Write(data, 0, data.Length);
-        newStream.Close();
+      var newStream=request.GetRequestStream();
+      newStream.Write(data, 0, data.Length);
+      newStream.Close();
            
 
-        try
-        {
-            var a=(HttpWebResponse)request.GetResponse();
-        }
-        catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
+      try
+      {
+        var a=(HttpWebResponse)request.GetResponse();
+      }
+      catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
 
     }    
  
@@ -185,34 +185,40 @@ namespace NSQLManager
       at.Initialize();
       at.GO();
     }
-     //DATABASE BOILERPLATE
+    //DATABASE BOILERPLATE
     public static void GenDevDB(bool cleanUpAter=false,bool newsGen=true)
     {
 
-Managers.Manager mng = new Managers.Manager("dev_db");
+List<News> news_=new List<News>(){};
+List<Commentary> comments_=new List<Commentary>() { };
+
+Managers.Manager mng=new Managers.Manager("dev_db");
 //CREATE DB
 mng.GenDB(cleanUpAter);
 //GENERATE NEWS,COMMENTS
-mng.GenNewsComments(newsGen);
+mng.GenNewsComments(newsGen,true);
 
     }
     public static void GenTestDB(bool cleanUpAter=false,bool newsGen=true)
     {
 
+List<News> news_ = new List<News>() { };
+List<Commentary> comments_ = new List<Commentary>() { };
+
 Managers.Manager mng = new Managers.Manager("test_db");
 //CREATE DB
 mng.GenDB(cleanUpAter);
 //GENERATE NEWS,COMMENTS
-mng.GenNewsComments(newsGen);
+mng.GenNewsComments(newsGen,true);
 
     }    
-      
+
     //FUNCTIONAL TESTS
     public static void UOWFunctionalCheck()
     {
       
-      Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientDevDB"],null);
-      //Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientUnitTestDB"],null);
+      //Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientDevDB"],null);
+      Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientUnitTestDB"],null);
       PersonUOWs.PersonUOW pu=mng.GetPersonUOW();
       NewsUOWs.NewsRealUow nu=mng.GetNewsUOW();
 
@@ -221,27 +227,90 @@ mng.GenNewsComments(newsGen);
       
       POCO.News newsToAdd0 = new News() { GUID = "119", content = "s \"a \"a  t " };
       POCO.Person newsMaker = nu.SearchByName("Neprintsevia").FirstOrDefault();
+      POCO.Person likeMaker = nu.SearchByName("Person1").FirstOrDefault();
+      POCO.Person troubleMaker = nu.SearchByName("Person0").FirstOrDefault();
       
       GETparameters gp = new GETparameters() {offest=5,published=true,pinned=true,asc=true,author=newsMaker };
       JSONManager jm = new JSONManager();
 
-      //Like Dislike check
-      List<Note> notesCreated=(from s in nu.GetOrientObjects<Note>() where s.authGUID!=null select s).ToList();
+
+      //TAGS ADD remove add CHECK
+      List<Tag> tagsAdd=new List<Tag>();
+      List<Tag> tags=new List<Tag>() {new Tag(){tagText="tag1"},new Tag(){tagText="tag2"},new Tag(){tagText="tag3"}};
+      string tagsStr = jm.SerializeObject(tags);
+
+      foreach(Tag tag_ in tags){
+        Tag tagTm = nu.AddTag(tag_);
+        if(tagTm!=null){tagsAdd.Add(tagTm);}}
+      int tagsInDB=nu.GetItems<Tag>().Count();
+      int tagsAdded=tagsAdd.Count();
+      List<Tag> tagsAddedlt=nu.GetItems<Tag>().ToList();
+      List<News> notesToTag=nu.GetItems<News>().ToList();
+
+
+      //---->
+      //Manager tag object check
+      PostTags pt = new PostTags() { news_ = notesToTag[0], tags_ = new List<Tag>() { tagsAddedlt[0], tagsAddedlt[1] } };
+      string ptStr = jm.SerializeObject(pt);
+      string ptStrDes =
+      "{\"news_\":{\"GUID\":\""+notesToTag[0].GUID+"\"},\"tags_\":[{\"tagText\":\""+tagsAddedlt[0].tagText+"\"},{\"tagText\":\""+tagsAddedlt[1].tagText+"\"}]}";
+      pt = jm.DeserializeFromParentNodeStringObj<PostTags>(ptStrDes);
+      mng.AddTag(pt);
+      int postTagged=nu.GetItems<Tagged>().Count();
+      
+      //---->
+      //PARAMS OBJ CHECK 0
+      GETparameters gpp=new GETparameters(){offest=5,tagg=tagsAddedlt[0]};
+      string gpsp=jm.SerializeObject(gpp);
+
+      string resp =mng.GetNewsHC(gpp);
+
+      mng.UnTag(pt);
+      int unTagged=nu.GetItems<Tagged>().Count();
+
+      Tagged tg1=nu.ToTag(notesToTag[0], tagsAddedlt[0]);
+      Tagged tg2=nu.ToTag(notesToTag[0], tagsAddedlt[1]);
+      Tagged tg3=nu.ToTag(notesToTag[1], tagsAddedlt[1]);
+      int newsByTag = nu.newsByTag(tagsAddedlt[1]).Count();
+      int tagged=nu.GetItems<Tagged>().Count();
+      nu.UnTag(notesToTag[0], tagsAddedlt[0]);
+      int untagged=nu.GetItems<Tagged>().Count();
+      nu.DeleteItems<Tag>(nu.GetItems<Tag>());
+      int tagsremoved=nu.GetItems<Tag>().Count();
+      int taggedrem=nu.GetItems<Tagged>().Count();
+
+    
+
+      //LIKE DISLIKE CHECK
+      nu.DeleteItems<Liked>(nu.GetItems<Liked>());
+      List<Note> notesCreated=(from s in nu.GetItems<Note>() where s.authGUID!=null select s).ToList();
       if(notesCreated.Count()>0)
       {
         Note noteToLike=notesCreated[0];
-        Liked lk=nu.LikeNote(noteToLike,newsMaker);
-        Note likedNote=nu.GetLikes(noteToLike);
-        IEnumerable<Note> notesLiked=nu.GetPersonNewsHCSelectCond(5, null, null,true, true, null);
-        Note disliked= nu.DislikeNote(noteToLike,newsMaker);
-        IEnumerable<Note> notesDisLiked=nu.GetPersonNewsHCSelectCond(5, null, null,true, true, null);
+
+        Liked lk1=nu.LikeNote(noteToLike,newsMaker);
+        int? likes1=nu.GetLikesCountHC(noteToLike).Likes;
+        nu.LikeNote(noteToLike,newsMaker);
+        int? likesNotDoubled=nu.GetLikesCountHC(noteToLike).Likes;
+
+        Liked lk2=nu.LikeNote(noteToLike,likeMaker);
+        int? likes2=nu.GetLikesCountHC(noteToLike).Likes;
+
+        IEnumerable<Note> notesLiked=nu.GetPersonNewsHCSelectCond(5, null, null,true, true,null, null);
+
+        Note disliked=nu.DislikeNote(noteToLike,newsMaker);
+        int? likes3=nu.GetLikesCountHC(noteToLike).Likes;     
+
+        nu.DislikeNote(noteToLike,troubleMaker);
+        int? notDiliked=nu.GetLikesCountHC(noteToLike).Likes;   
+
+        nu.DislikeNote(noteToLike,likeMaker);
+        int? ActuallydislikedNote=nu.GetLikesCountHC(noteToLike).Likes;
+
+
       }
 
-      //PARAMS OBJ CHECK
-      string gps = jm.SerializeObject(gp);
-      string res =mng.GetNewsHC(gp);
-      gp = new GETparameters() {offest=5,published=true};
-      res =mng.GetNewsHC(gp);
+   
 
       //NEWS POSTE CHECK
       string newsToAdded0=mng.PostNews(newsToAdd0, null);
@@ -249,6 +318,11 @@ mng.GenNewsComments(newsGen);
       //GET BY OFFSET CHECK
       List<Note> notes0 = nu.GetByOffset("153c2d01-6def-4bcc-97fe-85b051fd8532", 50).ToList();
 
+      //PARAMS OBJ CHECK
+      string gps=jm.SerializeObject(gp);
+      string res=mng.GetNewsHC(gp);
+      gp=new GETparameters(){offest=5,published=true};      
+      res =mng.GetNewsHC(gp);
 
       Person commenter_ = pu.GetPersonByGUID("88906e68-e697-11e5-80d4-005056813668");
       News newsTocomment = nu.GetNewsByGUID("153c2d01-6def-4bcc-97fe-85b051fd8532");
@@ -260,7 +334,7 @@ mng.GenNewsComments(newsGen);
       IEnumerable<Note> news=nu.GetNews(null,null,null);
 
       //PersonsWith news
-      List<Person> persons=nu.GetOrientObjects<Person>().ToList();
+      List<Person> persons=nu.GetItems<Person>().ToList();
       //get by date check          
       Person personUpdatesNews=persons[0];
       Person personNewsUpdated=persons[1];
@@ -281,14 +355,14 @@ mng.GenNewsComments(newsGen);
       Note updatedNote2=nu.UpdateNote(pers,netoupdate2);
 
       //test author news update comment not update
-      Person someGuy=nu.GetOrientObjects<Person>(null).ToList()[0];
+      Person someGuy=nu.GetItems<Person>(null).ToList()[0];
       News newsToAdd=new News() { name="TestNews",content="content" };
       News newsTestTime=nu.CreateNews(someGuy,newsToAdd);            
          
       //test personal update        
 
       //authored commentaries
-      IEnumerable<Commentary> commentaries = from s in nu.GetOrientObjects<Commentary>() where s.author_ != null select s;
+      IEnumerable<Commentary> commentaries = from s in nu.GetItems<Commentary>() where s.author_ != null select s;
 
 
       //ABSENT PERSON CHECK

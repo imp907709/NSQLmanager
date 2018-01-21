@@ -429,8 +429,8 @@ namespace QueryManagers
         /// <summary>
         /// Char arrays rearrange (arrays gaps error)
         /// </summary>
+     
       
-
     }
 
     /// <summary>
