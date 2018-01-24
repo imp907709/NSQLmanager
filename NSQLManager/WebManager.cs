@@ -567,22 +567,22 @@ namespace WebManagers
     /// </summary>
     public class ReturnEntities : IHttpActionResult
     {
-        HttpRequestMessage _returnedTask;
-        public string _result;
+      HttpRequestMessage _returnedTask;
+      public string _result;
 
-        public ReturnEntities(string result_, HttpRequestMessage ar_)
-        {
-            this._returnedTask=ar_;
-            this._result=result_;
-        }
+      public ReturnEntities(string result_, HttpRequestMessage ar_)
+      {
+        this._returnedTask=ar_;
+        this._result=result_;
+      }
 
-        async Task<HttpResponseMessage> IHttpActionResult.ExecuteAsync(CancellationToken cancellationToken)
-        {
-            HttpResponseMessage response=new HttpResponseMessage(HttpStatusCode.OK);
-            response.Content=new StringContent(_result, Encoding.UTF8, "text/plain");
+      async Task<HttpResponseMessage> IHttpActionResult.ExecuteAsync(CancellationToken cancellationToken)
+      {
+        HttpResponseMessage response=new HttpResponseMessage(HttpStatusCode.OK);
+        response.Content=new StringContent(_result, Encoding.UTF8, "text/plain");
 
-            return await Task.FromResult(response);
-        }
+        return await Task.FromResult(response);
+      }
 
     }
 

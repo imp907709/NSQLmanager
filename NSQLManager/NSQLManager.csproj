@@ -110,6 +110,7 @@
     <Compile Include="IRepo.cs" />
     <Compile Include="IWebManager.cs" />
     <Compile Include="JsonManagers.cs" />
+    <Compile Include="LinqContextPOC.cs" />
     <Compile Include="OrientRealization.cs" />
     <Compile Include="POCO.cs" />
     <Compile Include="Program.cs" />

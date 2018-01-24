@@ -3818,6 +3818,7 @@ namespace OrientRealization
 
       return ret_;
     }
+   
 
     public T CreateEdge<T>(T edge_,IOrientVertex vFrom,IOrientVertex vTo,string dbName_=null) 
         where T:class,IOrientEdge
@@ -4038,13 +4039,13 @@ namespace OrientRealization
         ReadResponseStr("POST", _miniFactory.Created());
 
         if (this.response_ != null && this.response_ != string.Empty)
+        {
+          try
           {
-              try
-              {
-                  ret_=_jsonmanager.DeserializeFromParentNode<T>(this.response_, "result");
-              }
-              catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
+            ret_=_jsonmanager.DeserializeFromParentNode<T>(this.response_, "result");
           }
+          catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
+        }
       }
       return ret_;
 
@@ -4728,6 +4729,8 @@ for(int i2=0;i2<propertiesTo.Count();i2++){
     if(val_==null){
 toUpdate = false;
     }else{
+
+    //check empty string -> not updatable
     if(val_.GetType().Equals(typeof(string))){
     if(val_.ToString()==string.Empty)
     {
@@ -4877,7 +4880,7 @@ propertiesTo[i2].SetValue(result, propertiesFrom[i].GetValue(fromObject, null), 
     T CreateProperty<T>(T item = null, string dbName_ = null) where T : class, IorientDefaultObject;
     IOrientRepo CreateVertex(string vertex, string content_ = null, string dbName_ = null);
     T CreateVertex<T>(IorientDefaultObject vertex, string dbName_ = null) where T : class, IorientDefaultObject;
-    T CreateVertex<T>(string content_, string dbName_ = null) where T : class, IOrientVertex;
+    T CreateVertex<T>(string content_, string dbName_ = null) where T : class, IOrientVertex;  
     void DbPredefinedParameters();
     IOrientRepo Delete<T>(T item = null, string condition_ = null, string dbName_ = null) where T : class, IorientDefaultObject;
     IOrientRepo DeleteDb(string dbName_ = null, string host = null);

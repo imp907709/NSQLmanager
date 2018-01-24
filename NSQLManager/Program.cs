@@ -27,7 +27,6 @@ using System.IO;
 using System.Text.RegularExpressions;
 
 
-
 namespace NSQLManager
 {
 
@@ -43,6 +42,9 @@ namespace NSQLManager
       //ManagerCheck.GenTestDB();
       //ManagerCheck.GenDevDB();
 
+      //check linq to context
+      LinqToContextCheck.GO();
+
       //FUCNTIONAL CHECK
       ManagerCheck.UOWFunctionalCheck();
       
@@ -56,9 +58,9 @@ namespace NSQLManager
 
   }
 
+  //move to tests except DB generating
   public static class ManagerCheck
-  {
-    
+  {    
     static void propSearch<T>(T item)
     {
       var pc = item.GetType().GetProperties();
@@ -126,10 +128,10 @@ namespace NSQLManager
     }
     static NewsUOWs.NewsRealUow ActualNewsUOW()
     {
-      NewsUOWs.NewsRealUow newsUow = new NewsUOWs.NewsRealUow(DefaultManagerInit("test_db"));
+      NewsUOWs.NewsRealUow newsUow = new NewsUOWs.NewsRealUow(DefaultManagerInit(ConfigurationManager.AppSettings["OrientUnitTestDB"]));
       return newsUow;
     }
-        
+
     public static void JsonManagerCheck()
     {
       string hs ="{ \"GUID\": \"542ceb48-8454-11e4-acb0-00c2c66d13b0\", \"Holidays\": [{ \"Position\": \"Главный специалист\", \"Holidays\": [{ \"LeaveType\": \"Основной\", \"Days\": 13 }] }, { \"Position\": \"Ведущий специалист\", \"Holidays\": [{ \"LeaveType\": \"Основной\", \"Days\": 13 }] }] } ";
@@ -222,158 +224,41 @@ mng.GenNewsComments(newsGen,true);
       PersonUOWs.PersonUOW pu=mng.GetPersonUOW();
       NewsUOWs.NewsRealUow nu=mng.GetNewsUOW();
 
-      Managers.Manager mngPerson=new Managers.Manager(ConfigurationManager.AppSettings["OrientSourceDB"],null);
+      Managers.Manager mngPerson=new Managers.Manager(ConfigurationManager.AppSettings["OrientSourceDB"]);
+
+      //!!! PROD DATABASE FOR PERSON SYNC !!!
+      //!!!
+      //Managers.Manager mngPerson=new Managers.Manager("Orgchart_prod","http://msk1-vm-indb01:2480","root","mR%mzJUGq1E");
+      //!!!
+
+      /*
+      testing Chilinyak
+      Чили
+      13da7c6ca09a755dc45553bce03723f7
+      a.chilinyak
+      */
+
       PersonUOWs.PersonUOW personToGetUOW=mngPerson.GetPersonUOW();
       
       POCO.News newsToAdd0 = new News() { GUID = "119", content = "s \"a \"a  t " };
-      POCO.Person newsMaker = nu.SearchByName("Neprintsevia").FirstOrDefault();
-      POCO.Person likeMaker = nu.SearchByName("Person1").FirstOrDefault();
-      POCO.Person troubleMaker = nu.SearchByName("Person0").FirstOrDefault();
-      
+      POCO.Person newsMaker = pu.SearchByName("Neprintsevia").FirstOrDefault();
+      POCO.Person likeMaker = pu.SearchByName("Person1").FirstOrDefault();
+      POCO.Person troubleMaker = pu.SearchByName("Person0").FirstOrDefault();
+
       GETparameters gp = new GETparameters() {offest=5,published=true,pinned=true,asc=true,author=newsMaker };
       JSONManager jm = new JSONManager();
-
-
-      //TAGS ADD remove add CHECK
-      List<Tag> tagsAdd=new List<Tag>();
-      List<Tag> tags=new List<Tag>() {new Tag(){tagText="tag1"},new Tag(){tagText="tag2"},new Tag(){tagText="tag3"}};
-      string tagsStr = jm.SerializeObject(tags);
-
-      foreach(Tag tag_ in tags){
-        Tag tagTm = nu.AddTag(tag_);
-        if(tagTm!=null){tagsAdd.Add(tagTm);}}
-      int tagsInDB=nu.GetItems<Tag>().Count();
-      int tagsAdded=tagsAdd.Count();
-      List<Tag> tagsAddedlt=nu.GetItems<Tag>().ToList();
-      List<News> notesToTag=nu.GetItems<News>().ToList();
-
-
-      //---->
-      //Manager tag object check
-      PostTags pt = new PostTags() { news_ = notesToTag[0], tags_ = new List<Tag>() { tagsAddedlt[0], tagsAddedlt[1] } };
-      string ptStr = jm.SerializeObject(pt);
-      string ptStrDes =
-      "{\"news_\":{\"GUID\":\""+notesToTag[0].GUID+"\"},\"tags_\":[{\"tagText\":\""+tagsAddedlt[0].tagText+"\"},{\"tagText\":\""+tagsAddedlt[1].tagText+"\"}]}";
-      pt = jm.DeserializeFromParentNodeStringObj<PostTags>(ptStrDes);
-      mng.AddTag(pt);
-      int postTagged=nu.GetItems<Tagged>().Count();
-      
-      //---->
-      //PARAMS OBJ CHECK 0
-      GETparameters gpp=new GETparameters(){offest=5,tagg=tagsAddedlt[0]};
-      string gpsp=jm.SerializeObject(gpp);
-
-      string resp =mng.GetNewsHC(gpp);
-
-      mng.UnTag(pt);
-      int unTagged=nu.GetItems<Tagged>().Count();
-
-      Tagged tg1=nu.ToTag(notesToTag[0], tagsAddedlt[0]);
-      Tagged tg2=nu.ToTag(notesToTag[0], tagsAddedlt[1]);
-      Tagged tg3=nu.ToTag(notesToTag[1], tagsAddedlt[1]);
-      int newsByTag = nu.newsByTag(tagsAddedlt[1]).Count();
-      int tagged=nu.GetItems<Tagged>().Count();
-      nu.UnTag(notesToTag[0], tagsAddedlt[0]);
-      int untagged=nu.GetItems<Tagged>().Count();
-      nu.DeleteItems<Tag>(nu.GetItems<Tag>());
-      int tagsremoved=nu.GetItems<Tag>().Count();
-      int taggedrem=nu.GetItems<Tagged>().Count();
-
-    
-
-      //LIKE DISLIKE CHECK
-      nu.DeleteItems<Liked>(nu.GetItems<Liked>());
-      List<Note> notesCreated=(from s in nu.GetItems<Note>() where s.authGUID!=null select s).ToList();
-      if(notesCreated.Count()>0)
-      {
-        Note noteToLike=notesCreated[0];
-
-        Liked lk1=nu.LikeNote(noteToLike,newsMaker);
-        int? likes1=nu.GetLikesCountHC(noteToLike).Likes;
-        nu.LikeNote(noteToLike,newsMaker);
-        int? likesNotDoubled=nu.GetLikesCountHC(noteToLike).Likes;
-
-        Liked lk2=nu.LikeNote(noteToLike,likeMaker);
-        int? likes2=nu.GetLikesCountHC(noteToLike).Likes;
-
-        IEnumerable<Note> notesLiked=nu.GetPersonNewsHCSelectCond(5, null, null,true, true,null, null);
-
-        Note disliked=nu.DislikeNote(noteToLike,newsMaker);
-        int? likes3=nu.GetLikesCountHC(noteToLike).Likes;     
-
-        nu.DislikeNote(noteToLike,troubleMaker);
-        int? notDiliked=nu.GetLikesCountHC(noteToLike).Likes;   
-
-        nu.DislikeNote(noteToLike,likeMaker);
-        int? ActuallydislikedNote=nu.GetLikesCountHC(noteToLike).Likes;
-
-
-      }
-
-   
-
-      //NEWS POSTE CHECK
-      string newsToAdded0=mng.PostNews(newsToAdd0, null);
-
-      //GET BY OFFSET CHECK
-      List<Note> notes0 = nu.GetByOffset("153c2d01-6def-4bcc-97fe-85b051fd8532", 50).ToList();
-
-      //PARAMS OBJ CHECK
-      string gps=jm.SerializeObject(gp);
-      string res=mng.GetNewsHC(gp);
-      gp=new GETparameters(){offest=5,published=true};      
-      res =mng.GetNewsHC(gp);
-
-      Person commenter_ = pu.GetPersonByGUID("88906e68-e697-11e5-80d4-005056813668");
-      News newsTocomment = nu.GetNewsByGUID("153c2d01-6def-4bcc-97fe-85b051fd8532");
-      Commentary comment = new Commentary() { content = "nt_0" };
-      comment=nu.CreateCommentary(commenter_, comment, newsTocomment);    
-
-      //GET check
-      IEnumerable <Note> notes=nu.GetByOffset("558d95f3-964e-45f3-9708-2ee964aa2854", 2);
-      IEnumerable<Note> news=nu.GetNews(null,null,null);
-
-      //PersonsWith news
-      List<Person> persons=nu.GetItems<Person>().ToList();
-      //get by date check          
-      Person personUpdatesNews=persons[0];
-      Person personNewsUpdated=persons[1];
-
-      News newToupdate=nu.CreateNews(personNewsUpdated,new News(){content="content created"});
-          
-      if(newToupdate!=null)
-      {
-        newToupdate.content="Updated";
-        nu.UpdateNote(personUpdatesNews, newToupdate);
-        newToupdate=nu.GetNewsByGUID(newToupdate.GUID);
-        Note updatedNote=nu.UpdateNotePersonal(personUpdatesNews,newToupdate);
-        IEnumerable<News> ns=nu.GetNews(5,null,null);
-      }
-
-      Person pers = nu.SearchByName("neprintsev").FirstOrDefault();
-      Note netoupdate2 = nu.GetNoteByGUID("34b0cd78-2931-4e7b-8533-5d9ea6ee982b");
-      Note updatedNote2=nu.UpdateNote(pers,netoupdate2);
-
-      //test author news update comment not update
-      Person someGuy=nu.GetItems<Person>(null).ToList()[0];
-      News newsToAdd=new News() { name="TestNews",content="content" };
-      News newsTestTime=nu.CreateNews(someGuy,newsToAdd);            
          
-      //test personal update        
-
-      //authored commentaries
-      IEnumerable<Commentary> commentaries = from s in nu.GetItems<Commentary>() where s.author_ != null select s;
-
 
       //ABSENT PERSON CHECK
       Random rnd = new Random();
-      int acc = (int)rnd.Next(0, 10000);
+      
       //News ns = nu.GetNewsByGUID("2370b972-48d4-4e49-95ad-b99ba5382042");
       //News ns = nu.GetNewsByGUID("e7bc87ec-f649-4748-b4cb-d2863f780f1c");
       //nu.GetNewsByGUID("f7557c27-f889-4aab-91ce-ba15e34e3981");
       //News ns = nu.GetNewsByGUID("f7557c27-f889-4aab-91ce-ba15e34e3981");
 
       var a=nu.GetNews(5,null,null);
+      int acc = (int)rnd.Next(0, 10000);
 
       Person personAbsent = new Person() { Name = "PersonAbsent", sAMAccountName = "absent"+acc };
       string newsContent = "{\"conntent_\":\"news text\",\"name\":\"News name\"}";
@@ -398,8 +283,19 @@ mng.GenNewsComments(newsGen,true);
       commentAdded.content="Updated comment";
       Commentary commentUpdated2=nu.UpdateCommentary(personFromTest,commentAdded);
             
-    }            
-    
-  }  
-    
+    }                
+  }
+  
+  //check Linq to context
+  public static class LinqToContextCheck
+  {
+    static TestContext ts = new TestContext();
+    public static void GO()
+    {
+      string st1=ts.ConditionFromExpressionTypes<TestEntity>(s=>s.Id>=1);
+      string st2=ts.ConditionFromExpressionTypes<TestEntity>(s=>s.name=="test name");
+      string st3=ts.ConditionFromExpressionTypes<TestEntity>(s=>s.intrinsicIsTrue==true);
+      string st4=ts.ConditionFromExpressionTypes<TestEntity>(s=>s.tp.isTrue==true);
+    }
+  }
 }

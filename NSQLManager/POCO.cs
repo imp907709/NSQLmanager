@@ -429,6 +429,10 @@ namespace POCO
       public News news_ {get;set;}
       public List<Tag> tags_ {get;set;}
     }
+    public class StringResult
+    {
+      List<string> results { get; set; }
+    }
     #endregion
 
     #region Attributes

@@ -227,6 +227,16 @@ namespace PersonUOWs
       result = _repo.SelectSingle<Person>("@rid='" + ID_ + "'", null);
       return result;
     }
+    public IEnumerable<Person> SearchByName(string Name_)
+    {
+      IEnumerable<Person> result=null;
+      Name_ = Name_.ToLower();
+      result=_repo
+        .SelectFromType<Person>("Name.toLowerCase() like '%"+Name_+"%' or sAMAccountName.toLowerCase() like '%"+Name_+"%'or mail.toLowerCase() like '%"+Name_+"%'"
+        ,null);
+      return result;
+    }        
+
 
     public Person CreatePerson(Person p_)
     {
@@ -407,18 +417,6 @@ namespace NewsUOWs
       result = _repo.SelectHC<Note,Note>(null, select_, cond_, null);
       return result; 
     }
-
-
-    public IEnumerable<Person> SearchByName(string Name_)
-    {
-      IEnumerable<Person> result=null;
-      Name_ = Name_.ToLower();
-      result=_repo
-        .SelectFromType<Person>("Name.toLowerCase() like '%"+Name_+"%' or sAMAccountName.toLowerCase() like '%"+Name_+"%'or mail.toLowerCase() like '%"+Name_+"%'"
-        ,null);
-      return result;
-    }        
-
    
     public Person CheckAndCreatePerson (Person person_)
     {
@@ -617,7 +615,8 @@ namespace NewsUOWs
   _repo.UpdateEntity<Note>(noteToAdd,null);
   Commentary nt=_repo.SelectSingle<Commentary>("GUID='"+noteFrom.GUID+"'",null);
   return nt;
-    }     
+    }
+   
 
     /// <summary>
     /// Checks type and account. If commentary validates user by sAMAccountName. 
@@ -788,18 +787,17 @@ namespace NewsUOWs
     {
       return _repo.SelectFromType<Tag>("tagText='"+tag_.tagText+"'", null).FirstOrDefault();
     }
-    public string DeleteTag(Tag tag_)
+    public Tag DeleteTag(Tag tag_)
     {
       tag_=getTag(tag_);
       if(tag_!=null){
         IEnumerable<Tagged> taggeds=_repo.SelectFromType<Tagged>("in.rid="+tag_.id, null);
         foreach(Tagged ref_ in taggeds){
-          _repo.Delete<Tagged>(ref_);
-          _repo.Delete<Tag>(tag_);
-          return "DELETED";
+          _repo.Delete<Tagged>(ref_);          
         }
-      }
-     return "Not deleted";
+        _repo.Delete<Tag>(tag_);
+      }else{ return null;}
+     return tag_;
     }
     public Tagged ToTag(News note_, Tag tag_)
     {
@@ -846,7 +844,7 @@ namespace NewsUOWs
     /// <summary>
     /// Check inE types on Comment,Authorship. If has inE comment, then returns current Note.
     /// </summary>
-    /// <param name="NewsId">Npte which type need to be checked</param>
+    /// <param name="NewsId">Note which type need to be checked</param>
     /// <returns></returns>
     public int? IsCommentToComment(string NewsId)
     {
@@ -968,6 +966,11 @@ namespace Managers
       this._repo=repo_;
       _newsUOW.BindRepo(_repo);
       _personUOW.BindRepo(_repo);  
+    }
+    void bindPersonRepo(IOrientRepo repo_)
+    {
+      this._repo=repo_;
+      _newsUOW.BindRepo(_repo);     
     }
     
     public string UserAcc()
@@ -1102,10 +1105,22 @@ namespace Managers
         if(tgadded_!=null){
           tagsAdded.Add(tgadded_);
         }
-      }
-           
-      res_=_newsUOW.UOWserialize<POCO.Tag>(tagsAdded);
-    
+      }           
+      res_=_newsUOW.UOWserialize<POCO.Tag>(tagsAdded);    
+      return res_;
+    }
+    public string DeleteTagList(IEnumerable<Tag> tags_)
+    {
+      string res_=null;
+      string acc=this.UserAcc();
+      List<Tag> tagsDeleted = new List<Tag>();
+      Person person_=_personUOW.GetPersonByAccount(acc);
+      
+      foreach(Tag tag_ in tags_){
+      Tag tagTm = _newsUOW.DeleteTag(tag_);
+      if(tagTm!=null){tagsDeleted.Add(tagTm);}}
+
+       res_=_newsUOW.UOWserialize<POCO.Tag>(tagsDeleted);
       return res_;
     }
     public string AddTag(PostTags postTags)
@@ -1282,6 +1297,9 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
     //GENERATE NEWS,COMMENTS
     public void GenNewsComments(List<News> newsToAdd,List<Commentary> commentsToAdd)
     {
+      
+      if(newsToAdd==null || newsToAdd.Count()==0){ newsToAdd = GenNews(); }
+      if(commentsToAdd==null || commentsToAdd.Count()==0){ commentsToAdd = GenCommentaries(); }
 
       List<Person> personsAdded = new List<Person>();
       List<News> newsAdded = new List<News>();
