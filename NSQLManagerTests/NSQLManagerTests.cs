@@ -400,7 +400,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
 
             //Create DB
             //creating Orient REST API url for db creation from db name, using shemas
-            string urlCommand = _urlShemas.Database(dbName).GetText();
+            string urlCommand = _urlShemas.CreateDatabase(dbName).GetText();
             //bind request to Webmanager
             webRequestManager.AddRequest(urlCommand);
             //bind credentials to request
@@ -408,9 +408,8 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
             //build and bind authentication header from passed credentials
             //webRequestManager.SetBase64AuthHeader(orientAuth);
             //get response of POST method
-            try
-            {
-                createDbResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+            try{
+              createDbResult=webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
             }catch (Exception e) { }
 
 
@@ -489,7 +488,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
 
 
             //delete DB 
-            urlCommand = _urlShemas.Database(dbName).GetText();
+            urlCommand = _urlShemas.CreateDatabase(dbName).GetText();
             //bind request to Webmanager
             webRequestManager.AddRequest(urlCommand);
             //bind credentials to request
@@ -521,7 +520,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
           //binding host from dbname to shema builder
           _urlShemas.AddHost(hostToken.Text);
           //creating Orient REST API url for db creation from db name, using shemas
-          string urlCommand=_urlShemas.Database(dbName).GetText();
+          string urlCommand=_urlShemas.CreateDatabase(dbName).GetText();
           //bind request to Webmanager
           webRequestManager.AddRequest(urlCommand);
           //bind credentials to request
@@ -1235,7 +1234,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         {
             string result=string.Empty;
             string expected=parentHost + "/database/test_db/plocal";
-            result=Urlshema.Database(new TextToken() {Text=testDBname}).GetText();
+            result=Urlshema.CreateDatabase(new TextToken() {Text=testDBname}).GetText();
             Assert.Equal(expected,result);
         }
         [Fact]
@@ -2390,6 +2389,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         Func<int, string> intEmpty = delegate (int s) { if(s==0){ return null;}else{ return s.ToString(); } };        
 
         NewsUOWs.NewsRealUow nu;
+        PersonUOWs.PersonUOW pu;
         public NewsUOWCHeck()
         {
           nu = new NewsUOWs.NewsRealUow(RepoFactory.NewOrientRepo(
@@ -2401,6 +2401,14 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
             ,ConfigurationManager.AppSettings["orient_pswd"]));
 
 
+            pu = new PersonUOWs.PersonUOW(RepoFactory.NewOrientRepo(
+            ConfigurationManager.AppSettings["OrientUnitTestDB"]
+            ,string.Format("{0:1}"
+            ,ConfigurationManager.AppSettings["OrientDevHost"]
+            ,ConfigurationManager.AppSettings["OrientPort"])
+            ,ConfigurationManager.AppSettings["orient_login"]
+            ,ConfigurationManager.AppSettings["orient_pswd"]));
+
         }
       
         [Fact]
@@ -2409,35 +2417,34 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
           List<string> results = new List<string>();
           List<Person> pers = nu.GetItems<Person>(null).ToList();
 
-          results.Add(nu.SearchByName(pers[0].Name).FirstOrDefault().id);            
-          results.Add(intEmpty(nu.SearchByName(pers[0].Name).Count()));
+      
           results.Add(intEmpty(pers.Count()));
           results.Add(nu.GetItems<Person>(pers[0].id).FirstOrDefault().id);
 
-          Assert.Equal(4,results.Count());
+          Assert.Equal(2,results.Count());
         }
      
         [Fact]
         public void UOWCreateNewsCheck()
-        {            
+        {
           JSONManager jm = new JSONManager();
-          Note nt = new Note() { content="Very interesting new",name="News" };            
+          Note nt = new Note() { content="Very interesting new",name="News" };
           string news = jm.SerializeObject(nt);
-          Person p = nu.SearchByName("Neprintsevia").FirstOrDefault();
+          Person p = pu.SearchByName("Neprintsevia").FirstOrDefault();
           string result = nu.CreateNews(p, nt).id;
           Assert.NotNull(result);
         }
         [Fact]
         public void UOWDeleteRelation()
         {
-            Person p = nu.SearchByName("Neprintsevia").FirstOrDefault();
-            bool result = false;
-            string res = nu.DeleteNews(p, "");
-            if(res==null||res==string.Empty)
-            {
-                result = true;
-            }
-            Assert.True(result);
+          Person p = pu.SearchByName("Neprintsevia").FirstOrDefault();
+          bool result = false;
+          string res = nu.DeleteNews(p, "");
+          if(res==null||res==string.Empty)
+          {
+            result = true;
+          }
+          Assert.True(result);
         }
 
     }

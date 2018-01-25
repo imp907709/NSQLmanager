@@ -43,7 +43,7 @@ namespace NSQLManager
       //ManagerCheck.GenDevDB();
 
       //check linq to context
-      LinqToContextCheck.GO();
+      //LinqToContextCheck.GO();
 
       //FUCNTIONAL CHECK
       ManagerCheck.UOWFunctionalCheck();
@@ -219,24 +219,20 @@ mng.GenNewsComments(newsGen,true);
     public static void UOWFunctionalCheck()
     {
       
+      //GET CLASS
+      Managers.Manager mngCl = new Managers.Manager("dev_db",null);
+      IOrientRepo rp = mngCl.GetRepo();
+      GetClass gc = rp.GetClass<Person>("dev_db", null);
+
+
+
       //Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientDevDB"],null);
       Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientUnitTestDB"],null);
+      Managers.Manager mngSource = new Managers.Manager(ConfigurationManager.AppSettings["OrientSourceDB"],null);
       PersonUOWs.PersonUOW pu=mng.GetPersonUOW();
       NewsUOWs.NewsRealUow nu=mng.GetNewsUOW();
 
       Managers.Manager mngPerson=new Managers.Manager(ConfigurationManager.AppSettings["OrientSourceDB"]);
-
-      //!!! PROD DATABASE FOR PERSON SYNC !!!
-      //!!!
-      //Managers.Manager mngPerson=new Managers.Manager("Orgchart_prod","http://msk1-vm-indb01:2480","root","mR%mzJUGq1E");
-      //!!!
-
-      /*
-      testing Chilinyak
-      Чили
-      13da7c6ca09a755dc45553bce03723f7
-      a.chilinyak
-      */
 
       PersonUOWs.PersonUOW personToGetUOW=mngPerson.GetPersonUOW();
       
@@ -247,7 +243,7 @@ mng.GenNewsComments(newsGen,true);
 
       GETparameters gp = new GETparameters() {offest=5,published=true,pinned=true,asc=true,author=newsMaker };
       JSONManager jm = new JSONManager();
-         
+      
 
       //ABSENT PERSON CHECK
       Random rnd = new Random();
@@ -262,28 +258,26 @@ mng.GenNewsComments(newsGen,true);
 
       Person personAbsent = new Person() { Name = "PersonAbsent", sAMAccountName = "absent"+acc };
       string newsContent = "{\"conntent_\":\"news text\",\"name\":\"News name\"}";
-      News newsToinsert = nu.UOWdeserialize<News>(newsContent);
-      News newsAdded=nu.CreateNews(personAbsent, newsToinsert);
-
-      //NEWS CREATION CHECK
-      Person personFromTest=personToGetUOW.GetPersonByAccount("Neprintsevia");
-      News newsAdded2=nu.CreateNews(personFromTest, newsToinsert);
-      string personFromStr = nu.UOWserialize<Person>(personFromTest);
-      string newsCreatedStr = nu.UOWserialize<News>(newsAdded2);
-
-      //COMMENTARY CREATION CHECK
-      Commentary commentToAdd = nu.UOWdeserialize<Commentary>(newsContent);
-      Commentary commentAdded = nu.CreateCommentary(personFromTest, commentToAdd, newsAdded2);
-      string CommentaryCreatedStr = nu.UOWserialize<Commentary>(commentAdded);
-
-      //NEWS UPDATE CHECK
-      newsAdded.content="Updated news";
-      News commentUpdated1=nu.UpdateNews(personFromTest,newsAdded);
-      //COMMENT UPDATE CHECK
-      commentAdded.content="Updated comment";
-      Commentary commentUpdated2=nu.UpdateCommentary(personFromTest,commentAdded);
             
-    }                
+
+    }
+
+    public static void UOWMovePersonFromProd()
+    {    
+      //!!! PROD DATABASE FOR PERSON SYNC !!!
+      //!!!
+      //Managers.Manager mngPerson=new Managers.Manager("Orgchart_prod","http://msk1-vm-indb01:2480","root","mR%mzJUGq1E");
+      //!!!
+
+      /*
+      testing Chilinyak
+      Чили
+      13da7c6ca09a755dc45553bce03723f7
+      a.chilinyak
+      */
+
+    }
+  
   }
   
   //check Linq to context

@@ -15,7 +15,7 @@ namespace IOrientObjects
     }
     public interface IOrientClass : IOrientObject
     {
-
+      
     }
     public interface IOrientProperty : IOrientObject
     {

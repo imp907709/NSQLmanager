@@ -1225,10 +1225,10 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
         Note ntCl0=new Note(){name="test name",content="test content"};
         Object_SC obs = new Object_SC() { GUID="1", changed=DateTime.Now, created=DateTime.Now, disabled=DateTime.Now };
         News ns = new News() {name="Real news"};
-        Commentary cm = new Commentary() {name="Real comment"};         
+        Commentary cm = new Commentary() {name="Real comment"};
 
         _repo.CreateClass("Person","V",null);
-        MainAssignment ma = new MainAssignment() { };
+        MainAssignment ma=new MainAssignment(){};
 
         //create property
         //will not create properties - not initialized object all property types anonimous.

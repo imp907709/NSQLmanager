@@ -26,9 +26,8 @@ namespace POCO
     public class OrientClass : IOrientClass
     {
       public string type { get; set; }
-
       public string name { get; set; }
-
+      public int value { get; set; }
     }
     public class OrientProperty : IOrientProperty
     {
@@ -38,23 +37,31 @@ namespace POCO
 
     }
     public class OrientEntity : IOrientEntity
-    {
-    
+    {   
+
       [JsonProperty("@rid", Order=1)]
       public virtual string id { get; set; }
+      
       [JsonProperty("@type")]
-      public string type {get; set; }   
-         
-      [JsonProperty("@version")]
-      public virtual string version {get;  set;}   
+      public string type {get; set; }           
       [JsonProperty("@class")]
       public string class_ {get; set;} 
-        
+      [JsonProperty("value")]
+      public int value_ {get; set;} 
+      
+
+      [JsonProperty("@version")]
+      public virtual string version {get;  set;}   
+
       public bool ShouldSerializeclass_()
       {
         return false;
       }
       public bool ShouldSerializetype()
+      {
+        return false;
+      }
+       public bool ShouldSerializevalue_()
       {
         return false;
       }
@@ -411,6 +418,24 @@ namespace POCO
       public string GUID { get; set; }
     }
    
+    #endregion
+
+    #region OrientMaintenanceClasses 
+    public class GetClass
+    {
+      public string name {get;set;}
+      public string superClass {get;set;}
+      public List<string> superClasses {get;set;}
+      public string alias {get;set;}
+      [JsonProperty("abstract")]
+      public bool abstract_ {get;set;}
+      [JsonProperty("strictmode")]
+      public bool strictmode_ {get;set;}
+      public int[] clusters {get;set;}
+      public int defaultCluster {get;set;}
+      public string clusterSelection {get;set;}
+      public int records {get;set;}   
+    }
     #endregion
 
     #region ControllerParams

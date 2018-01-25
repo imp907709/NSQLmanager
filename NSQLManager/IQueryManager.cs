@@ -70,7 +70,7 @@ namespace IQueryManagers
       ITypeToken ToToken();
       ITypeToken VertexToken();
       ITypeToken WhereToken();
-      ITypeToken AndToken();
+      ITypeToken AndToken();     
 
       ITypeToken In();
       ITypeToken Out();
@@ -113,6 +113,7 @@ namespace IQueryManagers
       ITypeToken True();
       ITypeToken False();
       ITypeToken Type();
+      ITypeToken Class_();
 
       ITypeToken StringToken();
       ITypeToken BooleanToken();
