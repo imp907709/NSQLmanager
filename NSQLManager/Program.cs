@@ -50,7 +50,7 @@ namespace NSQLManager
       
       //START API TEST
       ManagerCheck.APItester_sngltnCheck();
-
+      
       //QUIZ CHECK
       //ManagerCheck.QuizCheck();
 
@@ -148,7 +148,6 @@ namespace NSQLManager
     }
     public static void BatchBodyContentCheck()
     {
-
       WebRequest request=WebRequest.Create("http://localhost:2480/batch/test_db");
 
       request.Headers.Add(HttpRequestHeader.Authorization, "Basic " + System.Convert.ToBase64String(
@@ -218,50 +217,33 @@ mng.GenNewsComments(newsGen,true);
     //FUNCTIONAL TESTS
     public static void UOWFunctionalCheck()
     {
-      
-      //GET CLASS
-      Managers.Manager mngCl = new Managers.Manager("dev_db",null);
-      IOrientRepo rp = mngCl.GetRepo();
-      GetClass gc = rp.GetClass<Person>("dev_db", null);
+
+      Quizes.QuizUOWTest.GO();
+
+      //Check LinqToContext
+      //LinqToContextCheck.GO();
 
 
-
-      //Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientDevDB"],null);
-      Managers.Manager mng = new Managers.Manager(ConfigurationManager.AppSettings["OrientUnitTestDB"],null);
-      Managers.Manager mngSource = new Managers.Manager(ConfigurationManager.AppSettings["OrientSourceDB"],null);
-      PersonUOWs.PersonUOW pu=mng.GetPersonUOW();
-      NewsUOWs.NewsRealUow nu=mng.GetNewsUOW();
-
-      Managers.Manager mngPerson=new Managers.Manager(ConfigurationManager.AppSettings["OrientSourceDB"]);
-
-      PersonUOWs.PersonUOW personToGetUOW=mngPerson.GetPersonUOW();
-      
-      POCO.News newsToAdd0 = new News() { GUID = "119", content = "s \"a \"a  t " };
-      POCO.Person newsMaker = pu.SearchByName("Neprintsevia").FirstOrDefault();
-      POCO.Person likeMaker = pu.SearchByName("Person1").FirstOrDefault();
-      POCO.Person troubleMaker = pu.SearchByName("Person0").FirstOrDefault();
-
-      GETparameters gp = new GETparameters() {offest=5,published=true,pinned=true,asc=true,author=newsMaker };
-      JSONManager jm = new JSONManager();
-      
-
-      //ABSENT PERSON CHECK
-      Random rnd = new Random();
-      
-      //News ns = nu.GetNewsByGUID("2370b972-48d4-4e49-95ad-b99ba5382042");
-      //News ns = nu.GetNewsByGUID("e7bc87ec-f649-4748-b4cb-d2863f780f1c");
-      //nu.GetNewsByGUID("f7557c27-f889-4aab-91ce-ba15e34e3981");
-      //News ns = nu.GetNewsByGUID("f7557c27-f889-4aab-91ce-ba15e34e3981");
-
-      var a=nu.GetNews(5,null,null);
-      int acc = (int)rnd.Next(0, 10000);
-
-      Person personAbsent = new Person() { Name = "PersonAbsent", sAMAccountName = "absent"+acc };
-      string newsContent = "{\"conntent_\":\"news text\",\"name\":\"News name\"}";
-            
-
+      //moove database
+      //UOWMooveDb();
     }
 
+    //MOOVE DB
+    public static void UOWMooveDb()
+    {
+      Managers.Manager mngFrom1=new Managers.Manager("dev_db","http://msk1-vm-ovisp02:2480","root","I9grekVmk5g");
+      Managers.Manager mngFrom2=new Managers.Manager("news_test5","http://msk1-vm-ovisp02:2480","root","I9grekVmk5g");
+
+      //msk1-vm-indb01.nspk.ru
+      //mR%mzJUGq1E
+      Managers.Manager mngTo=new Managers.Manager("news_prod","http://msk1-vm-ovisp02:2480","root","I9grekVmk5g");
+      //Managers.Manager mngTo=new Managers.Manager("news_prod","http://msk1-vm-indb01.nspk.ru:2480","root","mR%mzJUGq1E");
+
+      
+      MooveDB.Migrate(mngTo, mngFrom1,true ,true,false, false);
+      MooveDB.Migrate(mngTo, mngFrom2,false,false,true, false);
+    }
+    //Exclusive person moove
     public static void UOWMovePersonFromProd()
     {    
       //!!! PROD DATABASE FOR PERSON SYNC !!!
@@ -275,21 +257,193 @@ mng.GenNewsComments(newsGen,true);
       13da7c6ca09a755dc45553bce03723f7
       a.chilinyak
       */
-
     }
   
   }
   
+  public static class MooveDB
+  {
+    static TypeConverter tc = new TypeConverter();
+    static IOrientRepo targetRepo_,sourceRepo_;
+    public static OrientDatabase Migrate(Managers.Manager to_,Managers.Manager from_,
+    bool dropAndCreateIfExists=false,bool mooveClasses=false,bool mooveObjects=false,bool generate=false)
+    {
+      OrientDatabase result=null;
+ 
+	    bool allreadyExists=false;
+      
+      if(to_==null){ throw new Exception("No from DB passed");}
+      targetRepo_=to_.GetRepo();
+      if(targetRepo_==null){ throw new Exception("No from repo exists");}
+      
+      OrientDatabase dbTo=targetRepo_.GetDb();
+		    		  
+	    if(dropAndCreateIfExists==true){
+	      //drop and create db
+	      if(dbTo!=null){targetRepo_.DeleteDb();}
+        targetRepo_.CreateDb();
+        if(targetRepo_.GetDb()==null){throw new Exception("Db was not recreated");}
+	    }
+	    if(from_!=null){
+	      //moove db
+        sourceRepo_=from_.GetRepo();
+        if(sourceRepo_==null){throw new Exception("No from repo exists");}
+	      OrientDatabase dbFrom=sourceRepo_.GetDb();
+        dbFrom=sourceRepo_.GetDb();
+        dbTo=targetRepo_.GetDb();
+        if(dbTo==null)
+        {throw new Exception("No target database exists");}
+        if(dbFrom==null)
+        {throw new Exception("No source database exists");}
+        
+        if(mooveClasses){
+          MooveClasses(targetRepo_,sourceRepo_);
+            
+          targetRepo_.CreateProperty<OrientEdge>(new OrientEdge(), null);
+          //create all properties even if all null.
+          targetRepo_.CreateProperty<MainAssignment>( new MainAssignment(), null);
+          targetRepo_.CreateProperty<Unit>( new Unit(), null);
+          targetRepo_.CreateProperty<Note>( new Note(), null);
+          targetRepo_.CreateProperty<Authorship>( new Authorship(), null);
+          targetRepo_.CreateProperty<Comment>( new Comment(), null);
+          targetRepo_.CreateProperty<Commentary>( new Commentary(), null);
+          targetRepo_.CreateProperty<News>( new News(), null);
+          targetRepo_.CreateProperty<Person>(new Person(), null);
+        
+          targetRepo_.CreateProperty<Liked>(new Liked(), null);
+          targetRepo_.CreateProperty<Tag>(new Tag(), null);
+          targetRepo_.CreateProperty<Tagged>(new Tagged(), null);
+        }
+
+        if(mooveObjects){
+          MooveObjectsOfClass<Person>(targetRepo_,sourceRepo_);
+          MooveObjectsOfClass<Unit>(targetRepo_,sourceRepo_);       
+         
+          MooveObjectsOfClass<SubUnit>(targetRepo_,sourceRepo_);
+          MooveObjectsOfClass<MainAssignment>(targetRepo_,sourceRepo_);
+          MooveObjectsOfClass<OldMainAssignment>(targetRepo_,sourceRepo_); 
+        }
+        /*
+        MooveObjectsOfClass<UserSettings>(targetRepo_,sourceRepo_);
+        MooveObjectsOfClass<CommonSettings>(targetRepo_,sourceRepo_);
+        */
+
+        MooveObjectsOfClass<PersonRelation>(targetRepo_,sourceRepo_);
+
+	    }
+	    if(generate==true){
+        //generate scenery to existing
+        to_.GenDB(false,false);
+        to_.GenNewsComments(null,null);
+	    }
+      
+      targetRepo_.StoreDbStatistic(null,null);
+      return result;
+    }
+   
+    static void MooveClasses(IOrientRepo targetRepo,IOrientRepo sourceRepo)
+    {
+      TypeConverter tc = new TypeConverter();
+      OrientDatabase dbFrom=sourceRepo.GetDb(null,null);
+
+      foreach(OrientClass oc in dbFrom.classes){
+        //Moove objects person 
+        if(tc.GegtypeFromAsm(oc.name,null)!=null){
+          CreateClassRec(oc);
+        }
+      }
+    }
+    static void CreateClassRec(OrientClass class_)
+    {
+      OrientClass _class=targetRepo_.GetClass(class_.name,null, null);    
+      if(_class==null){
+        if(class_.superClass!=null){
+          OrientClass superClass=targetRepo_.GetClass(class_.superClass,null, null);
+          if(superClass==null){
+            superClass=sourceRepo_.GetClass(class_.superClass,null, null);
+              if(superClass==null){throw new Exception("no superclass in sourcedb found");}
+            CreateClassRec(superClass);
+          }
+          class_=targetRepo_.CreateClass(class_.name,superClass.name,null).GetClass(class_.name,null,null);
+        }else{
+          class_=targetRepo_.CreateClass(class_.name,null,null).GetClass(class_.name,null,null);
+        }
+        if(class_==null){throw new Exception("failed to create class");}
+      }
+    }
+    
+    static void MooveObjectsOfClass<T>(IOrientRepo targetRepo,IOrientRepo sourceRepo) where T:class, IOrientObjects.IorientDefaultObject
+    {
+      List<T> arbitraryObjects = new List<T>();
+      foreach(T p in sourceRepo.SelectFromType<T>(null,null))
+      {
+        T pc = null;
+        try{
+          if(p.GetType().BaseType==typeof(V)){
+            pc=targetRepo.CreateVertex<T>(p, null);
+          }
+          if(p.GetType().BaseType==typeof(E)){
+            POCO.OrientEdge io=p as POCO.OrientEdge;
+            POCO.V vFrom=
+            sourceRepo.SelectByIDWithCondition<POCO.V>(io.In,null,null).FirstOrDefault();
+            POCO.V vTo=
+            sourceRepo.SelectByIDWithCondition<POCO.V>(io.Out,null,null).FirstOrDefault();
+
+            vFrom=targetRepo.SelectFromType<POCO.V>("GUID='"+vFrom.GUID+"'",null).FirstOrDefault();
+            vTo=targetRepo.SelectFromType<POCO.V>("GUID='"+vTo.GUID+"'",null).FirstOrDefault();
+
+            pc=targetRepo.CreateEdge<T>(p,vFrom,vTo, null) as T;
+          }
+          if(pc==null){ if(arbitraryObjects!=null ){arbitraryObjects.Add(p);}}
+        }catch(Exception e){ System.Diagnostics.Trace.WriteLine(e.Message);}
+      }
+      if(arbitraryObjects.Count()>0){
+        CheckListOfObjects(targetRepo, arbitraryObjects);
+      }
+    }
+    static void CheckListOfObjects<T>(IOrientRepo targetRepo, List<T> unaddedObjects) where T:class, IOrientObjects.IorientDefaultObject
+    {
+      T pc=null;
+      foreach(T p in unaddedObjects)
+      {
+        pc=targetRepo.SelectFromType<T>("GUID='"+p.GUID+"'",null).FirstOrDefault();
+        if(pc==null){
+          try{
+            if(p.GetType().BaseType==typeof(V)){
+              pc=targetRepo.CreateVertex<T>(p, null);
+            }
+            if(p.GetType().BaseType==typeof(E)){
+              IOrientObjects.IOrientEdge io=p as IOrientObjects.IOrientEdge;
+              IOrientObjects.IOrientVertex vFrom=targetRepo.SelectByIDWithCondition<T>(io.In,null,null).FirstOrDefault() as IOrientObjects.IOrientVertex;
+              IOrientObjects.IOrientVertex vTo=targetRepo.SelectByIDWithCondition<T>(io.Out,null,null).FirstOrDefault() as IOrientObjects.IOrientVertex;
+              pc=targetRepo.CreateEdge<IOrientObjects.IorientDefaultObject>(p,vFrom,vTo, null) as T;
+            }
+          }catch(Exception e){ System.Diagnostics.Trace.WriteLine(e.Message);}
+        }
+      }
+    }
+
+  }
+
   //check Linq to context
   public static class LinqToContextCheck
   {
     static TestContext ts = new TestContext();
     public static void GO()
     {
-      string st1=ts.ConditionFromExpressionTypes<TestEntity>(s=>s.Id>=1);
-      string st2=ts.ConditionFromExpressionTypes<TestEntity>(s=>s.name=="test name");
-      string st3=ts.ConditionFromExpressionTypes<TestEntity>(s=>s.intrinsicIsTrue==true);
-      string st4=ts.ConditionFromExpressionTypes<TestEntity>(s=>s.tp.isTrue==true);
+      TestEntity te=new TestEntity() {Id=0,name=null};
+      var a = te?.name;
+
+      ts.ExpressionBuild();
+
+      string st4=ts.VisitLeftRightFromExpressionTypes<TestEntity>(s=>s.tp.isTrue==false);
+      string st1=ts.VisitLeftRightFromExpressionTypes<TestEntity>(s=>s.Id>=1);      
+
+      string st2=ts.VisitLeftRightFromExpressionTypes<TestEntity>(s=>s.name=="test name");
+      string st3=ts.VisitLeftRightFromExpressionTypes<TestEntity>(s=>s.intrinsicIsTrue==true);
+    
     }
   }
+  
+
 }

@@ -19,23 +19,8 @@ namespace POCO
 
 
     //Orient object
-    public class OrientDatabase : IOrientDatabase
-    {
-
-    }
-    public class OrientClass : IOrientClass
-    {
-      public string type { get; set; }
-      public string name { get; set; }
-      public int value { get; set; }
-    }
-    public class OrientProperty : IOrientProperty
-    {
-      public string type { get; set; }
-
-      public string name { get; set; }
-
-    }
+  
+   
     public class OrientEntity : IOrientEntity
     {   
 
@@ -67,7 +52,7 @@ namespace POCO
       }
     }
     
-    public class OrientDefaultObject :OrientEntity,IorientDefaultObject
+    public class OrientDefaultObject:OrientEntity,IorientDefaultObject
     {
       [Mandatory(true),Updatable(false)]
       [JsonProperty("GUID", Order = 2)]
@@ -86,12 +71,20 @@ namespace POCO
     }
     public class OrientEdge :OrientDefaultObject, IOrientEdge
     {
-      [JsonIgnore]
-      [JsonProperty("out")]
-      string Out {get; set;}
-      [JsonIgnore]
-      [JsonProperty("in")]
-      string In {get; set;}
+      
+      [JsonProperty("out"),NOTSynchronisable(true)]
+      public string Out {get; set;}    
+      [JsonProperty("in"),NOTSynchronisable(true)]
+      public string In {get; set;}
+
+      public bool ShouldSerializeOut()
+      {
+        return false;
+      }
+       public bool ShouldSerializeIn()
+      {
+        return false;
+      }
     }
 
 
@@ -316,7 +309,10 @@ namespace POCO
     {
 
     }
+    public class PersonRelation : E
+    {
 
+    }
 
     public class TrackBirthdays : E
     {
@@ -407,9 +403,7 @@ namespace POCO
       [JsonConverter(typeof(OrientDateTime)), Updatable(false)]
       public DateTime? dateChanged { get; set; } = null;
     }
-
   
-
     //for spagetty check
     public class MigrateCollection
     {
@@ -420,21 +414,51 @@ namespace POCO
    
     #endregion
 
-    #region OrientMaintenanceClasses 
-    public class GetClass
+    #region OrientMaintenanceClasses
+    public class OrientDatabase : IOrientDatabase
+    {
+      public List<OrientClass> classes {get;set;}
+      public OrientConfigValues config {get;set;}
+    }
+   
+    public class OrientClass
     {
       public string name {get;set;}
       public string superClass {get;set;}
       public List<string> superClasses {get;set;}
       public string alias {get;set;}
       [JsonProperty("abstract")]
-      public bool abstract_ {get;set;}
-      [JsonProperty("strictmode")]
-      public bool strictmode_ {get;set;}
-      public int[] clusters {get;set;}
-      public int defaultCluster {get;set;}
+      public bool? abstract_ {get;set;}
+      public bool? strictmode {get;set;}
+      public List<int> clusters {get;set;}
+      public int? defaultCluster {get;set;}
       public string clusterSelection {get;set;}
-      public int records {get;set;}   
+      public int? records {get;set;}
+      [JsonProperty("properties")]
+      public List<OrientProperty> properties_ {get;set;}
+    }
+    public class OrientProperty{
+      public string name {get;set;}
+      public string type {get;set;}
+      public bool? mandatory {get;set;}
+      [JsonProperty("readonly")]
+      public bool? readonly_ {get;set;}
+      public bool? notNull {get;set;}
+      public int? min {get;set;}
+      public int? max {get;set;}
+      public string regexp {get;set;}
+      public string collate {get;set;}
+      public string defaultValue {get;set;}
+    }
+    
+    public class OrientConfigValues
+    {
+      public List<OrientValue> values {get;set;}
+    }
+    public class OrientValue
+    {
+      public string name {get;set;}
+      public string value {get;set;}
     }
     #endregion
 
@@ -481,6 +505,15 @@ namespace POCO
       {
         this.isUpdatable = isUpdatable_;        
       }
+    }
+     [System.AttributeUsage(System.AttributeTargets.Property)]
+    public class NOTSynchronisable:System.Attribute
+    {
+      public bool isUpdatable=true;
+      public NOTSynchronisable(bool isUpdatable_)
+      {
+        this.isUpdatable = isUpdatable_;        
+      }
     }    
     [System.AttributeUsage(System.AttributeTargets.Property)]
     public class Mandatory:System.Attribute
@@ -515,7 +548,7 @@ namespace POCO
 
     #region Quiz
 
-    public class QuizGet : V
+    public class Quiz : V
     {
         [JsonProperty("Author")]
         public string Author { get; set; } = null;
@@ -573,8 +606,7 @@ namespace POCO
     class OrientDateTime : IsoDateTimeConverter
     {
         public OrientDateTime()
-        {
-        
+        {        
             DateTimeFormat = ConfigurationManager.AppSettings["OrientDateTime"];
         }
     }   
