@@ -45,7 +45,7 @@ namespace IOrientObjects
       string In {get; set;}
     }
     
-    public interface IorientDefaultObject : IOrientEntity
+    public interface IOrientDefaultObject : IOrientEntity
     {
       [JsonProperty("GUID", Order = 2)]
       string GUID { get; set; }

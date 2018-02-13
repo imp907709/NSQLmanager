@@ -8,7 +8,7 @@ namespace IRepos
     public interface IRepo_v1
     {
 
-    string Add(IorientDefaultObject obj_);
+    string Add(IOrientDefaultObject obj_);
     string Add(ITypeToken db_name, ITypeToken command_type);
     string Add(ITypeToken rest_command_, ITypeToken dbName_, ITypeToken type_);
     string Add(IOrientEdge obj_, IOrientVertex from, IOrientVertex to);

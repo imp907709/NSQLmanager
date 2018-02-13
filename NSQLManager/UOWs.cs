@@ -25,51 +25,41 @@ using System.IO;
 
 namespace IUOWs
 {
-  using IOrientObjects;
-
-  public interface IPersonUOW
-  {
-    IEnumerable<Person> GetAll();
-    string GetByGUID(string GUID);
-    IEnumerable<Person> GetObjByGUID(string GUID);
-    string GetTrackedBirthday(string GUID);
-    string AddTrackBirthday(E edge_, string guidFrom, string guidTo);
-    string DeleteTrackedBirthday(E edge_, string guidFrom, string guidTo);
-  }
+  using IOrientObjects;  
 
   public interface IUOW
   {
     void BindRepo(IOrientRepo repo_);
-    T UOWdeserialize<T>(string item_) where T : class, IorientDefaultObject;
-    string UOWserialize<T>(IEnumerable<T> item_) where T : class, IorientDefaultObject;
-    string UOWserialize<T>(T item_) where T : class, IorientDefaultObject;
+    T UOWdeserialize<T>(string item_) where T : class, IOrientDefaultObject;
+    string UOWserialize<T>(IEnumerable<T> item_) where T : class, IOrientDefaultObject;
+    string UOWserialize<T>(T item_) where T : class, IOrientDefaultObject;
 
-    T ValidateItem<T>(T item_) where T : class, IorientDefaultObject;
+    T ValidateItem<T>(T item_) where T : class, IOrientDefaultObject;
 
 
     IEnumerable<T> GetItems<T>()
-      where T : class, IorientDefaultObject;
+      where T : class, IOrientDefaultObject;
     IEnumerable<T> GetItems<T>(string cond_ = null)
-      where T : class, IOrientObjects.IorientDefaultObject;
+      where T : class, IOrientObjects.IOrientDefaultObject;
 
     void DeleteItems<T>(IEnumerable<T> items_)
-      where T : class, IorientDefaultObject;
+      where T : class, IOrientDefaultObject;
 
     T GetItemByGUID<T>(T item)
-      where T : class, IorientDefaultObject;
+      where T : class, IOrientDefaultObject;
     T CreateVertex<T>(T item)
-      where T : class, IOrientVertex, IorientDefaultObject;
+      where T : class, IOrientVertex, IOrientDefaultObject;
     T CreateEdge<T, C, K>(T rel, C from, K to)
-      where T : class, IOrientEdge, IorientDefaultObject
-      where C : class, IOrientVertex, IorientDefaultObject
-      where K : class, IOrientVertex, IorientDefaultObject;
+      where T : class, IOrientEdge, IOrientDefaultObject
+      where C : class, IOrientVertex, IOrientDefaultObject
+      where K : class, IOrientVertex, IOrientDefaultObject;
     void DeleteEdge<T, C, K>(C from, K to)
-      where T : class, IOrientEdge, IorientDefaultObject
-      where C : class, IOrientVertex, IorientDefaultObject
-      where K : class, IOrientVertex, IorientDefaultObject;
+      where T : class, IOrientEdge, IOrientDefaultObject
+      where C : class, IOrientVertex, IOrientDefaultObject
+      where K : class, IOrientVertex, IOrientDefaultObject;
 
     IEnumerable<C> GetInEOutV<T, K, C>(T vertex)
-      where T : class, IOrientVertex, IorientDefaultObject where K : class, IOrientEdge where C : class, IOrientVertex;
+      where T : class, IOrientVertex, IOrientDefaultObject where K : class, IOrientEdge where C : class, IOrientVertex;
 
   }
 
@@ -88,12 +78,12 @@ namespace IUOWs
     }  
 
     public IEnumerable<T> GetItems<T>()
-      where T:class,IorientDefaultObject
+      where T:class,IOrientDefaultObject
     {
       return _repo.SelectFromType<T>(null, null);
     }
     public void DeleteItems<T>(IEnumerable<T> items_)
-      where T : class, IorientDefaultObject
+      where T : class, IOrientDefaultObject
     {
       foreach(T item in items_)
       {
@@ -101,14 +91,14 @@ namespace IUOWs
       }
     }
     public T GetItemByGUID<T>(T item)
-      where T:class,IorientDefaultObject 
+      where T:class,IOrientDefaultObject 
     {
       T result=null;
         result=_repo.SelectSingle<T>("GUID='"+item.GUID+"'",null);
       return result;
     }
     public IEnumerable<T> GetItems<T>(string cond_=null)
-    where T : class, IOrientObjects.IorientDefaultObject
+    where T : class, IOrientObjects.IOrientDefaultObject
   {
     IEnumerable<T> result = null;
     result = _repo.SelectFromType<T>(cond_, null);
@@ -116,16 +106,16 @@ namespace IUOWs
   }
       
     public T CreateVertex<T>(T item)
-      where T:class,IOrientVertex,IorientDefaultObject
+      where T:class,IOrientVertex,IOrientDefaultObject
     {
       T result=null;
         result=_repo.CreateVertex<T>(item, null);
       return result;
     }
     public T CreateEdge<T,C,K>(T rel,C from,K to)
-      where T:class,IOrientEdge,IorientDefaultObject
-      where C:class,IOrientVertex,IorientDefaultObject
-      where K:class,IOrientVertex,IorientDefaultObject
+      where T:class,IOrientEdge,IOrientDefaultObject
+      where C:class,IOrientVertex,IOrientDefaultObject
+      where K:class,IOrientVertex,IOrientDefaultObject
     {
       T result = null;
         
@@ -137,14 +127,14 @@ namespace IUOWs
       return result;
     }
     public void DeleteEdge<T,C,K>(C from,K to)
-      where T:class,IOrientEdge,IorientDefaultObject
-      where C:class,IOrientVertex,IorientDefaultObject
-      where K:class,IOrientVertex,IorientDefaultObject
+      where T:class,IOrientEdge,IOrientDefaultObject
+      where C:class,IOrientVertex,IOrientDefaultObject
+      where K:class,IOrientVertex,IOrientDefaultObject
     {
       _repo.DeleteEdge<T,C,K>(from,to,null,null); 
     }
 
-    public T ValidateItem<T>(T item_) where T:class,IorientDefaultObject
+    public T ValidateItem<T>(T item_) where T:class,IOrientDefaultObject
     {
       T result = null;
         try{
@@ -156,13 +146,13 @@ namespace IUOWs
     }
 
     public IEnumerable<C> GetInEOutV<T,K,C>(T vertex)
-      where T:class,IOrientVertex, IorientDefaultObject where K : class,IOrientEdge where C : class,IOrientVertex
+      where T:class,IOrientVertex, IOrientDefaultObject where K : class,IOrientEdge where C : class,IOrientVertex
     {
       return _repo.SelectInEOutV<T, K, C>(vertex, null);
     }
 
     public string UOWserialize<T>(T item_)
-        where T:class,IOrientObjects.IorientDefaultObject
+        where T:class,IOrientObjects.IOrientDefaultObject
     {
       string result = null;
       result = _repo.ObjectToContentString<T>(item_);
@@ -170,14 +160,14 @@ namespace IUOWs
     }
       
     public string UOWserialize<T>(IEnumerable<T> item_)
-        where T:class,IOrientObjects.IorientDefaultObject
+        where T:class,IOrientObjects.IOrientDefaultObject
     {
       string result = null;
-      result = _repo.ObjectToContentString<T>(item_);
+        result=_repo.ObjectToContentString<T>(item_);
       return result;
     }
     public T UOWdeserialize<T>(string item_)
-        where T : class, IOrientObjects.IorientDefaultObject
+        where T : class, IOrientObjects.IOrientDefaultObject
     {
       T result = null;
       result = _repo.ContentStringToObject<T>(item_);
@@ -198,7 +188,7 @@ namespace IUOWs
 }
 
 namespace PersonUOWs
-{  
+{
 
   public class PersonUOW : IUOWs.UOW
   {
@@ -314,21 +304,6 @@ namespace NewsUOWs
       }
       return result_;
     }
-    public IEnumerable<TestNews> GetByOffsetTest(string guid_, int? offset_=3)
-    {
-      IEnumerable<TestNews> result_=null;
-      TestNews nt=_repo.SelectByCondFromType<TestNews>(typeof(News),"GUID='"+guid_+"'",null).FirstOrDefault();
-      if(nt!=null) {
-        int startDepth=nt.commentDepth == null ? 0 : (int)nt.commentDepth;
-        int endDepth=offset_==null?startDepth:startDepth+(int)offset_;        
-        IEnumerable<TestNews> temRes = _repo.TraverseFrom<TestNews, Comment, Commentary, Authorship, Comment>(nt.id, null);
-        if(temRes!=null){
-          result_ = temRes.Where(s => (s.class_ == "Commentary" || s.class_ == "News")&&(s.commentDepth>=startDepth&&s.commentDepth<=endDepth));
-        }
-      }
-      return result_;
-    }
-
 
     [Obsolete]
     public IEnumerable<News> GetNewsByOffset(int? offset_=20)
@@ -559,14 +534,7 @@ namespace NewsUOWs
       }
       return _nt;
     }
-
-    public News CreateNews(Person from,string news_)
-    {
-      from=CheckAndCreatePerson(from);
-      News note_=_repo.CreateVertex<News>(news_,null);
-      News created=CreateNews(from, note_);
-      return created;
-    }
+   
     public News CreateNews(Person from_,Note note_)
     {
       News nt_=null;
@@ -636,6 +604,7 @@ namespace NewsUOWs
       }
       return result;
     }
+
 
     /// <summary>
     /// Updates property by property object to object from. Custom Updatable system attribute true false checked.
@@ -1188,11 +1157,10 @@ new Person(){Seed=456,Name="0",GUID="001",changed=new DateTime(2017,01,01,00,00,
         MainAssignment mainAssignment=new MainAssignment();
         string pone=_repo.ObjectToContentString<Person>(personOne);
         List<Person> personsToAdd = new List<Person>() {
-new Person(){
-Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
-,changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)
-}
-,new Person(){Seed =123,Name="YablokovAE",sAMAccountName="YablokovAE",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)}      
+        //unit testing users
+new Person(){Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)}
+,new Person(){Seed =124,Name="YablokovAE",sAMAccountName="YablokovAE",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)}  
+,new Person(){Seed =125,Name="admin",sAMAccountName="admin",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)}
 };
 
         Unit u = new Unit() { Name = "Unit1" };
@@ -1489,7 +1457,7 @@ Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia"
     {
       _repo.DeleteDb(_dbName);
     }
-
+    
   }
 
 }
@@ -1588,22 +1556,21 @@ namespace AdinTce
             }           
             if (holidays.Count()==0&&(holidaysResp!=null||holidaysResp!=string.Empty))
             {
-                IEnumerable<List<AdinTce.Holiday>> hl = _jsonManager.DeserializeFromParentChildren<List<Holiday>>(holidaysResp, "Holidays");                
+                IEnumerable<List<AdinTce.Holiday>> hl=_jsonManager.DeserializeFromParentChildren<List<Holiday>>(holidaysResp, "Holidays");                
                 foreach (List<Holiday> lt_ in hl)
-                {                   
-                    holidays.AddRange(lt_);                                      
+                {
+                    holidays.AddRange(lt_);
                 }                
             }
             if (vacations.Count()==0&&(vacationsResp!=null&&vacationsResp!=string.Empty))
             {
 
-                IEnumerable<List<AdinTce.Vacation>> hl = _jsonManager.DeserializeFromParentChildren<List<Vacation>>(vacationsResp, "Holidays");
+                IEnumerable<List<AdinTce.Vacation>> hl=_jsonManager.DeserializeFromParentChildren<List<Vacation>>(vacationsResp, "Holidays");
                 vacations = new List<Vacation>();
                 foreach (List<Vacation> lt_ in hl)
                 {
                     vacations.AddRange(lt_);
-                }
-
+                }         
             }
             if (adp.GUID_==null)
             {
@@ -1647,7 +1614,7 @@ namespace AdinTce
                 AdpCheck();
                 try
                 {
-                    adp.vacations=vacations.ToList();
+                    adp.vacations=vacations.OrderBy(s => s.DateStart).ToList();
                 }
                 catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
             }
@@ -1658,8 +1625,11 @@ namespace AdinTce
                 AdpCheck();
                 try
                 {
-                    graphs=_jsonManager.DeserializeFromParentChildren<GraphRead>(graphResp, "Holidays");
-                    adp.Graphs=GrapthReadToWriteDateCheck(graphs.ToList());
+                    //graphs=_jsonManager.DeserializeFromChildNode<GraphRead>(graphResp, "Holidays");
+                    graphs = _jsonManager.DeserializeFromParentChildren<GraphRead>(graphResp, "Holidays");
+                    //graphs = _jsonManager.DeserializeFromParentNode<GraphRead>(graphResp, "Holidays");
+
+                    adp.Graphs=GrapthReadToWriteDateCheck(graphs.OrderBy(s=>s.DateStart).ToList());
                 }
                 catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
             }
@@ -1685,7 +1655,7 @@ namespace AdinTce
         {
             AdinTceWebManager webManagerAc=new AdinTceWebManager();
             webManagerAc.SetCredentials(new System.Net.NetworkCredential(
-             ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
+            ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
             webManagerAc.AddRequest(holidayCommand);
             holidaysResp=_responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
 
@@ -1694,7 +1664,7 @@ namespace AdinTce
         {
             AdinTceWebManager webManagerAc=new AdinTceWebManager();
             webManagerAc.SetCredentials(new System.Net.NetworkCredential(
-             ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
+            ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
             webManagerAc.AddRequest(vacationCommand);
             vacationsResp=_responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
 
@@ -1703,7 +1673,7 @@ namespace AdinTce
         {
             AdinTceWebManager webManagerAc=new AdinTceWebManager();
             webManagerAc.SetCredentials(new System.Net.NetworkCredential(
-             ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
+            ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
             webManagerAc.AddRequest(graphCommand);
             graphResp=_responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
         }

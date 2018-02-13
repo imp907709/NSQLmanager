@@ -1,6 +1,5 @@
 ﻿//using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -116,7 +115,7 @@ namespace NSQLManagerTests.Tests
           HttpStatusCode code=HttpStatusCode.NotImplemented;
           wm=new WebRequestManager();
           wm.AddRequest(testUrl);
-          //wm.SetTimeout(5000);
+          wm.SetTimeout(5000);
           code=((HttpWebResponse)wm.GetHttpResponse("GET")).StatusCode;
           Assert.Equal(HttpStatusCode.OK, code);
       }
@@ -126,6 +125,7 @@ namespace NSQLManagerTests.Tests
           HttpStatusCode code=HttpStatusCode.NotImplemented;
           wm=new WebRequestManager();
           wm.AddRequest(testUrl);
+          wm.SetTimeout(5000);
           code=((HttpWebResponse)wm.GetHttpResponse("POST")).StatusCode;
           Assert.Equal(HttpStatusCode.OK, code);
       }
@@ -179,7 +179,7 @@ namespace NSQLManagerTests.Tests
 
   public class IntegrationMnagerFireTest
   {
-      OrientRepo mng;
+      OrientRepo repo_;
       Person p;
       Unit u;
       MainAssignment mainAssignment;
@@ -226,10 +226,10 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         CommandShemasExplicit cs = new CommandShemasExplicit(cf, ff,
       new TokenMiniFactory(), new OrientQueryFactory());
 
-        mng = new OrientRepo(tc, jm, tf, us, bs, cs, wm, wr, cf, ff, oqf, pc);
+        repo_ = new OrientRepo(tc, jm, tf, us, bs, cs, wm, wr, cf, ff, oqf, pc);
 
       }
-
+      
   }
 
   public class OrientWebManagerIntegrationTests
@@ -351,7 +351,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
               .GetBuilder().Build().GetText();
 
           string exp =
-"create class Person content {\"Changed\": \"2017-10-19 18:00:09\", \"Created\": \"2015-02-02 12:43:56\", \"GUID\": \"1\", \"Name\": \"0\"} ";
+"create Class Person content {\"Changed\": \"2017-10-19 18:00:09\", \"Created\": \"2015-02-02 12:43:56\", \"GUID\": \"1\", \"Name\": \"0\"} ";
 
           Assert.Equal(exp, res);
       }
@@ -553,8 +553,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         lcb.Add(this.commandOne.Coma().Create().Class(V).Extends(VSC).NestQuotes().GetBuilder());
         
         CommandBuilder cb = new CommandBuilder(lcb,ff);
-        
-        string result=cb.Build().GetText();
+        string result=this.commandOne.GetCommand();
         Assert.Equal("\"create class V Extends VSC\",\"create Class V Extends VSC\"", result);
       }
 
@@ -1554,6 +1553,7 @@ Assert.Equal("Select expand(r1) from(Select in('Authorship','Person','Note'),out
           Assert.Equal(resp, act1);
       }
 
+
   }
   public class URIBuilderIntergrationTest
   {
@@ -1644,7 +1644,7 @@ Assert.Equal("Select expand(r1) from(Select in('Authorship','Person','Note'),out
       [Fact]
       public void OrientHostTest_ReturnsValidString()
       {
-          Assert.Equal(hostExpected, host_.Text);
+        Assert.Equal(hostExpected, host_.Text);
       }
       [Fact]
       public void OrientPortTest_ReturnsValidString()
@@ -1933,7 +1933,7 @@ new List<ITypeToken>() {new OrientHost(), new OrientPort(), new OrientCommandTok
 
       string adinTceUrl=ConfigurationManager.AppSettings["AdinTceUrl"] + "/holiday/full";
 
-      string testGUID= "ba124b8e-9857-11e7-8119-005056813668";
+      string testGUID= "c1a4c984-a00e-11e6-80db-005056813668";
       //"18222799-602e-11e4-ad69-00c2c66d13b0" //test_long
       //"18a14516-cbb4-11e4-b849-f80f41d3dd35" //test
       //"ed53c8ea-c179-11e4-8edf-f80f41d3dd35" //Fill
@@ -2164,13 +2164,14 @@ new List<ITypeToken>() {new OrientHost(), new OrientPort(), new OrientCommandTok
 
 namespace NSQLIntegrationTests
 {
-  using Xunit;
+    using NUnit.Framework;
 
-  /// <summary>
-  /// Testing database generation from web manager by command. Every test recreates its personal db instance test_db_0
-  /// </summary>
-  public class IntegrationChainingTest
-  {
+    /// <summary>
+    /// Testing database generation from web manager by command. Every test recreates its personal db instance test_db_0
+    /// </summary>
+    [TestFixture]
+    public class IntegrationChainingTest
+    {
     CommandsChain commandOne;
 
     JSONManager jsonManage;
@@ -2207,331 +2208,328 @@ namespace NSQLIntegrationTests
       ,createDb,dropDb
       ,createClassResult,propertyStrResult, propertyBoolResult
       ,insertVertexResult, createDbResult, dropDbResult;
-
+    
+    
     public IntegrationChainingTest()
     {           
 
-      jsonManage=new JSONManager();
+        jsonManage=new JSONManager();
 
-      webRequestManager=new WebRequestManager();
-      webResponseReader=new WebResponseReader();
+        webRequestManager=new WebRequestManager();
+        webResponseReader=new WebResponseReader();
 
-      _commandFactory=new CommandFactory();
-      _formatFactory=new FormatFactory();
-      _miniFactory=new TokenMiniFactory();
+        _commandFactory=new CommandFactory();
+        _formatFactory=new FormatFactory();
+        _miniFactory=new TokenMiniFactory();
 
-      _orientBodyFactory=new OrientBodyFactory();
-      _orientQueryFactory=new OrientQueryFactory();
+        _orientBodyFactory=new OrientBodyFactory();
+        _orientQueryFactory=new OrientQueryFactory();
 
-      _commandBuilder=_commandFactory.CommandBuilder(_miniFactory, _formatFactory);
-      _formatGenerator=_formatFactory.FormatGenerator(_miniFactory);
+        _commandBuilder=_commandFactory.CommandBuilder(_miniFactory, _formatFactory);
+        _formatGenerator=_formatFactory.FormatGenerator(_miniFactory);
 
-      _urlShemas=new UrlShemasExplicit(_commandFactory, _formatFactory, _miniFactory, _orientBodyFactory);
-      _commandSchema=new CommandShemasExplicit(_commandFactory, _formatFactory, _miniFactory, _orientQueryFactory);
-      _bodyShema=new BodyShemas(_commandFactory, _formatFactory, _miniFactory, _orientBodyFactory);
+        _urlShemas=new UrlShemasExplicit(_commandFactory, _formatFactory, _miniFactory, _orientBodyFactory);
+        _commandSchema=new CommandShemasExplicit(_commandFactory, _formatFactory, _miniFactory, _orientQueryFactory);
+        _bodyShema=new BodyShemas(_commandFactory, _formatFactory, _miniFactory, _orientBodyFactory);
 
-      commandOne=new CommandsChain(_miniFactory, _orientQueryFactory, _formatFactory, _commandFactory);
+        commandOne=new CommandsChain(_miniFactory, _orientQueryFactory, _formatFactory, _commandFactory);
 
-      orientAuth=string.Format("{0}{1}{2}",
+        orientAuth=string.Format("{0}{1}{2}",
             ConfigurationManager.AppSettings["orient_login"] 
             ,":"
             , ConfigurationManager.AppSettings["orient_pswd"]
             );
 
-      hostToken=new TextToken()
-      {
-          Text =
-          string.Format("{0}:{1}"
-          , ConfigurationManager.AppSettings["OrientDevHost"]
-          , ConfigurationManager.AppSettings["OrientPort"])
-      };
+        hostToken=new TextToken()
+        {
+            Text =
+            string.Format("{0}:{1}"
+            , ConfigurationManager.AppSettings["OrientDevHost"]
+            , ConfigurationManager.AppSettings["OrientPort"])
+        };
 
-      databaseName=ConfigurationManager.AppSettings["OrientUnitTestDB"]+"_0";
+        databaseName=ConfigurationManager.AppSettings["OrientUnitTestDB"]+"_0";
 
-      V=_miniFactory.NewToken("V");
+        V=_miniFactory.NewToken("V");
     }
  
     public CommandsChain NewChain()
     {
-      return  new CommandsChain(_miniFactory, _orientQueryFactory, _formatFactory, _commandFactory);
+        return  new CommandsChain(_miniFactory, _orientQueryFactory, _formatFactory, _commandFactory);
     }
       
-    [Fact]
+    [Test]
     public void IntegrationChainingDatabasePropertyCreateInsertDelete()
     {
 
-      ITypeToken dbName=new TextToken(){Text=databaseName};
-      //string personContent = "{\"Changed\": \"2017-10-19 18:00:09\", \"Created\": \"2015-02-02 12:43:56\", \"GUID\": \"2\", \"Name\": \"0\"}";
+        ITypeToken dbName=new TextToken(){Text=databaseName};
+        //string personContent = "{\"Changed\": \"2017-10-19 18:00:09\", \"Created\": \"2015-02-02 12:43:56\", \"GUID\": \"2\", \"Name\": \"0\"}";
 
-      Person p_ = new Person()
-      {
+        Person p_ = new Person()
+        {
         changed = new DateTime(2017, 01, 01, 00, 00, 00)
         ,created = new DateTime(2017, 01, 01, 00, 00, 00)
         ,GUID = "1"
         ,Name = "0"
-      };
+        };
 
-      //binding host from dbname to body shema builder
-      //_bodyShema.AddHost(hostToken);
-      //binding host from dbname to url shema builder
-      _urlShemas.AddHost(hostToken.Text);
+        //binding host from dbname to body shema builder
+        //_bodyShema.AddHost(hostToken);
+        //binding host from dbname to url shema builder
+        _urlShemas.AddHost(hostToken.Text);
 
-      string personObjectContent=jsonManage.SerializeObject(p_);
-      List<ITypeToken> personObjectContentToken=new List<ITypeToken> { _miniFactory.NewToken(personObjectContent) };
-      ITypeToken personToken=_miniFactory.NewToken("Person");
-      ITypeToken vToken=_miniFactory.NewToken("V");
-      ITypeToken propertyStrToken=_miniFactory.NewToken("TestPropStr");
-      ITypeToken propertyBoolToken=_miniFactory.NewToken("TestPropBool");
+        string personObjectContent=jsonManage.SerializeObject(p_);
+        List<ITypeToken> personObjectContentToken=new List<ITypeToken> { _miniFactory.NewToken(personObjectContent) };
+        ITypeToken personToken=_miniFactory.NewToken("Person");
+        ITypeToken vToken=_miniFactory.NewToken("V");
+        ITypeToken propertyStrToken=_miniFactory.NewToken("TestPropStr");
+        ITypeToken propertyBoolToken=_miniFactory.NewToken("TestPropBool");
 
-      //Create DB
-      //creating Orient REST API url for db creation from db name, using shemas
-      string urlCommand = _urlShemas.CreateDatabase(dbName).GetText();
-      //bind request to Webmanager
-      webRequestManager.AddRequest(urlCommand);
-      //bind credentials to request
-      webRequestManager.SetCredentials(nc);
-      //build and bind authentication header from passed credentials
-      //webRequestManager.SetBase64AuthHeader(orientAuth);
-      //get response of POST method
-      try
-      {
+        //Create DB
+        //creating Orient REST API url for db creation from db name, using shemas
+        string urlCommand = _urlShemas.CreateDatabase(dbName).GetText();
+        //bind request to Webmanager
+        webRequestManager.AddRequest(urlCommand);
+        //bind credentials to request
+        webRequestManager.SetCredentials(nc);
+        //build and bind authentication header from passed credentials
+        //webRequestManager.SetBase64AuthHeader(orientAuth);
+        //get response of POST method
+        try
+        {
         createDbResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
-      }catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
+        }catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
 
 
-      //Create class
-      ICommandBuilder commandBody = commandOne.Create().Class(personToken).Extends(vToken)
-          .GetBuilder().Build();
-      string requestBody = _bodyShema.Command(commandBody).Build().GetText();
-      string urlStr = _urlShemas.Command(dbName).Build().GetText();
-      urlCommand = _urlShemas.Command(dbName).GetText();
-      webRequestManager.SwapRequestsURL(urlCommand);
-      webRequestManager.SetContent(requestBody);
-      try
-      {
+        //Create class
+        ICommandBuilder commandBody = commandOne.Create().Class(personToken).Extends(vToken)
+            .GetBuilder().Build();
+        string requestBody = _bodyShema.Command(commandBody).Build().GetText();
+        string urlStr = _urlShemas.Command(dbName).Build().GetText();
+        urlCommand = _urlShemas.Command(dbName).GetText();
+        webRequestManager.SwapRequestsURL(urlCommand);
+        webRequestManager.SetContent(requestBody);
+        try
+        {
         createClassResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
-      }
-      catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
+        }
+        catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
 
 
-      //Add property str
-      ICommandBuilder addPropertyBody =
-      NewChain().Create().Property(personToken, propertyStrToken, 
-      _orientBodyFactory.StringToken(), 
-      _orientBodyFactory.False(), 
-      _orientBodyFactory.False())
-          .GetBuilder().Build();
+        //Add property str
+        ICommandBuilder addPropertyBody =
+        NewChain().Create().Property(personToken, propertyStrToken, 
+        _orientBodyFactory.StringToken(), 
+        _orientBodyFactory.False(), 
+        _orientBodyFactory.False())
+            .GetBuilder().Build();
 
-      requestBody = _bodyShema.Command(addPropertyBody).Build().GetText();
-      urlStr = _urlShemas.Command(dbName).Build().GetText();
-      urlCommand = _urlShemas.Command(dbName).GetText();
-      webRequestManager.SwapRequestsURL(urlCommand);
-      webRequestManager.SetContent(requestBody);
-      try
-      {
-        propertyStrResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
-      }
-      catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
-
-
-      //Add property bool
-      ICommandBuilder addPropertyStrBody =
-      NewChain().Create().Property(personToken
-      , propertyBoolToken
-      , _orientBodyFactory.BooleanToken()
-      , _orientBodyFactory.False()
-      , _orientBodyFactory.False())
-          .GetBuilder().Build();
-
-      requestBody = _bodyShema.Command(addPropertyStrBody).Build().GetText();
-      urlStr = _urlShemas.Command(dbName).Build().GetText();
-      urlCommand = _urlShemas.Command(dbName).GetText();
-      webRequestManager.SwapRequestsURL(urlCommand);
-      webRequestManager.SetContent(requestBody);
-      try
-      {
-        propertyBoolResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
-      }
-      catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
+        requestBody = _bodyShema.Command(addPropertyBody).Build().GetText();
+        urlStr = _urlShemas.Command(dbName).Build().GetText();
+        urlCommand = _urlShemas.Command(dbName).GetText();
+        webRequestManager.SwapRequestsURL(urlCommand);
+        webRequestManager.SetContent(requestBody);
+        try{
+            propertyStrResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+        }
+        catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
 
 
-      //Insert vertex
-      ICommandBuilder contentBody = _commandFactory
-          .CommandBuilder(_miniFactory, _formatFactory, personObjectContentToken, _miniFactory.NewToken("{0}")).Build();
-      ICommandBuilder insertVertexBody = NewChain().Create().Vertex(personToken).Content(contentBody)
-          .GetBuilder().Build();
+        //Add property bool
+        ICommandBuilder addPropertyStrBody =
+        NewChain().Create().Property(personToken
+        , propertyBoolToken
+        , _orientBodyFactory.BooleanToken()
+        , _orientBodyFactory.False()
+        , _orientBodyFactory.False())
+            .GetBuilder().Build();
 
-      requestBody = _bodyShema.Batch(insertVertexBody).Build().GetText();
-      urlStr = _urlShemas.Command(dbName).Build().GetText();
-      urlCommand = _urlShemas.Batch(dbName).GetText();
-      webRequestManager.SwapRequestsURL(urlCommand);
-      webRequestManager.SetContent(requestBody);
-      try
-      {
-        insertVertexResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
-      }
-      catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
+        requestBody = _bodyShema.Command(addPropertyStrBody).Build().GetText();
+        urlStr = _urlShemas.Command(dbName).Build().GetText();
+        urlCommand = _urlShemas.Command(dbName).GetText();
+        webRequestManager.SwapRequestsURL(urlCommand);
+        webRequestManager.SetContent(requestBody);
+        try{
+            propertyBoolResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+        }
+        catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
 
 
-      //delete DB 
-      urlCommand = _urlShemas.CreateDatabase(dbName).GetText();
-      //bind request to Webmanager
-      webRequestManager.AddRequest(urlCommand);
-      //bind credentials to request
-      webRequestManager.SetCredentials(nc);
-      //build and bind authentication header from passed credentials
-      webRequestManager.SetBase64AuthHeader(orientAuth);
-      //get response of POST method 
-      try
-      {
+        //Insert vertex
+        ICommandBuilder contentBody = _commandFactory
+            .CommandBuilder(_miniFactory, _formatFactory, personObjectContentToken, _miniFactory.NewToken("{0}")).Build();
+        ICommandBuilder insertVertexBody = NewChain().Create().Vertex(personToken).Content(contentBody)
+            .GetBuilder().Build();
+
+        requestBody = _bodyShema.Batch(insertVertexBody).Build().GetText();
+        urlStr = _urlShemas.Command(dbName).Build().GetText();
+        urlCommand = _urlShemas.Batch(dbName).GetText();
+        webRequestManager.SwapRequestsURL(urlCommand);
+        webRequestManager.SetContent(requestBody);
+        try{
+            insertVertexResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+        }
+        catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
+
+
+        //delete DB 
+        urlCommand = _urlShemas.CreateDatabase(dbName).GetText();
+        //bind request to Webmanager
+        webRequestManager.AddRequest(urlCommand);
+        //bind credentials to request
+        webRequestManager.SetCredentials(nc);
+        //build and bind authentication header from passed credentials
+        webRequestManager.SetBase64AuthHeader(orientAuth);
+        //get response of POST method 
+        try
+        {
         dropDbResult = webResponseReader.ReadResponse(webRequestManager.GetResponse64("DELETE"));
-      }
-      catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
+        }
+        catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
    
-      Assert.NotNull(createDbResult);
-      Assert.NotNull(createClassResult);
-      Assert.NotNull(propertyStrResult);
-      Assert.NotNull(propertyBoolResult);
-      Assert.NotNull(insertVertexResult);
-      Assert.Equal(string.Empty, dropDbResult);
+        Assert.NotNull(createDbResult);
+        Assert.NotNull(createClassResult);
+        Assert.NotNull(propertyStrResult);
+        Assert.NotNull(propertyBoolResult);
+        Assert.NotNull(insertVertexResult);
+        Assert.AreEqual(string.Empty, dropDbResult);
     }
 
-    [Fact]
+    [Test]
     public void IntegrationChainingDatabaseCreateDeleteCombat()
     {
 
-      ITypeToken dbName=new TextToken() {Text=databaseName};
+        ITypeToken dbName=new TextToken() {Text=databaseName};
 
-      //binding host from dbname to shema builder
-      _urlShemas.AddHost(hostToken.Text);
-      //creating Orient REST API url for db creation from db name, using shemas
-      string urlCommand=_urlShemas.CreateDatabase(dbName).GetText();
-      //bind request to Webmanager
-      webRequestManager.AddRequest(urlCommand);
-      //bind credentials to request
-      webRequestManager.SetCredentials(nc);
-      //build and bind authentication header from passed credentials
-      webRequestManager.SetBase64AuthHeader(orientAuth);
+        //binding host from dbname to shema builder
+        _urlShemas.AddHost(hostToken.Text);
+        //creating Orient REST API url for db creation from db name, using shemas
+        string urlCommand=_urlShemas.CreateDatabase(dbName).GetText();
+        //bind request to Webmanager
+        webRequestManager.AddRequest(urlCommand);
+        //bind credentials to request
+        webRequestManager.SetCredentials(nc);
+        //build and bind authentication header from passed credentials
+        webRequestManager.SetBase64AuthHeader(orientAuth);
 
-      //Create DB
-      //get response of POST method 
-      try
-      {
+        //Create DB
+        //get response of POST method 
+        try
+        {
         createDb=webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
-      }
-      catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
+        }
+        catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
           
-      //
-      List<ITypeToken> tokens_=new List<ITypeToken>() {
+        //
+        List<ITypeToken> tokens_=new List<ITypeToken>() {
         _miniFactory.EmptyString()
-      };
+        };
 
-      //Generate command url
-      _commandFactory.CommandBuilder(_miniFactory, _formatFactory, tokens_, _miniFactory.EmptyString());
+        //Generate command url
+        _commandFactory.CommandBuilder(_miniFactory, _formatFactory, tokens_, _miniFactory.EmptyString());
 
-      //delete DB
-      //get response of DELETE method 
-      //get response of DELETE method 
-      try
-      {
+        //delete DB
+        //get response of DELETE method
+        //get response of DELETE method
+        try
+        {
         dropDb=webResponseReader.ReadResponse(webRequestManager.GetResponse64("DELETE"));
-      }
-      catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
+        }
+        catch (Exception e) {System.Diagnostics.Trace.WriteLine(e.Message);}
 
-      webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
+        webResponseReader.ReadResponse(webRequestManager.GetResponse64("POST"));
 
-      Assert.NotNull(createDb);
-      Assert.Equal(string.Empty, dropDb);
+        Assert.NotNull(createDb);
+        Assert.AreEqual(string.Empty, dropDb);
     }
 
-  }
-  
-  /// <summary>
-  /// Testing db generation with manager and crud operations with UOWS. Db generated once test_db_1 and deleted on tear down.
-  /// </summary>
-   
-  public class IntegrationRepoCheck
-  {
+}
+
+    /// <summary>
+    /// Testing db generation with manager and crud operations with UOWS. Db generated once test_db_1 and deleted on tear down.
+    /// </summary>   
+    [TestFixture]
+    public class IntegrationRepoCheck
+    {
     
-    Managers.Manager mng;
-    OrientRepo repo;
-    string dbName;
+        Managers.Manager mng;
+        OrientRepo repo;
+        string dbName;
 
-    public IntegrationRepoCheck()
-    {
-      string login = ConfigurationManager.AppSettings["orient_login"];
-      string password = ConfigurationManager.AppSettings["orient_pswd"];
-      List<News> news_ = new List<News>() { };
-      List<Commentary> comments_ = new List<Commentary>() { };
+        public IntegrationRepoCheck()
+        {
+          string login=ConfigurationManager.AppSettings["orient_login"];
+          string password=ConfigurationManager.AppSettings["orient_pswd"];
+          List<News> news_=new List<News>() { };
+          List<Commentary> comments_=new List<Commentary>() { };
 
-      string dbHost = string.Format("{0}:{1}"
-        , ConfigurationManager.AppSettings["OrientDevHost"]
-        , ConfigurationManager.AppSettings["OrientPort"]);
+          string dbHost=string.Format("{0}:{1}"
+            , ConfigurationManager.AppSettings["OrientDevHost"]
+            , ConfigurationManager.AppSettings["OrientPort"]);
 
-      dbName = "test_db_2";      
+          dbName="test_db_2";      
 
-      TypeConverter typeConverter = new TypeConverter();
-      JsonManagers.JSONManager jsonMnager = new JSONManager();
-      TokenMiniFactory tokenFactory = new TokenMiniFactory();
-      UrlShemasExplicit UrlShema = new UrlShemasExplicit(
-          new CommandBuilder(tokenFactory, new FormatFactory())
-          , new FormatFromListGenerator(new TokenMiniFactory())
-          , tokenFactory, new OrientBodyFactory());
+          TypeConverter typeConverter = new TypeConverter();
+          JsonManagers.JSONManager jsonMnager = new JSONManager();
+          TokenMiniFactory tokenFactory = new TokenMiniFactory();
+          UrlShemasExplicit UrlShema = new UrlShemasExplicit(
+            new CommandBuilder(tokenFactory, new FormatFactory())
+            ,new FormatFromListGenerator(new TokenMiniFactory())
+            ,tokenFactory, new OrientBodyFactory());
 
-      BodyShemas bodyShema = new BodyShemas(new CommandFactory(), new FormatFactory(), new TokenMiniFactory(),
-          new OrientBodyFactory());
+          BodyShemas bodyShema=new BodyShemas(new CommandFactory(),new FormatFactory(),new TokenMiniFactory(),new OrientBodyFactory());
 
-      UrlShema.AddHost(dbHost);
-      WebResponseReader webResponseReader = new WebResponseReader();
-      WebRequestManager webRequestManager = new WebRequestManager();
-      webRequestManager.SetCredentials(new NetworkCredential(login, password));
-      CommandFactory commandFactory = new CommandFactory();
-      FormatFactory formatFactory = new FormatFactory();
-      OrientQueryFactory orientQueryFactory = new OrientQueryFactory();
-      OrientCLRconverter orientCLRconverter = new OrientCLRconverter();
+          UrlShema.AddHost(dbHost);
+          WebResponseReader webResponseReader = new WebResponseReader();
+          WebRequestManager webRequestManager = new WebRequestManager();
+          webRequestManager.SetCredentials(new NetworkCredential(login, password));
+          CommandFactory commandFactory = new CommandFactory();
+          FormatFactory formatFactory = new FormatFactory();
+          OrientQueryFactory orientQueryFactory = new OrientQueryFactory();
+          OrientCLRconverter orientCLRconverter = new OrientCLRconverter();
 
-      CommandShemasExplicit commandShema_ = new CommandShemasExplicit(commandFactory, formatFactory,
-      new TokenMiniFactory(), new OrientQueryFactory());
+          CommandShemasExplicit commandShema_ = new CommandShemasExplicit(commandFactory, formatFactory,
+          new TokenMiniFactory(), new OrientQueryFactory());
 
-      repo = new OrientRepo(typeConverter, jsonMnager, tokenFactory, UrlShema, bodyShema, commandShema_
-      , webRequestManager, webResponseReader, commandFactory, formatFactory, orientQueryFactory, orientCLRconverter);
+          repo = new OrientRepo(typeConverter, jsonMnager, tokenFactory, UrlShema, bodyShema, commandShema_
+          , webRequestManager, webResponseReader, commandFactory, formatFactory, orientQueryFactory, orientCLRconverter);
 
-      repo.BindDbName(dbName);
-      repo.CreateDb();
+          repo.BindDbName(dbName);
+          repo.CreateDb();
 
-      mng=new Managers.Manager(dbName);
-      mng.GenDB(false);
-      mng.GenNewsComments(news_,comments_);   
-    }
+          mng=new Managers.Manager(dbName);
+          mng.GenDB(false,false);
+          mng.GenNewsComments(news_,comments_);   
+        }
     
-    ~IntegrationRepoCheck()
-    {
-      mng.DeleteDB();
-    }
+        ~IntegrationRepoCheck()
+        {
+          mng.DeleteDB();
+        }
 
-    [Fact]
-    public void RepoCreateClassCheck()
-    {
-      OrientEntity cl=repo.CreateClassTp<OrientEntity>(typeof(POCO.TestNews),typeof(V),dbName);
+        [Test]
+        public void RepoCreateClassCheck()
+        {
+          OrientEntity cl=repo.CreateClassTp<OrientEntity>(typeof(POCO.TestNews),typeof(V),dbName);
 
-      Assert.NotNull(cl);
+          Assert.NotNull(cl);
+        }
+        [Test]
+        public void RepoGetClassCheck()
+        {
+          OrientEntity cl=repo.CreateClassTp<OrientEntity>(typeof(POCO.TestNews),typeof(V),dbName);      
+          OrientClass clRet=repo.GetClass<POCO.TestNews>(dbName,null);
+          Assert.NotNull(clRet);
+        }
+        [Test]
+        public void RepoGetDbCheck()
+        {
+          OrientEntity cl=repo.CreateClassTp<OrientEntity>(typeof(POCO.TestNews),typeof(V),dbName);      
+          OrientDatabase dbPs = repo.GetDb(null, null);
+          Assert.NotNull(dbPs);
+        }
+       
     }
-    [Fact]
-    public void RepoGetClassCheck()
-    {
-      OrientEntity cl=repo.CreateClassTp<OrientEntity>(typeof(POCO.TestNews),typeof(V),dbName);      
-      OrientClass clRet=repo.GetClass<POCO.TestNews>(dbName,null);
-      Assert.NotNull(clRet);
-    }
-    [Fact]
-    public void RepoGetDbCheck()
-    {
-      OrientEntity cl=repo.CreateClassTp<OrientEntity>(typeof(POCO.TestNews),typeof(V),dbName);      
-      OrientDatabase dbPs = repo.GetDb(null, null);
-      Assert.NotNull(dbPs);
-    }
-
-  }
 
 }
 
@@ -2578,7 +2576,7 @@ List<Commentary> comments_ = new List<Commentary>() { };
       mng=new Managers.Manager(dbName,orientHost);
       
       System.Diagnostics.Trace.WriteLine("Db create start");
-      mng.GenDB();
+      mng.GenDB(true,false);
       System.Diagnostics.Trace.WriteLine("Db create finished");
       System.Diagnostics.Trace.WriteLine("notes create start");
       mng.GenNewsComments(null,null);
@@ -2857,24 +2855,26 @@ List<Note> notes0 = nu.GetByOffset(ns.ToList()[0].GUID, 3).ToList();
     {
       nu.DeleteItems<Tagged>(nu.GetItems<Tagged>());
       nu.DeleteItems<Tag>(nu.GetItems<Tag>());
-      int cntr=3;
+      int cntr=0;
 
       List<Tag> tagsAdd=new List<Tag>();
       foreach(Tag tag_ in tags){
       Tag tagTm = nu.AddTag(tag_);
-      if(tagTm!=null){tagsAdd.Add(tagTm);}}    
+      if(tagTm!=null){tagsAdd.Add(tagTm);}}
+      List<Tagged> taggs = new List<Tagged>();
 
       Person personWithNews=nu.GetPersonsWithNews(null).ToList()[0];
       IEnumerable<News> news_=nu.GetPersonNews(personWithNews);
       foreach(News ns in news_)
       {
-        nu.ToTag(ns,tagsAdd[0]);
+        taggs.Add(nu.ToTag(ns,tagsAdd[0]));        
       }
-      
-      int? notesTagged=nu.GetPersonNewsHCSelectCond(5, null, null, true, null, tagsAdd[0], personWithNews).ToList().Count();
+
+      cntr =(from s in taggs where s!=null select s).Count();
+      int? notesTagged=nu.GetPersonNewsHCSelectCond(5,null,null,true,null,tagsAdd[0],personWithNews).ToList().Count();
       nu.DeleteItems<Tagged>(nu.GetItems<Tagged>());
       nu.DeleteItems<Tag>(nu.GetItems<Tag>());
-      Assert.AreNotEqual(cntr,notesTagged);
+      Assert.AreEqual(cntr,notesTagged);
     }
 
     [Test]
@@ -2961,9 +2961,9 @@ namespace NSQLManagerFunctionalTests
         
     public ManagerTests()
     {
-      string testDbName = "tes_db_FuncitonalTests";
+      string testDbName = "test_db_FuncitonalTests";
       mng=new Managers.Manager(testDbName);
-      mng.GenDB();
+      mng.GenDB(true,false);
       mng.GenNewsComments(null,null);
 
       string host_=string.Format("{0}:{1}"
@@ -2979,7 +2979,7 @@ namespace NSQLManagerFunctionalTests
       ,ConfigurationManager.AppSettings["OrientDevHost"]
       ,ConfigurationManager.AppSettings["OrientPort"]);
 
-      personSourceManager = new Managers.Manager(ConfigurationManager.AppSettings["OrientSourceDB"]);
+      personSourceManager=new Managers.Manager(ConfigurationManager.AppSettings["OrientSourceDB"]);
       IOrientRepo personRepo=RepoFactory.NewOrientRepo(ConfigurationManager.AppSettings["OrientSourceDB"]
       ,personHost_
       ,ConfigurationManager.AppSettings["orient_login"]
@@ -3053,7 +3053,7 @@ namespace NSQLManagerFunctionalTests
       Assert.AreNotEqual(0,cntAct);
     }
     [Test]
-    public void ManagerPostNewsByAccountCCheck()
+    public void ManagerPostNewsCheck()
     {
       News news_=new News(){content="tc_0",pic=string.Empty};
       string result=mng.PostNews(news_);
@@ -3063,7 +3063,7 @@ namespace NSQLManagerFunctionalTests
       Assert.NotNull(note_);
     }
     [Test]
-    public void ManagerPostCommentByAccountCheck()
+    public void ManagerPostCommentCheck()
     {
       Commentary comment_=new Commentary(){content="tc_01",pic=string.Empty};
       News news=repo.SelectFromType<News>(null, null).Take(1).ToList()[0];
@@ -3073,7 +3073,7 @@ namespace NSQLManagerFunctionalTests
       Assert.NotNull(news_);
     }
     [Test]
-    public void ManagerPutCommentByAccountCCheck()
+    public void ManagerPutCommentCheck()
     {
       News news=repo.SelectFromType<News>(null, null).Where(s=>s.author_!=null).Take(1).ToList()[0];
       Note noteBefore=NoteFieldsBind(news);
