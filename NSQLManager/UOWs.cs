@@ -201,7 +201,7 @@ namespace PersonUOWs
     public Person GetPersonByAccount(string accountName_)
     {
       Person result=null;
-      var a=from s in _repo.Props<Person>().ToList() where s.Name=="sAMAccountName" select s;
+      //var a=from s in _repo.Props<Person>().ToList() where s.Name=="sAMAccountName" select s;
       result=_repo.SelectSingle<Person>("sAMAccountName='" + accountName_+"'", null);
       return result;
     }
@@ -232,6 +232,15 @@ namespace PersonUOWs
       Person result = null;
         result = _repo.CreateVertex<Person>(p_,null);
       return result;
+    }
+
+    public List<Person> Managers()
+    {
+      List<Person> persons_ = new List<Person>();
+        WebManager wm = new WebManager("root","I9grekVmk5g");
+        JSONManager jm = new JSONManager();
+        
+      return persons_;
     }
 
   }
@@ -369,7 +378,7 @@ namespace NewsUOWs
     {
         return _repo.SelectOutEInV<Person,Authorship, News>(p_);
     }    
-    //Get News with parameters to hardcoded query string. hardcoded select    
+    //Get News with parameters to hardcoded query string. hardcoded select
     public IEnumerable<Note> GetPersonNewsHCSelectCond(int? offset,bool? published_,bool? pinned_,bool? asc,bool? liked,Tag tag_,Person p_)
     {
       string cond_=null;
@@ -676,7 +685,7 @@ namespace NewsUOWs
               note_.Likes=GetLikesCountHC(note_).Likes;
               note_=UpdateNote(note_);
               if(note_==null){
-                _repo.Delete<Liked>(result);
+                _repo.Delete<Liked>(result,null,null);
                 throw new Exception("Ups... Note failed to update. Like deleted.");
               }
             }else{throw new Exception("Ups... No Like created.");}
@@ -761,9 +770,9 @@ namespace NewsUOWs
       if(tag_!=null){
         IEnumerable<Tagged> taggeds=_repo.SelectFromType<Tagged>("in.rid="+tag_.id, null);
         foreach(Tagged ref_ in taggeds){
-          _repo.Delete<Tagged>(ref_);          
+          _repo.Delete<Tagged>(ref_,null,null);          
         }
-        _repo.Delete<Tag>(tag_);
+        _repo.Delete<Tag>(tag_,null,null);
       }else{ return null;}
      return tag_;
     }
@@ -846,6 +855,8 @@ namespace Managers
     PersonUOW _personUOW;
     QuizUOW _quizUOW;
 
+    QuizNewUOW _quizUOWNew;
+
     /// <summary>
     /// Dictionary for storing new UOWs
     /// </summary>
@@ -855,9 +866,9 @@ namespace Managers
     string _dbHost;
     
     public Manager(string dbName_=null,string url_=null,string login_=null,string password_=null)
-    {   
+    {
     
-      string login =string.IsNullOrEmpty(login_)?ConfigurationManager.AppSettings["orient_login"]:login_;
+      string login=string.IsNullOrEmpty(login_)?ConfigurationManager.AppSettings["orient_login"]:login_;
       string password=string.IsNullOrEmpty(password_)?ConfigurationManager.AppSettings["orient_pswd"]:password_;
 
       if(string.IsNullOrEmpty(login)||string.IsNullOrEmpty(password)){throw new Exception("Credentials not passed");}
@@ -865,7 +876,7 @@ namespace Managers
       try{
 
         _dbName=string.IsNullOrEmpty(dbName_) 
-        ?ConfigurationManager.AppSettings["OrientUnitTestDB"]
+        ?ConfigurationManager.AppSettings["OrientDevDB"]
         :dbName_ ;
             
         _dbHost=string.IsNullOrEmpty(url_)
@@ -904,8 +915,9 @@ namespace Managers
     }
     void initializeUOWs()
     {
-      _newsUOW=new NewsRealUow(this._repo);
-      _personUOW=new PersonUOW(this._repo);
+        _newsUOW=new NewsRealUow(this._repo);
+        _personUOW=new PersonUOW(this._repo);
+        _quizUOW=new QuizUOW(this._repo);
     }
     
     public void BindUOW(IUOW uow_,string UOWname)
@@ -948,6 +960,12 @@ namespace Managers
       return WebManagers.UserAuthenticationMultiple.UserAcc();
     }
     
+    public string GetGUIDByAcc(string accName_){
+      string result = string.Empty;
+        result = this._personUOW.GetPersonByAccount(accName_).GUID;
+      return result;
+    }  
+
     public string GetNotes(string GUID_,int offset)
     {
       string res_ = null;
@@ -1128,6 +1146,17 @@ namespace Managers
       return result;
     }
 
+    public string GetQuizNew(){
+        string res = null;
+            _quizUOWNew.QuizGetStr();
+        return res;
+    }
+    public string POSTQuizNew(IEnumerable<QuizNewGet> quizes_){
+        string res = null;
+            _quizUOWNew.QuizPost(quizes_);
+        return res;
+    }
+
     [Obsolete]
     public string GetNewsByTag(Tag tag_)
     {
@@ -1157,10 +1186,11 @@ new Person(){Seed=456,Name="0",GUID="001",changed=new DateTime(2017,01,01,00,00,
         MainAssignment mainAssignment=new MainAssignment();
         string pone=_repo.ObjectToContentString<Person>(personOne);
         List<Person> personsToAdd = new List<Person>() {
-        //unit testing users
+
 new Person(){Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)}
-,new Person(){Seed =124,Name="YablokovAE",sAMAccountName="YablokovAE",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)}  
+,new Person(){Seed =124,Name="YablokovAE",sAMAccountName="YablokovAE",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)}
 ,new Person(){Seed =125,Name="admin",sAMAccountName="admin",changed=new DateTime(2017,01,01,00,00,00),created=new DateTime(2017,01,01,00,00,00)}
+
 };
 
         Unit u = new Unit() { Name = "Unit1" };
@@ -1288,7 +1318,7 @@ new Person(){Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",changed
       bool res = dtStr.Equals(dtStrRegen);
 
       string sourceHost = string.Format("{0}:{1}"
-      ,ConfigurationManager.AppSettings["OrientDevHost"],ConfigurationManager.AppSettings["OrientPort"]);
+      ,ConfigurationManager.AppSettings["OrientProdHost"],ConfigurationManager.AppSettings["OrientPort"]);
 
       //Add custom Unit of work for receiving news_test5 users from dev db.
       PersonUOWs.PersonUOW _sourceUOW=
@@ -1296,12 +1326,9 @@ new Person(){Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",changed
       ConfigurationManager.AppSettings["OrientSourceDB"]
       ,sourceHost
       ,ConfigurationManager.AppSettings["orient_login"]
-      ,ConfigurationManager.AppSettings["orient_pswd"]));    
-
-
+      ,ConfigurationManager.AppSettings["orient_prod_pswd"]));    
       Person person_=_sourceUOW.GetPersonByAccount("Neprintsevia");
       string str=_newsUOW.UOWserialize<Person>(person_);
-
       Person pr=_repo.CreateVertex<Person>(str);
 
       personsAdded=_newsUOW.GetItems<Person>(null).ToList();         
@@ -1453,6 +1480,14 @@ new Person(){Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",changed
       return list_;
     }
    
+    public string SearchByName(string name)
+    {
+      string res = null;
+      JSONManager jm = new JSONManager();
+      res=jm.SerializeObject(this._personUOW.SearchByName(name));     
+      return res;
+    }
+
     public void DeleteDB()
     {
       _repo.DeleteDb(_dbName);
@@ -1883,7 +1918,7 @@ namespace AdinTce
 namespace Quizes
 {
 
-    public class QuizRepo
+    public class QuizRepoOLD
     {
 
         //IWebManager wm;
@@ -1891,7 +1926,7 @@ namespace Quizes
         IJsonManger jm;
         string orientHost, orientDbName;
 
-        public QuizRepo()
+        public QuizRepoOLD()
         {
             string nonConfigDb="Intranet";
             //wm=new WebManager();
@@ -2137,89 +2172,165 @@ namespace Quizes
 
     public class QuizUOW : UOW
     {
-      public QuizUOW(IOrientRepo repo_)
-        :base(repo_)
-      {
-        BindRepo(repo_);
-      }
-      JSONManager jm = new JSONManager();
-
-      public IEnumerable<Quiz> QuizGetAll()
-      {
-        IEnumerable<Quiz> quizes = null;
-          quizes=_repo.SelectByCondFromType<Quiz>(typeof(Quiz), " and 1=1", null);
-        return quizes;
-      }           
-      public IEnumerable<Quiz> QuizGetByDate(DateTime st_,DateTime fn_)
-      {
-        IEnumerable<Quiz> quizes = null;
-          string st = "'" +st_.ToString("yyyy-MM-dd HH:mm:ss")+"'";
-          string fn = "'" +fn_.ToString("yyyy-MM-dd HH:mm:ss")+"'";
-
-          quizes=_repo.SelectByCondFromType<Quiz>(typeof(Quiz), " and State ='Published' and StartDate.asDate() >" + st + " and EndDate.asDate() < " +fn, null);
-
-        return quizes;
-      }     
-
-      public string GetQuizByMonthGap(int? month_)
-      {
-        string result = string.Empty;
-        IEnumerable<Quiz> quizes = null;
-        List<QuizSend> quizesToSend = null;
-        if(month_==null){
-          quizes=QuizGetAll();       
-        }
-        else{
-          DateTime dateSt = DateTime.Now.Date.AddMonths((int)month_);
-          DateTime dateFn = DateTime.Now.Date.AddMonths((int)month_).AddMonths(1).AddMilliseconds(-1);
-          quizes=QuizGetByDate(dateSt, dateFn);
-        }
-        quizesToSend=ReturnQuizGet(quizes);
-        result=jm.SerializeObject(quizesToSend);
-        return result;
-      }
-
-      public List<QuizSend> ReturnQuizGet(IEnumerable<Quiz> quizes_)
-      {
-        List<QuizSend> _quizes = new List<QuizSend>();
-        foreach(Quiz qg in quizes_)
+        public QuizUOW(IOrientRepo repo_)
+            :base(repo_)
         {
-          if(qg!=null){
-            QuizSend qs = QuizGetToSendConvert(qg);
-            if(qs!=null){ _quizes.Add(qs); }
+            BindRepo(repo_);
+        }
+        JSONManager jm = new JSONManager();
+
+        public IEnumerable<QuizGet> QuizGetAll()
+        {
+          IEnumerable<QuizGet> quizes = null;
+            quizes=_repo.SelectByCondFromType<QuizGet>(typeof(Quiz), " and 1=1", null);
+          return quizes;
+        }           
+        public IEnumerable<QuizGet> QuizGetByDate(DateTime st_,DateTime fn_)
+        {
+          IEnumerable<QuizGet> quizes = null;
+            string st = "'" +st_.ToString("yyyy-MM-dd HH:mm:ss")+"'";
+            string fn = "'" +fn_.ToString("yyyy-MM-dd HH:mm:ss")+"'";
+
+            quizes=_repo.SelectByCondFromType<QuizGet>(typeof(Quiz), " and State ='Published' and StartDate.asDate() >" + st + " and EndDate.asDate() < " +fn, null);
+
+          return quizes;
+        }     
+
+        public string GetQuizByMonthGap(int? month_)
+        {
+          string result = string.Empty;
+          IEnumerable<QuizGet> quizes = null;
+          List<QuizSend> quizesToSend = null;
+          if(month_==null){
+              quizes=QuizGetAll();
+          }else{
+              DateTime dateSt = DateTime.Now.Date.AddMonths((int)month_);
+              DateTime dateFn = DateTime.Now.Date.AddMonths((int)month_).AddMonths(1).AddMilliseconds(-1);
+              quizes=QuizGetByDate(dateSt, dateFn);
           }
+          if(quizes!=null){
+            quizesToSend=ReturnQuizGet(quizes);
+            result=jm.SerializeObject(quizesToSend);
+          }
+          return result;
         }
-        return _quizes;
-      }
 
-      /// <summary>
-      /// Converting of Quiz received object to Quiz to pass in JSON object
-      /// </summary>
-      /// <param name="qr"></param>
-      /// <returns></returns>
-      public QuizSend QuizGetToSendConvert(Quiz qr)
-      {
-          QuizSend qs=new QuizSend();
-          qs.title=qr.Name;
-          qs.href=new QuizHrefNode() {link="/Quiz/Execute/?" + qr.id , target="_self"};
-          qs.parentid=50;
+        public List<QuizSend> ReturnQuizGet(IEnumerable<QuizGet> quizes_)
+        {
+            List<QuizSend> _quizes=new List<QuizSend>();
+            foreach(QuizGet qg in quizes_)
+            {
+              if(qg!=null){
+                QuizSend qs=QuizGetToSendConvert(qg);
+                if(qs!=null){ _quizes.Add(qs); }
+              }
+            }
+            return _quizes;
+        }
+
+        /// <summary>
+        /// Converting of Quiz received object to Quiz to pass in JSON object
+        /// </summary>
+        /// <param name="qr"></param>
+        /// <returns></returns>
+        public QuizSend QuizGetToSendConvert(QuizGet qr)
+        {
+            QuizSend qs=new QuizSend();
+            qs.title=qr.Name;
+            qs.href=new QuizHrefNode() {link="/Quiz/Execute/?" + qr.id , target="_self"};
+            qs.parentid=50;
           
-          return qs;
-      }
+            return qs;
+        }
     }
-
-    public static class QuizUOWTest
+    
+    public class QuizNewUOW : UOW
     {
-      public static void GO()
-      {
-        Managers.Manager mng=new Managers.Manager("Intranet","http://msk1-vm-indb01.nspk.ru:2480","root","mR%mzJUGq1E");
-        IOrientRepo repo = mng.GetRepo();
-        if(repo.GetDb()!=null){
-          QuizUOW qu = new QuizUOW(repo);
-          string quizAll=qu.GetQuizByMonthGap(null);
-          string quizByDate = qu.GetQuizByMonthGap(-9);
+
+        public QuizNewUOW(IOrientRepo repo_)
+            :base(repo_)
+        {
+          BindRepo(repo_);
         }
 
-      }
+        public void InitClasses()
+        {
+            _repo.Delete<QuizNewGet>(null, typeof(V), null, this._repo.getDbName());
+            _repo.CreateClass<QuizNewGet, V>(this._repo.getDbName());
+            _repo.CreateProperty<QuizNewGet>(new QuizNewGet(), null);
+        }
+
+        public void QuizGenerate()
+        {
+            this.InitClasses();
+            List<QuizNewGet> qzSend = new List<QuizNewGet>(){
+                    new QuizNewGet(){key=0,name="quiz 1", dateFrom=DateTime.Now,dateTo=DateTime.Now,
+                    questions_= new List<Question>(){
+
+                    new Question(){key=0,name="quiestion 1",value="question 1",toStore=true,type="checkbox",answers=new List<Answer>(){
+                    new Answer(){key=0,name="answer 1",value="answer 1"}
+                    ,new Answer(){key=1,name="answer 2",value="answer 2"}}}
+                        
+                    ,new Question(){key=0,name="quiestion 2",value="question 2",toStore=true,type="checkbox",answers=new List<Answer>(){
+                    new Answer(){key=0,name="answer 1",value="answer 1"}
+                    ,new Answer(){key=1,name="answer 2",value="answer 2"}
+                    ,new Answer(){key=2,name="answer 3",value="answer 3"}}}
+
+                    }
+                }
+                , new QuizNewGet(){key=0,name="quiz 2", dateFrom=DateTime.Now,dateTo=DateTime.Now,
+                      questions_= new List<Question>(){
+
+                        new Question(){key=0,name="quiestion 1",value="question 1",toStore=true,type="text"}
+                        
+                        ,new Question(){key=0,name="quiestion 2",toStore=true,type="checkbox",answers=new List<Answer>(){
+                        new Answer(){key=0,name="answer 1",value="answer 1"}
+                        ,new Answer(){key=1,name="answer 2",value="answer 2"}
+                        ,new Answer(){key=2,name="answer 3",value="answer 3"}}}
+
+                    }
+                }
+            };
+            this.QuizDelete(this.QuizGet());
+            this.QuizPost(qzSend);
+        }
+
+        public IEnumerable<QuizNewGet> QuizGet()
+        {
+            IEnumerable<QuizNewGet> quizes = null;           
+            quizes=_repo.SelectFromType<QuizNewGet>(null, this._repo.getDbName());
+            return quizes;
+        }
+        public QuizNewGet QuizGetItem(string guid_)
+        {
+            QuizNewGet quizes = null;           
+              quizes=_repo.SelectSingle<QuizNewGet>("GUID=='"+guid_+"'", this._repo.getDbName());
+            return quizes;
+        }
+        public string QuizGetStr()
+        {
+            string result = null;
+            result=_repo.ObjectToContentString<QuizNewGet>(QuizGet());
+            return result;
+        }
+
+        public void QuizPost(IEnumerable<QuizNewGet> quizes_)
+        {
+            QuizDelete(QuizGet());
+            foreach(QuizNewGet qz_ in quizes_){
+                _repo.CreateVertex<QuizNewGet>(qz_, this._repo.getDbName());
+            }
+        }
+        
+        public void QuizDelete(IEnumerable<QuizNewGet> quizes_)
+        {
+            foreach(QuizNewGet qz_ in quizes_){
+                QuizNewGet qzToDelete = this.QuizGetItem(qz_.GUID);
+                if(qzToDelete!=null){
+                    _repo.Delete<QuizNewGet>(qzToDelete,typeof(V), null,this._repo.getDbName());
+                }
+            }            
+        }
     }
 }
+
