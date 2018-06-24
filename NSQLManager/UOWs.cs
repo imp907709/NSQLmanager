@@ -1497,7 +1497,268 @@ new Person(){Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",changed
 
 }
 
+namespace DbSync
+{
 
+    /// <summary>
+    /// Mooves orient database (Classes with properties, vertices and edges with GUID)  
+    /// from one Manager to another with some options.
+    /// </summary>
+    public static class MooveDB
+    {
+        static TypeConverter tc = new TypeConverter();
+        static IOrientRepo targetRepo_, sourceRepo_;
+        static List<NodeReferenceConditional> conditionalItems;
+
+        static void ConditionalItemsInit(List<IOrientObjects.IOrientDefaultObject> mooveClasses)
+        {
+            conditionalItems = new List<NodeReferenceConditional>();
+            foreach (OrientDefaultObject tp_ in mooveClasses.Where(s => s.GetType().BaseType == typeof(V)))
+            {
+                if (tp_ != null) { conditionalItems.Add(new NodeReferenceConditional() { orientItem = tp_, processed = false }); }
+            }
+            foreach (OrientDefaultObject tp_ in mooveClasses.Where(s => s.GetType().BaseType == typeof(E)))
+            {
+                if (tp_ != null) { conditionalItems.Add(new NodeReferenceConditional() { orientItem = tp_, processed = false }); }
+            }
+        }
+        public static List<IOrientObjects.IOrientDefaultObject> GetClasses(List<IOrientObjects.IOrientDefaultObject> list_)
+        {
+            return list_;
+        }
+        public static OrientDatabase Migrate(Managers.Manager to_, Managers.Manager from_, List<IOrientObjects.IOrientDefaultObject> mooveClasses
+        , List<IOrientObjects.IOrientDefaultObject> mooveObjects, bool dropAndCreateIfExists = false, bool generate = false)
+        {
+            OrientDatabase result = null;
+
+            bool allreadyExists = false;
+
+            if (to_ == null) { throw new Exception("No from DB passed"); }
+            targetRepo_ = to_.GetRepo();
+            if (targetRepo_ == null) { throw new Exception("No from repo exists"); }
+
+            OrientDatabase dbTo = targetRepo_.GetDb();
+
+            if (dropAndCreateIfExists == true)
+            {
+                //drop and create db
+                if (dbTo != null) { targetRepo_.DeleteDb(); }
+                targetRepo_.CreateDb();
+                if (targetRepo_.GetDb() == null) { throw new Exception("Db was not recreated"); }
+            }
+            if (from_ != null)
+            {
+                //moove db
+                sourceRepo_ = from_.GetRepo();
+                if (sourceRepo_ == null) { throw new Exception("No from repo exists"); }
+                OrientDatabase dbFrom = sourceRepo_.GetDb();
+                dbFrom = sourceRepo_.GetDb();
+                dbTo = targetRepo_.GetDb();
+                if (dbTo == null)
+                { throw new Exception("No target database exists"); }
+                if (dbFrom == null)
+                { throw new Exception("No source database exists"); }
+
+                if (mooveClasses != null && mooveClasses.Count() > 0)
+                {
+                    MooveClasses(targetRepo_, sourceRepo_, mooveClasses);
+
+                    foreach (OrientDefaultObject oL_ in mooveClasses)
+                    {
+                        targetRepo_.CreateProperty<OrientDefaultObject>(oL_, null);
+                    }
+                }
+                if (mooveObjects != null && mooveObjects.Count() > 0)
+                {
+                    ConditionalItemsInit(mooveObjects);
+                    MooveObject();
+
+                    /*
+                    MooveObjectsOfClass<Person>(targetRepo_,sourceRepo_);
+                    MooveObjectsOfClass<Unit>(targetRepo_,sourceRepo_);       
+
+                    MooveObjectsOfClass<SubUnit>(targetRepo_,sourceRepo_);
+                    MooveObjectsOfClass<MainAssignment>(targetRepo_,sourceRepo_);
+                    MooveObjectsOfClass<OldMainAssignment>(targetRepo_,sourceRepo_);
+                    */
+                }
+                /*
+                MooveObjectsOfClass<UserSettings>(targetRepo_,sourceRepo_);
+                MooveObjectsOfClass<CommonSettings>(targetRepo_,sourceRepo_);
+
+
+                MooveObjectsOfClass<PersonRelation>(targetRepo_,sourceRepo_);
+                */
+            }
+            if (generate == true)
+            {
+                //generate scenery to existing
+                to_.GenDB(false, false);
+                to_.GenNewsComments(null, null);
+            }
+
+            targetRepo_.StoreDbStatistic(null, null);
+            return result;
+        }
+
+        static void MooveClasses(IOrientRepo targetRepo, IOrientRepo sourceRepo, List<IOrientObjects.IOrientDefaultObject> mooveClasses)
+        {
+            TypeConverter tc = new TypeConverter();
+            OrientDatabase dbFrom = sourceRepo.GetDb(null, null);
+
+            foreach (OrientDefaultObject do_ in mooveClasses)
+            {
+                OrientClass oc = (from s in dbFrom.classes where s.name == do_.GetType().Name select s).FirstOrDefault();
+                if (oc != null)
+                {
+                    CreateClassRec(oc);
+                }
+            }
+        }
+        static void CreateClassRec(OrientClass class_)
+        {
+            OrientClass _class = targetRepo_.GetClass(class_.name, null, null);
+            if (_class == null)
+            {
+                if (class_.superClass != null)
+                {
+                    OrientClass superClass = targetRepo_.GetClass(class_.superClass, null, null);
+                    if (superClass == null)
+                    {
+                        superClass = sourceRepo_.GetClass(class_.superClass, null, null);
+                        if (superClass == null) { throw new Exception("no superclass in sourcedb found"); }
+                        CreateClassRec(superClass);
+                    }
+                    class_ = targetRepo_.CreateClass(class_.name, superClass.name, null).GetClass(class_.name, null, null);
+                }
+                else
+                {
+                    class_ = targetRepo_.CreateClass(class_.name, null, null).GetClass(class_.name, null, null);
+                }
+                if (class_ == null) { throw new Exception("failed to create class"); }
+            }
+        }
+
+        static void MooveObjectsOfClass<T>(IOrientRepo targetRepo, IOrientRepo sourceRepo)
+            where T : class, IOrientObjects.IOrientDefaultObject
+        {
+            List<T> arbitraryObjects = new List<T>();
+            foreach (T p in sourceRepo.SelectFromType<T>(null, null))
+            {
+                T pc = null;
+                try
+                {
+                    if (p.GetType().BaseType == typeof(V))
+                    {
+                        pc = targetRepo.CreateVertex<T>(p, null);
+                    }
+                    if (p.GetType().BaseType == typeof(E))
+                    {
+                        POCO.OrientEdge io = p as POCO.OrientEdge;
+                        POCO.V vFrom =
+                        sourceRepo.SelectByIDWithCondition<POCO.V>(io.In, null, null).FirstOrDefault();
+                        POCO.V vTo =
+                        sourceRepo.SelectByIDWithCondition<POCO.V>(io.Out, null, null).FirstOrDefault();
+
+                        vTo = targetRepo.SelectFromType<POCO.V>("GUID='" + vTo.GUID + "'", null).FirstOrDefault();
+
+                        pc = targetRepo.CreateEdge<T>(p, vFrom, vTo, null) as T;
+                    }
+                    if (pc == null) { if (arbitraryObjects != null) { arbitraryObjects.Add(p); } }
+                }
+                catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
+            }
+            if (arbitraryObjects.Count() > 0)
+            {
+                CheckListOfObjects(targetRepo, arbitraryObjects);
+            }
+        }
+        static void CheckListOfObjects<T>(IOrientRepo targetRepo, List<T> unaddedObjects) where T : class, IOrientObjects.IOrientDefaultObject
+        {
+            T pc = null;
+            foreach (T p in unaddedObjects)
+            {
+                pc = targetRepo.SelectFromType<T>("GUID='" + p.GUID + "'", null).FirstOrDefault();
+                if (pc == null)
+                {
+                    try
+                    {
+                        if (p.GetType().BaseType == typeof(V))
+                        {
+                            pc = targetRepo.CreateVertex<T>(p, null);
+                        }
+                        if (p.GetType().BaseType == typeof(E))
+                        {
+                            IOrientObjects.IOrientEdge io = p as IOrientObjects.IOrientEdge;
+                            IOrientObjects.IOrientVertex vFrom = targetRepo.SelectByIDWithCondition<T>(io.In, null, null).FirstOrDefault() as IOrientObjects.IOrientVertex;
+                            IOrientObjects.IOrientVertex vTo = targetRepo.SelectByIDWithCondition<T>(io.Out, null, null).FirstOrDefault() as IOrientObjects.IOrientVertex;
+                            pc = targetRepo.CreateEdge<IOrientObjects.IOrientDefaultObject>(p, vFrom, vTo, null) as T;
+                        }
+                    }
+                    catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
+                }
+            }
+        }
+
+        //If object classes list passed, handles object movement from source to target
+        static void MooveObject()
+        {
+            if (conditionalItems != null && conditionalItems.Count() > 0)
+            {
+                //Loop throught every assed class
+                foreach (NodeReferenceConditional conditionalreference_ in conditionalItems)
+                {
+                    IOrientObjects.IOrientDefaultObject objectClass_ = conditionalreference_.orientItem;
+
+                    //for Nodes
+                    if (objectClass_.GetType().BaseType.Equals(typeof(V)))
+                    {
+                        //get all objects of class from base
+                        IEnumerable<IOrientObjects.IOrientDefaultObject> tempVert = sourceRepo_.SelectRefl(objectClass_.GetType(), null);
+                        if (tempVert != null && tempVert.Count() > 0)
+                        {
+                            //for every Node just simple create
+                            foreach (V vToInsert in tempVert)
+                            {
+                                Type tp = vToInsert.GetType();
+                                IOrientObjects.IOrientDefaultObject vInserted = targetRepo_.CreateVertexTp(vToInsert, null);
+                                if (vInserted == null) { throw new Exception("vertex was not mooved"); }
+                            }
+                        }
+                    }
+
+                    //for References
+                    if (objectClass_.GetType().BaseType.Equals(typeof(E)))
+                    {
+                        //get all objects of class from base
+                        IEnumerable<IOrientObjects.IOrientDefaultObject> tempVert = sourceRepo_.SelectRefl(objectClass_.GetType(), null);
+                        //for every Node just simple create
+                        foreach (E eToInsert in tempVert)
+                        {
+                            //get related Nodes from source DB by referenced rIDs
+                            V vFrom = sourceRepo_.SelectByIDWithCondition<V>(eToInsert.In, null, null).FirstOrDefault();
+                            V vTo = sourceRepo_.SelectByIDWithCondition<V>(eToInsert.Out, null, null).FirstOrDefault();
+                            if (vFrom == null || vTo == null) { throw new Exception("no in or out Node in source db"); }
+
+                            //get related Nodes in target DB by GUIDs of source DB Nodes
+                            V vFromToIns = targetRepo_.SelectByCondFromType<V>(typeof(V), "GUID='" + vFrom.GUID + "'", null).FirstOrDefault();
+                            V vToToIns = targetRepo_.SelectByCondFromType<V>(typeof(V), "GUID='" + vTo.GUID + "'", null).FirstOrDefault();
+                            if (vFromToIns == null || vToToIns == null) { throw new Exception("no in or out Node in target db"); }
+
+                            //create relation inn target DB between Nodes related in source DB
+                            E eInserted = targetRepo_.CreateEdge<E>(eToInsert, vFromToIns, vToToIns, null);
+                            if (eInserted == null) { throw new Exception("no in or out Node in target db"); }
+                        }
+                    }
+
+
+                }
+
+            }
+        }
+    }
+
+}
 
 namespace AdinTce
 {
@@ -1517,14 +1778,14 @@ namespace AdinTce
 
         AdinTceExplicitTokenBuilder tokenBuilder;
 
-        AdinTcePOCO adp=new AdinTcePOCO();
-        List<Holiday> holidays=new List<Holiday>();
-        List<Vacation> vacations=new List<Vacation>();
-        IEnumerable<GraphRead> graphs=new List<GraphRead>();
-        IEnumerable<GUIDPOCO> guidpocos=new List<GUIDPOCO>();
+        AdinTcePOCO adp = new AdinTcePOCO();
+        List<Holiday> holidays = new List<Holiday>();
+        List<Vacation> vacations = new List<Vacation>();
+        List<GraphRead> graphs = new List<GraphRead>();
+        IEnumerable<GUIDPOCO> guidpocos = new List<GUIDPOCO>();
 
         string holidayCommand, vacationCommand, graphCommand,
-             holidaysResp=null, vacationsResp=null, graphResp=null;
+             holidaysResp = null, vacationsResp = null, graphResp = null;
 
         public AdinTceRepo(
             IQueryManagers.ICommandBuilder CommandBuilder_,
@@ -1532,99 +1793,107 @@ namespace AdinTce
             IWebManagers.IResponseReader responseReader_,
             IJsonManagers.IJsonManger jsonManager_)
         {
-          this._CommandBuilder=CommandBuilder_;
-          this._webManager=webManager_;
-          this._responseReader=responseReader_;
-          this._jsonManager=jsonManager_;
+            this._CommandBuilder = CommandBuilder_;
+            this._webManager = webManager_;
+            this._responseReader = responseReader_;
+            this._jsonManager = jsonManager_;
 
-          GUIDtoken=new AdinTceGUIDToken();
-          tokenBuilder=new AdinTceExplicitTokenBuilder();
-       }
+            GUIDtoken = new AdinTceGUIDToken();
+            tokenBuilder = new AdinTceExplicitTokenBuilder();
+        }
 
         public AdinTceRepo()
         {
 
-          this._CommandBuilder=new AdinTceCommandBuilder(new TokenMiniFactory(), new FormatFactory());
-          this._webManager=new AdinTceWebManager();
-          this._responseReader=new AdinTceResponseReader();
-          this._jsonManager=new AdinTceJsonManager();
+            this._CommandBuilder = new AdinTceCommandBuilder(new TokenMiniFactory(), new FormatFactory());
+            this._webManager = new AdinTceWebManager();
+            this._responseReader = new AdinTceResponseReader();
+            this._jsonManager = new AdinTceJsonManager();
 
-          _webManager.SetCredentials(new System.Net.NetworkCredential(
-              ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
+            _webManager.SetCredentials(new System.Net.NetworkCredential(
+                ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
 
-          GUIDtoken=new AdinTceGUIDToken();
-          tokenBuilder=new AdinTceExplicitTokenBuilder();
+            GUIDtoken = new AdinTceGUIDToken();
+            tokenBuilder = new AdinTceExplicitTokenBuilder();
         }
         public string HoliVation(string GUID)
         {
 
-            string result=string.Empty;
+            string result = string.Empty;
 
-            GUIDtoken.Text=GUID;
+            GUIDtoken.Text = GUID;
 
             _CommandBuilder.SetText(tokenBuilder.HolidaysCommand(GUIDtoken), new AdinTcePartformat());
-            holidayCommand=_CommandBuilder.GetText();
+            holidayCommand = _CommandBuilder.GetText();
             _CommandBuilder.SetText(tokenBuilder.VacationsCommand(GUIDtoken), new AdinTcePartformat());
-            vacationCommand=_CommandBuilder.GetText();
+            vacationCommand = _CommandBuilder.GetText();
             _CommandBuilder.SetText(tokenBuilder.GraphCommand(GUIDtoken), new AdinTcePartformat());
-            graphCommand=_CommandBuilder.GetText();
+            graphCommand = _CommandBuilder.GetText();
 
             GetResp();
 
             ParseResponseTry();
 
-            result=_jsonManager.SerializeObject(adp);
+            result = _jsonManager.SerializeObject(adp);
 
             return result;
         }
 
         void AdpCheck()
         {
-            if (adp==null)
+            if (adp == null)
             {
-                adp=new AdinTcePOCO();
+                adp = new AdinTcePOCO();
             }
-        
-            if (guidpocos.Count()==0&&(holidaysResp!=null||holidaysResp!=string.Empty))
+
+            if (guidpocos.Count() == 0 && (holidaysResp != null || holidaysResp != string.Empty))
             {
-                guidpocos=_jsonManager.DeserializeFromParentNode<GUIDPOCO>(holidaysResp);
-            }           
-            if (holidays.Count()==0&&(holidaysResp!=null||holidaysResp!=string.Empty))
+                guidpocos = _jsonManager.DeserializeFromParentNode<GUIDPOCO>(holidaysResp);
+            }
+            if (holidays.Count() == 0 && (holidaysResp != null || holidaysResp != string.Empty))
             {
-                IEnumerable<List<AdinTce.Holiday>> hl=_jsonManager.DeserializeFromParentChildren<List<Holiday>>(holidaysResp, "Holidays");                
+                IEnumerable<List<AdinTce.Holiday>> hl = _jsonManager.DeserializeFromParentChildren<List<Holiday>>(holidaysResp, "Holidays");
                 foreach (List<Holiday> lt_ in hl)
                 {
                     holidays.AddRange(lt_);
-                }                
+                }
             }
-            if (vacations.Count()==0&&(vacationsResp!=null&&vacationsResp!=string.Empty))
+            if (vacations.Count() == 0 && (vacationsResp != null && vacationsResp != string.Empty))
             {
 
-                IEnumerable<List<AdinTce.Vacation>> hl=_jsonManager.DeserializeFromParentChildren<List<Vacation>>(vacationsResp, "Holidays");
+                IEnumerable<List<AdinTce.Vacation>> hl = _jsonManager.DeserializeFromParentChildren<List<Vacation>>(vacationsResp, "Holidays");
                 vacations = new List<Vacation>();
                 foreach (List<Vacation> lt_ in hl)
                 {
                     vacations.AddRange(lt_);
-                }         
+                }
             }
-            if (adp.GUID_==null)
+            if (adp.GUID_ == null)
             {
-                adp.GUID_=guidpocos.Select(s => s).FirstOrDefault().GUID_;
+                adp.GUID_ = guidpocos.Select(s => s).FirstOrDefault().GUID_;
             }
-            if (adp.holidays==null)
+            if (adp.holidays == null)
             {
-                adp.Position=guidpocos.Select(s => s).FirstOrDefault().Position;
+                adp.Position = guidpocos.Select(s => s).FirstOrDefault().Position;
             }
-
+            if (graphs.Count() == 0)
+            {
+                IEnumerable<List<GraphRead>> gr = _jsonManager.DeserializeFromParentChildren<List<GraphRead>>(graphResp, "Holidays");
+                graphs = new List<GraphRead>();
+                foreach (List<GraphRead> gr_ in gr)
+                {
+                    graphs.AddRange(gr_);
+                }
+            }
         }
         void GetResp()
         {
-            Parallel.Invoke(new Action[] {HolidaysResp, VacationsResp, GraphResp});
+            Parallel.Invoke(new Action[] { HolidaysResp, VacationsResp, GraphResp });
         }
         private async Task<string> Request(string command_)
         {
             _webManager.AddRequest(command_);
-            Task<string> task_=Task.Run(
+            Task<string> task_ = Task.Run(
                     () =>
                         _responseReader.ReadResponse(_webManager.GetResponse("GET"))
                 );
@@ -1634,51 +1903,64 @@ namespace AdinTce
         void ParseResponseTry()
         {
 
-            if (holidaysResp != null && (holidaysResp != null ||holidaysResp!=string.Empty))
+            if (holidaysResp != null && (holidaysResp != null || holidaysResp != string.Empty))
             {
                 AdpCheck();
                 try
                 {
-                    adp.holidays=holidays.ToList();
+                    adp.holidays = holidays.ToList();
                 }
-                catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
+                catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
             }
 
-            if (vacationsResp != null && (vacationsResp!=null||vacationsResp != string.Empty))
+            if (vacationsResp != null && (vacationsResp != null || vacationsResp != string.Empty))
             {
                 AdpCheck();
                 try
                 {
-                    adp.vacations=vacations.OrderBy(s => s.DateStart).ToList();
+                    adp.vacations = vacations.OrderBy(s => s.DateStart).ToList();
                 }
-                catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
+                catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
             }
 
-            if (graphResp != null && (graphResp!=null|| graphResp != string.Empty))
+            if (graphResp != null && (graphResp != null || graphResp != string.Empty))
             {
 
                 AdpCheck();
+
+                Newtonsoft.Json.Linq.IJEnumerable<Newtonsoft.Json.Linq.JToken> res = Newtonsoft.Json.Linq.JToken.Parse(graphResp).Children()["Holidays"];
+                foreach (Newtonsoft.Json.Linq.JToken jt in res)
+                {
+                    try
+                    {
+                        string str = jt.ToString();
+                        IEnumerable<GraphRead> gr = jt.ToObject<IEnumerable<GraphRead>>();
+                    }
+                    catch (Exception e) { string err = e.Message; }
+                }
+
+
                 try
                 {
-                    //graphs=_jsonManager.DeserializeFromChildNode<GraphRead>(graphResp, "Holidays");
-                    graphs = _jsonManager.DeserializeFromParentChildren<GraphRead>(graphResp, "Holidays");
-                    //graphs = _jsonManager.DeserializeFromParentNode<GraphRead>(graphResp, "Holidays");
+                    //graphs =_jsonManager.DeserializeFromChildNode<GraphRead>(graphResp, "Holidays");
+                    //graphs = _jsonManager.DeserializeFromParentChildren<GraphRead>(graphResp, "Holidays");
+                    //graphs = _jsonManager.DeserializeFromParentNode<GraphRead>(graphResp, "Holidays");                 
 
-                    adp.Graphs=GrapthReadToWriteDateCheck(graphs.OrderBy(s=>s.DateStart).ToList());
+                    adp.Graphs = GrapthReadToWriteDateCheck(graphs.OrderBy(s => s.DateStart).ToList());
                 }
-                catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
+                catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
             }
         }
         public List<GraphWrite> GrapthReadToWriteDateCheck(List<GraphRead> ghl_)
         {
-            List<GraphWrite> gw=new List<GraphWrite>();
+            List<GraphWrite> gw = new List<GraphWrite>();
             foreach (GraphRead gr in ghl_)
-            {                
-                GraphWrite gfw=new GraphWrite();
-                if (gr.DateFinish==new DateTime()) {gfw.DateFinish=null;} else {gfw.DateFinish=gr.DateFinish;}
-                if (gr.DateStart==new DateTime()) {gfw.DateStart=null;} else {gfw.DateStart=gr.DateStart;}
-                gfw.LeaveType=gr.LeaveType;
-                gfw.DaysSpent=gr.DaysSpent;
+            {
+                GraphWrite gfw = new GraphWrite();
+                if (gr.DateFinish == new DateTime()) { gfw.DateFinish = null; } else { gfw.DateFinish = gr.DateFinish; }
+                if (gr.DateStart == new DateTime()) { gfw.DateStart = null; } else { gfw.DateStart = gr.DateStart; }
+                gfw.LeaveType = gr.LeaveType;
+                gfw.DaysSpent = gr.DaysSpent;
 
                 gw.Add(gfw);
 
@@ -1688,32 +1970,33 @@ namespace AdinTce
 
         void HolidaysResp()
         {
-            AdinTceWebManager webManagerAc=new AdinTceWebManager();
+            AdinTceWebManager webManagerAc = new AdinTceWebManager();
             webManagerAc.SetCredentials(new System.Net.NetworkCredential(
             ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
             webManagerAc.AddRequest(holidayCommand);
-            holidaysResp=_responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
+            holidaysResp = _responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
 
         }
         void VacationsResp()
         {
-            AdinTceWebManager webManagerAc=new AdinTceWebManager();
+            AdinTceWebManager webManagerAc = new AdinTceWebManager();
             webManagerAc.SetCredentials(new System.Net.NetworkCredential(
             ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
             webManagerAc.AddRequest(vacationCommand);
-            vacationsResp=_responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
+            vacationsResp = _responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
 
         }
         void GraphResp()
         {
-            AdinTceWebManager webManagerAc=new AdinTceWebManager();
+            AdinTceWebManager webManagerAc = new AdinTceWebManager();
             webManagerAc.SetCredentials(new System.Net.NetworkCredential(
             ConfigurationManager.AppSettings["AdinTceLogin"], ConfigurationManager.AppSettings["AdinTcePassword"]));
             webManagerAc.AddRequest(graphCommand);
-            graphResp=_responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
+            graphResp = _responseReader.ReadResponse(webManagerAc.GetResponse64("GET"));
         }
 
     }
+
 
     #endregion
 
@@ -2331,6 +2614,7 @@ namespace Quizes
                 }
             }            
         }
+    
     }
 }
 

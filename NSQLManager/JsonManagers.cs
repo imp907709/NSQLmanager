@@ -11,7 +11,7 @@ using System;
 
 namespace JsonManagers
 {
-  
+
     /// <summary>
     /// JSON manager revised 
     /// Newtonsoft JSON wrapper
@@ -32,7 +32,7 @@ namespace JsonManagers
         {
             IJEnumerable<JToken> result=null;
             try{
-            result=JToken.Parse(input).Children()[childNodeName];
+                result=JToken.Parse(input).Children()[childNodeName];
             }catch(Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
             return result;
         }
@@ -98,11 +98,11 @@ namespace JsonManagers
             T result = null;
             result = JsonConvert.DeserializeObject<T>(input);
             return result;
-        }
+        }        
 
         public string SerializeObject(object input_, JsonSerializerSettings settings_=null)
         {
-            string result=string.Empty;          
+            string result=string.Empty;
             result=JsonConvert.SerializeObject(input_, settings_);
             return result;
         }
@@ -119,13 +119,13 @@ namespace JsonManagers
                 NullValueHandling=NullValueHandling.Ignore,
                 Formatting=Formatting.None,
                 DateFormatString=@"yyyy-MM-dd HH:mm:ss"
-           };
+            };
 
             string result=string.Empty;
             result=JsonConvert.SerializeObject(input_, settings_);
             if (result == @"{}") {result=null;}
             return result;
-       }
+        }
 
 
         public IEnumerable<T> JTokensToCollection<T>(IEnumerable<JToken> input) where T : class
@@ -140,10 +140,10 @@ namespace JsonManagers
                     result.Add(t);
                 }
                 catch (Exception e){System.Diagnostics.Trace.WriteLine(e.Message);}
-           }
+            }
          
             return result;
-       }
+        }
         public IEnumerable<T> JTokensToCollectionObjColl<T>(IEnumerable<JToken> input) where T : class
         {
             IEnumerable<T> result=new List<T>();
@@ -151,7 +151,11 @@ namespace JsonManagers
             List<T> lt = new List<T>();
             foreach (JToken a in input)
             {
-                lt.Add(a.ToObject<T>());                
+                try
+                {
+                    lt.Add(a.ToObject<T>());
+                }
+                catch (Exception e) { System.Diagnostics.Trace.WriteLine(e.Message); }
             }
 
             result = lt;
@@ -166,7 +170,7 @@ namespace JsonManagers
                 result=a.ToObject<T>();
             }
             return result;
-       }
+        }
 
 
         public List<string> JTokenToCollection(IEnumerable<JToken> input)
@@ -175,16 +179,16 @@ namespace JsonManagers
             foreach (JToken jt in input.Children())
             {
                 result.Add(JsonConvert.SerializeObject(jt));
-           }
+            }
             return result;
-       }
+        }
         public string CollectionToStringFormat<T>(IEnumerable<T> list_, JsonSerializerSettings jss=null) where T : class
         {
             string result=null;
             result=JsonConvert.SerializeObject(list_, jss);
             return result;
-       }
+        }
 
-   }   
+    }   
 
 }

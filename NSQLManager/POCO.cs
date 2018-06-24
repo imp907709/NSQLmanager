@@ -555,6 +555,7 @@ namespace POCO
     }
     #endregion
 
+    [Obsolete]
     #region Quiz
 
     public class Quiz : V
@@ -591,9 +592,9 @@ namespace POCO
         public string link { get; set; } = null;
         public string target { get; set; } = "_self";
     }
-    
-    #endregion
 
+    #endregion
+  
     #region QuizNew
 
     public class QuiznewType{
@@ -627,6 +628,58 @@ namespace POCO
         public List<Question> questions_ { get; set; }
     }
 
+    #endregion
+
+    #region QuizTest
+    public class collectionTst
+    {
+        public virtual List<NodeCollectionTst> array { get; set; }
+    }
+    public class AnswersTst : collectionTst { public new List<AnswerTst> array { get; set; } }
+    public class QuestionsTst : collectionTst { public new List<QuestionTst> array { get; set; } }
+    public class QuizesTst : collectionTst { public new List<QuizTst> array { get; set; } }
+
+    public class NodeCollectionTst
+    {
+        public int _key { get; set; }
+        public string _name { get; set; }
+        public string _value { get; set; }
+        public string typeName { get; set; }
+
+        public collectionTst collection { get; set; }
+
+    }
+
+    public class ItemParameter : NodeCollectionTst
+    {
+        string cssType { get; set; }
+        string templateClass { get; set; }
+        bool show { get; set; }
+
+    }
+
+    public class HtmlitemTst : NodeCollectionTst
+    {
+        string cssClass { get; set; }
+    }
+
+    public class QuizItemTst : HtmlitemTst
+    {
+        public HtmlitemTst itemParameter { get; set; }
+        public NodeCollectionTst quizStatistic { get; set; }
+    }
+
+
+
+    public class AnswerTst : QuizItemTst { }
+    public class QuestionTst : QuizItemTst { public new AnswersTst collection { get; set; } }
+    public class QuizTst : QuizItemTst { public new QuestionsTst collection { get; set; } }
+
+
+    public class NodesItemsTst
+    {
+        public QuizesTst collection { get; set; }
+    }
     #endregion
 
     #region JsonConverters

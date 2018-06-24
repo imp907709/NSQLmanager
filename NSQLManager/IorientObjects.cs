@@ -22,15 +22,17 @@ namespace IOrientObjects
 
     }
     public interface IOrientEntity : IOrientObject
-    {      
-      [JsonProperty("@rid", Order = 1)]
-      string id { get; set; }
-      [JsonProperty("@type")]
-      string type {get;}          
-      [JsonProperty("@version")]
-      string version {get; }   
-      [JsonProperty("@class")]
-      string class_ {get; set;} 
+    {
+        [JsonProperty("@rid",Order=1)]
+        string id {get;set;}
+        [JsonProperty("@type")]
+        string type {get;}
+        [JsonProperty("@version")]
+        string version {get;}
+        [JsonProperty("@class")]
+        string class_ {get;set;}
+        [JsonProperty("@value")]
+        string value_ { get; set; }
     }
     public interface IOrientVertex : IOrientEntity
     {

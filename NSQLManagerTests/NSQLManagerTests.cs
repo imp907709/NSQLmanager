@@ -174,7 +174,17 @@ namespace NSQLManagerTests.Tests
           Assert.Equal(methodDelete, aMd);
           Assert.Equal(methodPut, aMp);
       }
-               
+      [Fact]
+      public void WebManager2_NTLMAuthCheck_OvispApiPerson()
+      {
+          HttpStatusCode code=HttpStatusCode.NotImplemented;
+          wm = new WebRequestManager();
+          wm.AddRequest("http://msk1-vm-ovisp01:8184/api/Person/GetManager/DegterevaSV");
+          wm.NtlmAuth(true);
+          wm.SetTimeout(2500);
+          code=((HttpWebResponse)wm.GetResponse("GET")).StatusCode;
+          Assert.Equal(HttpStatusCode.OK, code);
+      }
   }
 
   public class IntegrationMnagerFireTest
@@ -351,7 +361,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
               .GetBuilder().Build().GetText();
 
           string exp =
-"create Class Person content {\"Changed\": \"2017-10-19 18:00:09\", \"Created\": \"2015-02-02 12:43:56\", \"GUID\": \"1\", \"Name\": \"0\"} ";
+"create class Person content {\"Changed\": \"2017-10-19 18:00:09\", \"Created\": \"2015-02-02 12:43:56\", \"GUID\": \"1\", \"Name\": \"0\"} ";
 
           Assert.Equal(exp, res);
       }
@@ -554,7 +564,7 @@ new Unit() { Name = "0", GUID = "0", changed = new DateTime(2017, 01, 01, 00, 00
         
         CommandBuilder cb = new CommandBuilder(lcb,ff);
         string result=this.commandOne.GetCommand();
-        Assert.Equal("\"create class V Extends VSC\",\"create Class V Extends VSC\"", result);
+        Assert.Equal("\"create class V Extends VSC\",\"create class V Extends VSC\"", result);
       }
 
       //WHERE
@@ -1933,7 +1943,8 @@ new List<ITypeToken>() {new OrientHost(), new OrientPort(), new OrientCommandTok
 
       string adinTceUrl=ConfigurationManager.AppSettings["AdinTceUrl"] + "/holiday/full";
 
-      string testGUID= "c1a4c984-a00e-11e6-80db-005056813668";
+      string testGUID= "68e26b21-f5e0-11e7-8120-005056813668";
+      /**/
       //"18222799-602e-11e4-ad69-00c2c66d13b0" //test_long
       //"18a14516-cbb4-11e4-b849-f80f41d3dd35" //test
       //"ed53c8ea-c179-11e4-8edf-f80f41d3dd35" //Fill
@@ -2159,7 +2170,7 @@ new List<ITypeToken>() {new OrientHost(), new OrientPort(), new OrientCommandTok
 
 
   }
-
+  
 }    
 
 namespace NSQLIntegrationTests
@@ -2446,7 +2457,7 @@ namespace NSQLIntegrationTests
 }
 
     /// <summary>
-    /// Testing db generation with manager and crud operations with UOWS. Db generated once test_db_1 and deleted on tear down.
+    /// Testing db generation with manager and CRUD operations with UOWS. Db generated once test_db_1 and deleted on tear down.
     /// </summary>   
     [TestFixture]
     public class IntegrationRepoCheck
@@ -2558,54 +2569,54 @@ namespace NSQLIntegrationNunitTests
 
     public IntegrationNewsUOWCHeck()
     {
-      jm = new JSONManager();
-      string dbName = ConfigurationManager.AppSettings["OrientUnitTestDB"]+"_1";
-      newsContent = "{\"conntent_\":\"news UnitTest\",\"name\":\"News unit\"}";
-      commentaryContent = "{\"conntent_\":\"comment UnitTest\",\"name\":\"Comment unit\"}";
+        jm = new JSONManager();
+        string dbName = ConfigurationManager.AppSettings["OrientUnitTestDB"]+"_1";
+        newsContent = "{\"conntent_\":\"news UnitTest\",\"name\":\"News unit\"}";
+        commentaryContent = "{\"conntent_\":\"comment UnitTest\",\"name\":\"Comment unit\"}";
 
-List<News> news_ = new List<News>() { };
-List<Commentary> comments_ = new List<Commentary>() { };
+        List<News> news_ = new List<News>(){};
+        List<Commentary> comments_ = new List<Commentary>(){};
 
-      string orientHost=string.Format(
-      "{0}:{1}",ConfigurationManager.AppSettings["OrientDevHost"],ConfigurationManager.AppSettings["OrientPort"]);
+        string orientHost=string.Format(
+        "{0}:{1}",ConfigurationManager.AppSettings["OrientDevHost"],ConfigurationManager.AppSettings["OrientPort"]);
 
-      mng=new Managers.Manager(dbName,orientHost);
+        mng=new Managers.Manager(dbName,orientHost);
 
-      nu=mng.GetNewsUOW();
-      pu=mng.GetPersonUOW();
-      mng=new Managers.Manager(dbName,orientHost);
+        nu=mng.GetNewsUOW();
+        pu=mng.GetPersonUOW();
+        //mng=new Managers.Manager(dbName,orientHost);
       
-      System.Diagnostics.Trace.WriteLine("Db create start");
-      mng.GenDB(true,false);
-      System.Diagnostics.Trace.WriteLine("Db create finished");
-      System.Diagnostics.Trace.WriteLine("notes create start");
-      mng.GenNewsComments(null,null);
+        System.Diagnostics.Trace.WriteLine("Db create start");
+        mng.GenDB(true,false);
+        System.Diagnostics.Trace.WriteLine("Db create finished");
+        System.Diagnostics.Trace.WriteLine("notes create start");
+        mng.GenNewsComments(null,null);
 
-      notesCreated=nu.GetItems<Note>().ToList();
-      personsInDb=nu.GetItems<Person>();
-      List<Person> personsAdded=nu.GetPersonsWithNews().GroupBy(s => s.GUID).Select(s => s.First()).ToList();
+        notesCreated=nu.GetItems<Note>().ToList();
+        personsInDb=nu.GetItems<Person>();
+        List<Person> personsAdded=nu.GetPersonsWithNews().GroupBy(s => s.GUID).Select(s => s.First()).ToList();
 
-      if(personsInDb == null||notesCreated.Count()==0){ throw new Exception("No persons in DB"); }
-      if(notesCreated == null||notesCreated.Count()==0){ throw new Exception("No notes in DB"); }
-      if(personsAdded == null||notesCreated.Count()==0){ throw new Exception("No persons with news in DB"); }
+        if(personsInDb == null||notesCreated.Count()==0){ throw new Exception("No persons in DB"); }
+        if(notesCreated == null||notesCreated.Count()==0){ throw new Exception("No notes in DB"); }
+        if(personsAdded == null||notesCreated.Count()==0){ throw new Exception("No persons with news in DB"); }
 
-      newsMaker = personsAdded[0];
-      likeMaker = personsAdded[1];
-      troubleMaker = personsAdded[2];
-      newsCommenter=personsAdded[3];
+        newsMaker = personsAdded[0];
+        likeMaker = personsAdded[1];
+        troubleMaker = personsAdded[2];
+        newsCommenter=personsAdded[3];
 
-      if(newsMaker == null){ throw new Exception("No newsMaker in DB"); }
-      if(likeMaker == null){ throw new Exception("No likeMaker in DB"); }
-      if(troubleMaker == null){ throw new Exception("No troubleMaker in DB"); }
-      if(newsCommenter == null){ throw new Exception("No newsCommenter in DB"); }
+        if(newsMaker == null){ throw new Exception("No newsMaker in DB"); }
+        if(likeMaker == null){ throw new Exception("No likeMaker in DB"); }
+        if(troubleMaker == null){ throw new Exception("No troubleMaker in DB"); }
+        if(newsCommenter == null){ throw new Exception("No newsCommenter in DB"); }
 
-      tags=new List<Tag>(){
-        new Tag(){tagText="tag1"}
-        ,new Tag(){tagText="tag2"}
-        ,new Tag(){tagText="tag3"}
-      };
+        tags=new List<Tag>(){
+            new Tag(){tagText="tag1"}
+            ,new Tag(){tagText="tag2"}
+            ,new Tag(){tagText="tag3"}
+        };
 
-      System.Diagnostics.Trace.WriteLine("notes create finished");
+        System.Diagnostics.Trace.WriteLine("notes create finished");
     }    
 
     ~IntegrationNewsUOWCHeck()
@@ -2946,6 +2957,54 @@ List<Note> notes0 = nu.GetByOffset(ns.ToList()[0].GUID, 3).ToList();
 
 }
 
+namespace NSQLManagerQuizTest
+{
+    using NUnit.Framework;       
+    [TestFixture]
+    public class ManagerQuizTest
+    {
+        Managers.Manager mng;
+        IOrientRepo repo;
+        Quizes.QuizUOW qu;
+        JSONManager jm;
+
+        public ManagerQuizTest()
+        {
+            mng=new Managers.Manager("Intranet","http://msk1-vm-indb01.nspk.ru:2480","root","mR%mzJUGq1E");
+            repo=mng.GetRepo();
+            qu=new Quizes.QuizUOW(repo);
+            jm = new JSONManager();
+        }
+        [Test]
+        public void QuizTest_UOWGetAll()
+        {
+            string quizAll=qu.GetQuizByMonthGap(null);
+            IEnumerable<QuizGet> qs=jm.DeserializeFromParentNodeStringArr<QuizGet>(quizAll);
+            int quizesCount=qs.Count();
+            Assert.AreNotEqual(0,quizesCount);
+        }
+        [Test]
+        public void QuizTest_UOWByMonth()
+        {
+            DateTime st=new DateTime(2017, 03, 01);
+            DateTime fn=DateTime.Now;
+            int monthGap=(fn.Year-st.Year)*12+fn.Month-st.Month;
+            string quizByDate=qu.GetQuizByMonthGap(-monthGap);
+            IEnumerable<QuizGet> qs=jm.DeserializeFromParentNodeStringArr<QuizGet>(quizByDate);
+            int quizesCount=qs.Count();
+            Assert.AreNotEqual(0,quizesCount);
+        }
+        [Test]
+        public void QuizTest_ManagerGetAll()
+        {
+            string quizes=mng.GetQuiz(null);
+            IEnumerable<QuizGet> qs=jm.DeserializeFromParentNodeStringArr<QuizGet>(quizes);
+            int quizesCount=qs.Count();
+            Assert.AreNotEqual(0,quizesCount);
+        }
+    }
+}
+
 namespace NSQLManagerFunctionalTests
 {
 
@@ -2961,33 +3020,33 @@ namespace NSQLManagerFunctionalTests
         
     public ManagerTests()
     {
-      string testDbName = "test_db_FuncitonalTests";
-      mng=new Managers.Manager(testDbName);
-      mng.GenDB(true,false);
-      mng.GenNewsComments(null,null);
+        string testDbName = "test_db_FuncitonalTests";
+        mng=new Managers.Manager(testDbName);
+        mng.GenDB(true,false);
+        mng.GenNewsComments(null,null);
 
-      string host_=string.Format("{0}:{1}"
-      ,ConfigurationManager.AppSettings["OrientDevHost"]
-      ,ConfigurationManager.AppSettings["OrientPort"]);    
+        string host_=string.Format("{0}:{1}"
+        ,ConfigurationManager.AppSettings["OrientDevHost"]
+        ,ConfigurationManager.AppSettings["OrientPort"]);    
 
-      repo=RepoFactory.NewOrientRepo(testDbName
-      , host_
-      , ConfigurationManager.AppSettings["orient_login"]
-      , ConfigurationManager.AppSettings["orient_pswd"]);
+        repo=RepoFactory.NewOrientRepo(testDbName
+        , host_
+        , ConfigurationManager.AppSettings["orient_login"]
+        , ConfigurationManager.AppSettings["orient_pswd"]);
 
-      string personHost_=string.Format("{0}:{1}"
-      ,ConfigurationManager.AppSettings["OrientDevHost"]
-      ,ConfigurationManager.AppSettings["OrientPort"]);
+        string personSourceHost_=string.Format("{0}:{1}"
+        ,ConfigurationManager.AppSettings["OrientProdHost"]
+        ,ConfigurationManager.AppSettings["OrientPort"]);
 
-      personSourceManager=new Managers.Manager(ConfigurationManager.AppSettings["OrientSourceDB"]);
-      IOrientRepo personRepo=RepoFactory.NewOrientRepo(ConfigurationManager.AppSettings["OrientSourceDB"]
-      ,personHost_
-      ,ConfigurationManager.AppSettings["orient_login"]
-      ,ConfigurationManager.AppSettings["orient_pswd"]);
-      personSourceUOW=new PersonUOWs.PersonUOW(personRepo);
+        personSourceManager=new Managers.Manager(ConfigurationManager.AppSettings["OrientProdDB"]);
+        IOrientRepo personSourceRepo=RepoFactory.NewOrientRepo(ConfigurationManager.AppSettings["OrientProdDB"]
+        ,personSourceHost_
+        ,ConfigurationManager.AppSettings["orient_dev_login"]
+        ,ConfigurationManager.AppSettings["orient_prod_pswd"]);
+        personSourceUOW=new PersonUOWs.PersonUOW(personSourceRepo);
 
-      personSourceManager.BindUOW(personSourceUOW,"PersonUOW");
-      personSourceUOW=(PersonUOWs.PersonUOW)personSourceManager.GetUOW("PersonUOW");
+        personSourceManager.BindUOW(personSourceUOW,"PersonUOW");
+        personSourceUOW=(PersonUOWs.PersonUOW)personSourceManager.GetUOW("PersonUOW");
     }
     
     ~ManagerTests()
@@ -3026,8 +3085,10 @@ namespace NSQLManagerFunctionalTests
     [Test]
     public void ManagerUOWsBindCheck()
     {
+   
       Person yab=personSourceUOW.GetPersonByAccount("YablokovAE");      
-      Assert.AreEqual("YablokovAE", yab.sAMAccountName);
+      Assert.AreEqual("YablokovAE", yab.sAMAccountName);           
+      
     }    
     [Test]
     public void ManagerGetNewsWithOffsetCheck()

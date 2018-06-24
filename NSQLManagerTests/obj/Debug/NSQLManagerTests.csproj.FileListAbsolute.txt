@@ -1,4 +1,12 @@
+G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.csproj.App.config
+G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.csprojAssemblyReference.cache
+G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.csproj.CoreCompileInputs.cache
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.abstractions.dll
+G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\NUnit3.TestAdapter.dll
+G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\NUnit3.TestAdapter.pdb
+G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\nunit.engine.dll
+G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\nunit.engine.api.dll
+G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\Mono.Cecil.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.runner.visualstudio.testadapter.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.runner.reporters.net452.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.runner.utility.net452.dll
@@ -19,6 +27,7 @@ G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.assert.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.core.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.execution.desktop.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\NSQLmanager.pdb
+G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\NSQLmanager.exe.config
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\Castle.Core.xml
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\Moq.pdb
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\Moq.xml
@@ -32,7 +41,6 @@ G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\System.Web.Http.WebHost.xml
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.assert.xml
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.core.xml
 G:\disk\Files\git\nsql\NSQLManagerTests\bin\Debug\xunit.execution.desktop.xml
-G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.csproj.App.config
-G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.csprojResolveAssemblyReference.cache
+G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.csproj.CopyComplete
 G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.dll
 G:\disk\Files\git\nsql\NSQLManagerTests\obj\Debug\NSQLManagerTests.pdb
