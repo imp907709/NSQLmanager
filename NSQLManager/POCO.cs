@@ -351,7 +351,7 @@ namespace POCO
       public bool? hasComments { get; set; }
     
     }
-    public class News:Note{
+    public class News : Note{
       //[JsonProperty("content_")]
       //public override string content { get; set; }
       //[Updatable(false)]
@@ -368,6 +368,8 @@ namespace POCO
       //  set{content =
       //  System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(value));
       //  }}
+
+        public string description { get; set; }
     }
     public class Commentary:Note{
       //[JsonProperty("content_")]

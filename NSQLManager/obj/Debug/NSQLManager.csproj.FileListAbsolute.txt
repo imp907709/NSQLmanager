@@ -71,4 +71,3 @@ G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLManager.csproj.CoreCompileInput
 G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLManager.csproj.CopyComplete
 G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLmanager.exe
 G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLmanager.pdb
-G:\disk\Files\git\nsql\NSQLManager\obj\Debug\NSQLManager.csprojAssemblyReference.cache
