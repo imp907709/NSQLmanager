@@ -176,8 +176,7 @@ namespace LinqToContextPOC
             double result = function(1, 2, 3, 4, 5); // 12
         }
         public void ExpressionBuild(){
-            double a = 2;
-            double b = 3;
+        
             BinaryExpression be = Expression.Power(Expression.Constant(2D), Expression.Constant(3D));
             Expression<Func<double>> fd = Expression.Lambda<Func<double>>(be);
             Func<double> ce = fd.Compile();

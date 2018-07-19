@@ -176,6 +176,13 @@ namespace IUOWs
             result = _repo.ContentStringToObject<T>(item_);
             return result;
         }
+        public T UOWdeserialize<T>(string item_,JsonConverter js_)
+            where T : class, IOrientObjects.IOrientDefaultObject
+        {
+            T result = null;
+            result = JsonConvert.DeserializeObject<T>(item_, js_);
+            return result;
+        }
 
         string ConvertToBase64(string input)
         {
@@ -908,7 +915,7 @@ namespace Managers
         PersonUOW _personUOW;
         QuizUOW _quizUOW;
 
-        QuizNewUOW _quizUOWNew;
+        QuizNewUOW _quizUOWNew=null;
 
         /// <summary>
         /// Dictionary for storing new UOWs
@@ -1219,7 +1226,7 @@ namespace Managers
         public string POSTQuizNew(IEnumerable<QuizNewGet> quizes_)
         {
             string res = null;
-            _quizUOWNew.QuizPost(quizes_);
+            _quizUOWNew.QuizItemAdd(quizes_);
             return res;
         }
 
@@ -1299,7 +1306,7 @@ new Person(){Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",changed
             Note ntCl = new Note();
             Note ntCl0 = new Note() { name = "test name", content = "test content" };
             Object_SC obs = new Object_SC() { GUID = "1", changed = DateTime.Now, created = DateTime.Now, disabled = DateTime.Now };
-            News ns = new News() { name = "Real news", description = "descr1" };
+            News ns = new News() { name = "Real news",description="descr1" };
             Commentary cm = new Commentary() { name = "Real comment" };
 
             _repo.CreateClass("Person", "V", null);
@@ -1420,7 +1427,7 @@ new Person(){Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",changed
                     for (int i2 = 0; i2 < newsToAddCnt; i2++)
                     {
                         newsToAdd[randNewsCnt].published.isTrue = false;
-                        if (i == 0 && i2 == 0) { newsToAdd[randNewsCnt].published.isTrue = true; }
+                        if (i == 0 && i2==0) { newsToAdd[randNewsCnt].published.isTrue = true; }
                         News ns =
                         _newsUOW.CreateNews(personsAdded[i], newsToAdd[randNewsCnt]);
 
@@ -1469,14 +1476,12 @@ new Person(){Seed =123,Name="Neprintsevia",sAMAccountName="Neprintsevia",changed
 
                 for (int i = 0; i < 30; i++)
                 {
-                    News nsIns = new News() { name = "News" + i, content = crazyComment, description = "Mews description " + i };
-                    if (i == 0)
-                    {
+                    News nsIns=new News() { name = "News" + i, content = crazyComment, description = "Mews description " + i };
+                    if (i==0){                        
                         nsIns.published = new ToggledProperty() { isTrue = true };
                     }
                     News ns = _newsUOW.CreateNews(yab, nsIns);
-                    if (ns != null)
-                    {
+                    if (ns != null){
                         nodes.Add(ns);
                     }
                 }
@@ -1616,7 +1621,6 @@ namespace DbSync
         {
             OrientDatabase result = null;
 
-            bool allreadyExists = false;
 
             if (to_ == null) { throw new Exception("No from DB passed"); }
             targetRepo_ = to_.GetRepo();
@@ -1947,7 +1951,7 @@ namespace AdinTce
                     holidays.AddRange(lt_);
                 }
             }
-            if ((vacationsResp != null && vacationsResp != string.Empty))
+            if ( (vacationsResp != null && vacationsResp != string.Empty))
             {
 
                 IEnumerable<List<AdinTce.Vacation>> hl = _jsonManager.DeserializeFromParentChildren<List<Vacation>>(vacationsResp, "Holidays");
@@ -1992,7 +1996,7 @@ namespace AdinTce
         void ParseResponseTry()
         {
 
-            if (holidaysResp != null && holidaysResp != string.Empty)
+            if (holidaysResp != null &&  holidaysResp != string.Empty)
             {
                 AdpCheck();
                 try
@@ -2017,7 +2021,7 @@ namespace AdinTce
 
                 AdpCheck();
 
-                Newtonsoft.Json.Linq.IJEnumerable<Newtonsoft.Json.Linq.JToken> res =
+                Newtonsoft.Json.Linq.IJEnumerable<Newtonsoft.Json.Linq.JToken> res = 
                     Newtonsoft.Json.Linq.JToken.Parse(graphResp).Children()["Holidays"];
                 IEnumerable<GraphRead> gr = null;
                 foreach (Newtonsoft.Json.Linq.JToken jt in res)
@@ -2645,88 +2649,156 @@ namespace Quizes
             BindRepo(repo_);
         }
 
-        public void InitClasses()
+        public void ReInitClasses()
         {
-            _repo.Delete<QuizNewGet>(null, typeof(V), null, this._repo.getDbName());
-            _repo.CreateClass<QuizNewGet, V>(this._repo.getDbName());
-            _repo.CreateProperty<QuizNewGet>(new QuizNewGet(), null);
+            _repo.Delete<QuizItemNew>(null, typeof(V), null, this._repo.getDbName());
+            _repo.DropClassTp<QuizItemNew>(typeof(QuizItemNew),this._repo.getDbName());
+            _repo.CreateClass<QuizItemNew, V>(this._repo.getDbName());
+            _repo.CreateProperty<QuizItemNew>(new QuizItemNew(), null);
+
+            _repo.Delete<QuizNew>(null, typeof(V), null, this._repo.getDbName());
+            _repo.DropClassTp<QuizNew>(typeof(QuizNew), this._repo.getDbName());
+            _repo.CreateClass<QuizNew, V>(this._repo.getDbName());
+            _repo.CreateProperty<QuizNew>(new QuizNew(), null);
+
+            _repo.Delete<QuestionNew>(null, typeof(V), null, this._repo.getDbName());
+            _repo.DropClassTp<QuestionNew>(typeof(QuestionNew), this._repo.getDbName());
+            _repo.CreateClass<QuestionNew, V>(this._repo.getDbName());
+            _repo.CreateProperty<QuestionNew>(new QuestionNew(), null);
+
+            _repo.Delete<AnswerNew>(null, typeof(V), null, this._repo.getDbName());
+            _repo.DropClassTp<AnswerNew>(typeof(AnswerNew), this._repo.getDbName());
+            _repo.CreateClass<AnswerNew, V>(this._repo.getDbName());
+            _repo.CreateProperty<AnswerNew>(new AnswerNew(), null);
         }
 
-        public void QuizGenerate()
+        public QuizItemNew QuizGenerate()
         {
-            this.InitClasses();
-            List<QuizNewGet> qzSend = new List<QuizNewGet>(){
-                    new QuizNewGet(){key=0,name="quiz 1", dateFrom=DateTime.Now,dateTo=DateTime.Now,
-                    questions_= new List<Question>(){
+            QuizItemNew r = new QuizItemNew()
+            {
+                _key = 0,_name = "QuizItems",_value = "QuizItems",show = true,cssClass = "fxvt",
+                array = new List<QuizNew>()
+                {
 
-                    new Question(){key=0,name="quiestion 1",value="question 1",toStore=true,type="checkbox",answers=new List<Answer>(){
-                    new Answer(){key=0,name="answer 1",value="answer 1"}
-                    ,new Answer(){key=1,name="answer 2",value="answer 2"}}}
+                    new QuizNew()
+                    {_key = 0,_name = "QuizName0",_value = "QuizValue0",show = true,cssClass="fxvt",itemControlls = QuizNew.testitemControllsGen(),array = new List<QuestionNew>() {
 
-                    ,new Question(){key=0,name="quiestion 2",value="question 2",toStore=true,type="checkbox",answers=new List<Answer>(){
-                    new Answer(){key=0,name="answer 1",value="answer 1"}
-                    ,new Answer(){key=1,name="answer 2",value="answer 2"}
-                    ,new Answer(){key=2,name="answer 3",value="answer 3"}}}
+                        new QuestionNew() { _key = 0, _name = "QuestionName0", _value = "QuestionValue0", show = true,cssClass="fxvt"
+                        ,array = new List<AnswerNew>(){
+                        new AnswerNew(){_key = 0, _name = "AnswerName0", _value = "AnswerValue0", show = true}
+                        ,new AnswerNew(){_key = 1, _name = "AnswerName1", _value = "AnswerValue1", show = true}}}
+                        ,new QuestionNew() { _key = 1, _name = "QuestionName1", _value = "QuestionValue1", show = true,cssClass="fxvt"
+                        ,array = new List<AnswerNew>(){
+                        new AnswerNew(){_key = 0, _name = "AnswerName0", _value = "AnswerValue0", show = true}
+                        ,new AnswerNew(){_key = 1, _name = "AnswerName1", _value = "AnswerValue1", show = true}}}
 
+                        }
                     }
-                }
-                , new QuizNewGet(){key=0,name="quiz 2", dateFrom=DateTime.Now,dateTo=DateTime.Now,
-                      questions_= new List<Question>(){
+                    , new QuizNew()
+                    {_key = 1,_name = "QuizName1",_value = "QuizValue1",show = true,cssClass="fxvt",itemControlls = QuizNew.testitemControllsGen(),array = new List<QuestionNew>() {
 
-                        new Question(){key=0,name="quiestion 1",value="question 1",toStore=true,type="text"}
+                        new QuestionNew() { _key = 0, _name = "QuestionName0", _value = "QuestionValue0", show = true,cssClass="fxvt"
+                        ,array = new List<AnswerNew>(){
+                        new AnswerNew(){_key = 0, _name = "AnswerName0", _value = "AnswerValue0", show = true}
+                        ,new AnswerNew(){_key = 1, _name = "AnswerName1", _value = "AnswerValue1", show = true}}}
+                        ,new QuestionNew() { _key = 1, _name = "QuestionName1", _value = "QuestionValue1", show = true,cssClass="fxvt"
+                        ,array = new List<AnswerNew>(){
+                        new AnswerNew(){_key = 0, _name = "AnswerName0", _value = "AnswerValue0", show = true}
+                        ,new AnswerNew(){_key = 1, _name = "AnswerName1", _value = "AnswerValue1", show = true}}}
 
-                        ,new Question(){key=0,name="quiestion 2",toStore=true,type="checkbox",answers=new List<Answer>(){
-                        new Answer(){key=0,name="answer 1",value="answer 1"}
-                        ,new Answer(){key=1,name="answer 2",value="answer 2"}
-                        ,new Answer(){key=2,name="answer 3",value="answer 3"}}}
-
+                        }
                     }
+                    , new QuizNew()
+                    {_key = 2,_name = "QuizName3",_value = "QuizValue3",show = true,cssClass="fxvt",itemControlls = QuizNew.testitemControllsGen(),array = new List<QuestionNew>() {
+
+                        new QuestionNew() { _key = 0, _name = "QuestionName0", _value = "QuestionValue0", show = true,cssClass="fxvt"
+                        ,array = new List<AnswerNew>(){
+                        new AnswerNew(){_key = 0, _name = "AnswerName0", _value = "AnswerValue0", show = true}
+                        ,new AnswerNew(){_key = 1, _name = "AnswerName1", _value = "AnswerValue1", show = true}}}
+                        ,new QuestionNew() { _key = 1, _name = "QuestionName1", _value = "QuestionValue1", show = true,cssClass="fxvt"
+                        ,array = new List<AnswerNew>(){
+                        new AnswerNew(){_key = 0, _name = "AnswerName0", _value = "AnswerValue0", show = true}
+                        ,new AnswerNew(){_key = 1, _name = "AnswerName1", _value = "AnswerValue1", show = true}}}
+                         ,new QuestionNew() { _key = 2, _name = "QuestionName2", _value = "QuestionValue2", show = true,cssClass="fxvt"
+                        ,array = new List<AnswerNew>(){
+                        new AnswerNew(){_key = 0, _name = "AnswerName0", _value = "AnswerValue0", show = true}
+                        ,new AnswerNew(){_key = 1, _name = "AnswerName1", _value = "AnswerValue1", show = true}
+                        ,new AnswerNew(){_key = 2, _name = "AnswerName2", _value = "AnswerValue2", show = true}} }
+
+                        }
+                    }
+
                 }
             };
-            this.QuizDelete(this.QuizGet());
-            this.QuizPost(qzSend);
+
+            return r;
         }
 
-        public IEnumerable<QuizNewGet> QuizGet()
+        public IEnumerable<QuizItemNew> QuizItemsGet()
         {
-            IEnumerable<QuizNewGet> quizes = null;
-            quizes = _repo.SelectFromType<QuizNewGet>(null, this._repo.getDbName());
+            IEnumerable<QuizItemNew> quizes = null;
+            quizes = _repo.SelectFromType<QuizItemNew>(null, this._repo.getDbName());
             return quizes;
         }
-        public QuizNewGet QuizGetItem(string guid_)
+        public QuizItemNew QuizItemGet()
         {
-            QuizNewGet quizes = null;
-            quizes = _repo.SelectSingle<QuizNewGet>("GUID=='" + guid_ + "'", this._repo.getDbName());
+            QuizItemNew quiz = null;
+                quiz = _repo.SelectFromType<QuizItemNew>(null, this._repo.getDbName()).FirstOrDefault();
+            return quiz;
+        }
+
+        public void QuizItemAdd(IEnumerable<QuizItemNew> quizes_)
+        {
+            QuizDelete(QuizItemsGet());
+            foreach (QuizItemNew qz_ in quizes_)
+            {
+                _repo.CreateVertex<QuizItemNew>(qz_, this._repo.getDbName());
+            }
+        }
+        public void QuizItemAdd(QuizItemNew quiz_)
+        {
+           
+            _repo.CreateVertex<QuizItemNew>(quiz_, this._repo.getDbName());
+            
+        }
+
+        public void QuizDelete(IEnumerable<QuizItemNew> quizes_)
+        {
+            foreach (QuizItemNew qz_ in quizes_)
+            {
+                QuizItemNew qzToDelete = this.QuizGetItem(qz_.GUID);
+                if (qzToDelete != null)
+                {
+                    _repo.Delete<QuizItemNew>(qzToDelete, typeof(V), null, this._repo.getDbName());
+                }
+            }
+        }
+
+        public QuizItemNew QuizGetItem(string key_)
+        {
+            QuizItemNew quizes = null;
+            quizes = _repo.SelectSingle<QuizItemNew>("_key=='" + key_ + "'", this._repo.getDbName());
             return quizes;
         }
         public string QuizGetStr()
         {
             string result = null;
-            result = _repo.ObjectToContentString<QuizNewGet>(QuizGet());
+            result = _repo.ObjectToContentString<QuizItemNew>(QuizItemGet());
             return result;
         }
 
-        public void QuizPost(IEnumerable<QuizNewGet> quizes_)
+        public QuizItemNew QuizItemGetFromFileTest(string str_)
         {
-            QuizDelete(QuizGet());
-            foreach (QuizNewGet qz_ in quizes_)
-            {
-                _repo.CreateVertex<QuizNewGet>(qz_, this._repo.getDbName());
-            }
+            string _str = File.ReadAllText(str_);
+            QuizItemNew r = this.UOWdeserialize<POCO.QuizItemNew>(_str);
+            return r;
         }
-
-        public void QuizDelete(IEnumerable<QuizNewGet> quizes_)
+        public void QuizItemAddToFileTest(QuizItemNew item_,string str_)
         {
-            foreach (QuizNewGet qz_ in quizes_)
-            {
-                QuizNewGet qzToDelete = this.QuizGetItem(qz_.GUID);
-                if (qzToDelete != null)
-                {
-                    _repo.Delete<QuizNewGet>(qzToDelete, typeof(V), null, this._repo.getDbName());
-                }
-            }
+            string _str = this.UOWserialize<QuizItemNew>(item_);
+            File.WriteAllText(str_, _str);
         }
 
     }
-}
 
+}
